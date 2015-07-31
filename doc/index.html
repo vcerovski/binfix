@@ -1,0 +1,813 @@
+<p><link href="markdown.css" rel="stylesheet" type="text/css"></link></p>
+
+<h1>BINFIX</h1>
+
+<p>Viktor Cerovski, Jully 2015.</p>
+
+<p><a name="Introduction"></a></p>
+
+<h2>Introduction</h2>
+
+<p>BINFIX (blend from "Binary Infix") is a poweful infix syntax notation for
+S-expressions of Common LISP.  There are many packages that do something similar,
+and BINFIX differs from them in the sheer scope of the offered infix operations
+with numerous capabilities:</p>
+
+<ul>
+<li>Infix arithmetic operations, comparisons, logical connectives, etc</li>
+<li>Simple notation for lambda lists including optional arguments</li>
+<li>Simpler <code>LET</code>s and assignments</li>
+<li>Simpler multiple-choice forms</li>
+<li>Explicit annotation of types in lambda lists and <code>LET</code>s</li>
+<li>Overall reduction of the number of parens in definitions.</li>
+</ul>
+
+<hr />
+
+<h2>Content</h2>
+
+<ul>
+<li><a href="#Instalation">Installation</a></li>
+<li><a href="#Examples">Examples</a>
+<ul>
+<li><a href="#Arithmetic and logical expressions">Arithmetic and logical expressions</a></li>
+<li><a href="#Lambdas, definitions and type annotations">Lambdas, definitions and type annotations</a>
+<ul>
+<li><a href="#lambda">lambda</a></li>
+<li><a href="#defun">defun</a></li>
+<li><a href="#&amp;optional">&amp;optional</a></li>
+<li><a href="#defmethod">defmethod</a></li>
+<li><a href="#defmacro">defmacro</a></li>
+<li><a href="#Type function">Type <code>function</code></a></li>
+</ul></li>
+<li><a href="#LETs">LETs</a></li>
+<li><a href="#Implicit/Explicit progn">Implicit/Explicit <code>progn</code></a></li>
+<li><a href="#<code>$</code>plitter"><code>$</code>plitter</a></li>
+<li><a href="#Multiple-choice forms">Multiple-choice forms</a></li>
+<li><a href="#Destructuring, multiple values">Destructuring, multiple values</a></li>
+</ul></li>
+<li><a href="#Support for macros">Support for macros</a></li>
+<li><a href="#More involved examples">More involved examples</a>
+<ul>
+<li><a href="#ordinal">ordinal</a></li>
+<li><a href="#join">join</a></li>
+<li><a href="#values-bind">values-bind</a></li>
+</ul></li>
+<li><a href="#Implementation">Implementation</a>
+<ul>
+<li><a href="#protoBINFIX">protoBINFIX</a></li>
+</ul></li>
+<li><a href="#Appendix">Appendix</a>
+<ul>
+<li><a href="#Operation properties">Operation properties</a></li>
+<li><a href="#List of all operations">List of all operations</a></li>
+</ul></li>
+</ul>
+
+<hr />
+
+<p><a name="Instalation"></a></p>
+
+<h2>Instalation</h2>
+
+<p><a href="https://www.quicklisp.org/">Quicklisp</a> makes the
+downloading/installation/loading trivial:</p>
+
+<pre><code>(ql:quickload :binfix)
+</code></pre>
+
+<p>Currently BINFIX is <em>not</em> registered in the Quicklisp repositories so in order
+to have above command work it is sufficient to symlink binfix directory as
+<code>local-projects/binfix</code> directory of quicklisp (for instance:
+<code>ln -s ~/src/binfix ~/quicklisp/local-projects/binfix</code>.)</p>
+
+<p>After loading the package, the next step is to allow use of its symbols</p>
+
+<pre><code>(use-package :binfix)
+</code></pre>
+
+<p>BINFIX is developed using
+<a href="https://en.wikipedia.org/wiki/Steel_Bank_Common_Lisp">SBCL</a>, and checked to
+work fine with <a href="https://en.wikipedia.org/wiki/CLISP">CLISP</a>,
+<a href="https://en.wikipedia.org/wiki/Embeddable_Common_Lisp">ECL</a> and <a href="https://en.wikipedia.org/wiki/Clozure_CL">Clozure
+CL</a>, with a caveat:
+in the case of CLISP and Clozure CL, there is a single symbol clash that has to
+be resolved manually (symbols <code>!</code> and <code>@</code>, respectivelly) during <code>use-package</code>.</p>
+
+<p><a name="Examples"></a></p>
+
+<h2>Examples</h2>
+
+<p>Generally, quoting a BINFIX expression in REPL will produce the corresponding
+S-expression.</p>
+
+<p>For easier comparison of input and output forms in following examples, LISP
+printer is first <code>setq</code> (operation <code>=.</code>) to lowercase output with</p>
+
+<pre><code>{*print-case* =. :downcase}
+</code></pre>
+
+<p>=> <code>:downcase</code></p>
+
+<p><a name="Arithmetic and logical expressions"></a></p>
+
+<h3>Arithmetic and logical expressions</h3>
+
+<p>Classic math stuff:</p>
+
+<pre><code>{2 * 3 + 4}
+</code></pre>
+
+<p>=> <code>10</code></p>
+
+<pre><code>'{a * {b + c}}
+</code></pre>
+
+<p>=> <code>(* a (+ b c))</code></p>
+
+<pre><code>'{- {x + y} / x * y}
+</code></pre>
+
+<p>=> <code>(- (/ (+ x y) (* x y)))</code></p>
+
+<pre><code>'{0 &lt; x &lt; 1 &amp;&amp; y &gt;= 1 || y &gt;= 2}
+</code></pre>
+
+<p>=> <code>(or (and (&lt; 0 x 1) (&gt;= y 1)) (&gt;= y 2))</code></p>
+
+<p>Expressions like <code>{(f x y) * (g a b)}</code> and <code>{{f x y} * {g a b}}</code> generally
+produce the same result. The inner brackets, however, can be removed:</p>
+
+<pre><code>'{sqrt x * sin x}
+</code></pre>
+
+<p>=> <code>(* (sqrt x) (sin x))</code></p>
+
+<pre><code>'{A ! i .= B ! j + C ! k}
+</code></pre>
+
+<p>=> <code>(setf (aref a i) (+ (aref b j) (aref c k)))</code></p>
+
+<pre><code>'{a ! i j += b ! i k * c ! k j}
+</code></pre>
+
+<p>=> <code>(incf (aref a i j) (* (aref b i k) (aref c k j)))</code></p>
+
+<pre><code>'{listp A &amp;&amp; car A == 'x &amp;&amp; cdr A || A}
+</code></pre>
+
+<p>=> <code>(or (and (listp a) (eql (car a) 'x) (cdr x)) a)</code></p>
+
+<pre><code>{cons -2 loop for i to 9 collect i}
+</code></pre>
+
+<p>=> <code>(-2 0 1 2 3 4 5 6 7 8 9)</code></p>
+
+<p><a name="Lambdas, definitions and type annotations"></a></p>
+
+<h3>Lambdas, definitions and type annotations</h3>
+
+<p><a name="lambda"></a></p>
+
+<h4><code>lambda</code></h4>
+
+<pre><code>'{x -&gt; sqrt x * sin x}
+</code></pre>
+
+<p>=> <code>(lambda (x) (* (sqrt x) (sin x)))</code></p>
+
+<pre><code>'{x :single-float -&gt; sqrt x * sin x}
+</code></pre>
+
+<p>=> <code>(lambda (x) (declare (type single-float x)) (* (sqrt x) (sin x)))</code></p>
+
+<pre><code>'{x y -&gt; {x - y}/{x + y}}
+</code></pre>
+
+<p>=> <code>(lambda (x y) (/ (- x y) (+ x y)))</code></p>
+
+<p>Mixing of notations works as well, so each of the following</p>
+
+<pre><code>{x y -&gt; / (- x y) (+ x y)}
+{x y -&gt; (- x y)/(+ x y)}
+{x y -&gt; (/ (- x y) (+ x y))}
+</code></pre>
+
+<p>produces the same form.</p>
+
+<p>Fancy way of writing <code>{2 * 3 + 4}</code></p>
+
+<pre><code>{{x -&gt; y -&gt; z -&gt; x * y + z} @ 2 @ 3 @ 4}
+</code></pre>
+
+<p>=> <code>10</code></p>
+
+<p>Quoting reveals the expanded S-expr</p>
+
+<pre><code>'{{x -&gt; y -&gt; z -&gt; x * y + z} @ 2 @ 3 @ 4}
+</code></pre>
+
+<p>=></p>
+
+<pre><code>(funcall (funcall (funcall
+  (lambda (x) (lambda (y) (lambda (z) (+ (* x y) z))))
+    2) 3) 4)
+</code></pre>
+
+<p>Indeed, <code>@</code> is left-associative, standing for <code>funcall</code>.</p>
+
+<p>More complicated types can be also explicitely given after the
+argument, </p>
+
+<pre><code>'{x :|or symbol number| -&gt; cons x x}
+</code></pre>
+
+<p>=></p>
+
+<pre><code>(lambda (x) (declare (type (or symbol keyword) x)) (cons x x))
+</code></pre>
+
+<p><a name="defun"></a></p>
+
+<h4><code>defun</code></h4>
+
+<p>Factorial fun:</p>
+
+<pre><code>'{f n :integer := if {n &lt;= 0} 1 {n * f {1- n}}}
+</code></pre>
+
+<p>=></p>
+
+<pre><code>(defun f (n)
+  (declare (type integer n))
+  (if (&lt;= n 0)
+      1
+      (* n (f (1- n)))))
+</code></pre>
+
+<p><a name="&amp;optional"></a></p>
+
+<h4><code>&amp;optional</code> is optional</h4>
+
+<p>Explicitely tail-recursive version of <code>f</code></p>
+
+<pre><code>'{fac n m = 1 :=
+   declare (integer m n)
+   if {n &lt;= 0} m
+      {fac {n - 1} {n * m}}}
+</code></pre>
+
+<p>=></p>
+
+<pre><code>(defun fac (n &amp;optional (m 1))
+  (declare (integer m n))
+  (if (&lt;= n 0)
+      m
+      (fac (- n 1) (* n m))))
+</code></pre>
+
+<p>As you may by now expect, the following is also permited</p>
+
+<pre><code>{fac n :integer m :integer = 1 :=
+  if {n &lt;= 0} m
+     {fac {n - 1} {n * m}}}
+</code></pre>
+
+<p><a name="defmethod"></a></p>
+
+<h4><code>defmethod</code></h4>
+
+<p>Generic versions of <code>f</code></p>
+
+<pre><code>'{f n :integer :- if {n &lt;= 0} 1 {n * f {1- n}}}
+'{f (n integer):- if {n &lt;= 0} 1 {n * f {1- n}}}
+</code></pre>
+
+<p>both produce</p>
+
+<pre><code>(defmethod f ((n integer))
+  (if (&lt;= n 0)
+      1
+      (* n (f (1- n)))))
+</code></pre>
+
+<p><a name="defmacro"></a></p>
+
+<h4><code>defmacro</code></h4>
+
+<p>Macros are defined via <code>:==</code> operation, similar to the previous examples.
+See Sec. <a href="#Support for macros">Support for macros</a>.</p>
+
+<p><a name="Type function"></a></p>
+
+<h4>Type <code>function</code></h4>
+
+<p>Operation <code>:-&gt;</code> can be used to specify function type. For example, in
+SBCL 1.1.17 function <code>sin</code> has declared type that can be written as</p>
+
+<pre><code>'{number :-&gt; single-float -1.0 1.0 ||
+             double-float -1.0 1.0 ||
+             complex single-float  ||
+             complex double-float .x. &amp;optional}
+</code></pre>
+
+<p>=></p>
+
+<pre><code>(function (number)
+ (values
+  (or (single-float -1.0 1.0)
+      (double-float -1.0 1.0)
+      (complex single-float)
+      (complex double-float))
+  &amp;optional))
+</code></pre>
+
+<p><a name="LETs"></a></p>
+
+<h3>LETs</h3>
+
+<p>Various <code>let</code> forms currently covered by BINFIX all follow the pattern
+of </p>
+
+<pre><code>'{let x bit = 1
+      y = 2
+    x + y }
+</code></pre>
+
+<p>=></p>
+
+<pre><code>(let ((x 1) (y 2))
+  (declare (type bit x))
+  (+ x y))
+</code></pre>
+
+<p>Various <code>flet</code> forms require lambda-list before <code>=</code> symbol:</p>
+
+<pre><code>'{flet f (x) = {sqrt x * sin x}
+    f 0.5}
+</code></pre>
+
+<p>=></p>
+
+<pre><code>(flet ((f (x)
+         (* (sqrt x) (sin x))))
+  (f 0.5))
+</code></pre>
+
+<p><a name="Implicit/Explicit progn"></a></p>
+
+<h3>Implicit/Explicit <code>progn</code></h3>
+
+<p>Lambda written in BINFIX has no implicit progn (a nod to purely functional
+programming,) while <code>let</code>s have it.  This in particular means that if a prog is
+needed in the body of lambda, it should be explicitely given:</p>
+
+<pre><code>{x -&gt; prog2 (format t "Calculating... ")
+            {f $ x * x}
+            (format t "done.~%")}
+</code></pre>
+
+<p><a name="<code>$</code>plitter"></a></p>
+
+<h3><code>$</code>plitter</h3>
+
+<p>Infix <code>$</code> is a vanishing OP, leaving only its arguments,
+effectivelly splitting the list in two parts.</p>
+
+<pre><code>'{f $ g $ h x y z}
+</code></pre>
+
+<p>=> <code>(f (g (h x y z)))</code></p>
+
+<p>So its effect here is similar to <code>$</code> in Haskell. 
+Or perphaps:</p>
+
+<pre><code>'{declare $ optimize (speed 1) (safety 1)}
+</code></pre>
+
+<p>=> <code>(declare (optimize (speed 1) (safety 1)))</code></p>
+
+<p><code>$</code>plitter also allows writing a shorter <code>cond</code>, as in</p>
+
+<pre><code>(cond {p x $ f x}
+      {q x $ g x}
+      {r x $ h x}
+      {t $ x})
+</code></pre>
+
+<p>compared to the equivalent</p>
+
+<pre><code>(cond ((p x) (f x))
+      ((q x) (g x))
+      ((r x) (h x))
+      (t x))
+</code></pre>
+
+<p>Another splitter is <code>?</code>, as described in the next section.</p>
+
+<p><a name="Multiple-choice forms"></a></p>
+
+<h3>Multiple-choice forms (<code>cond</code>, <code>case</code>, ...)</h3>
+
+<p>An alternative syntax to describe multiple-choice forms is to use <code>?</code></p>
+
+<pre><code>{cond $
+   p x ? f x $
+   q x ? g x $
+   r x ? h x $
+     t ? x}
+</code></pre>
+
+<p>which can be written also as</p>
+
+<pre><code>{cond $ p x ? f x
+      $ q x ? g x
+      $ r x ? h x
+      $   t ? x}
+</code></pre>
+
+<p>See <a href="#ordinal"><code>ordinal</code> example below</a>.</p>
+
+<p><a name="Destructuring, multiple values"></a></p>
+
+<h3>Destructuring, multiple values</h3>
+
+<p>Multiple values (<code>values</code>) are represented by <code>.x.</code>, 
+<code>multiple-value-let</code> by <code>=..</code> , and <code>destructuring-bind</code> by <code>..=</code></p>
+
+<pre><code>'{a (b) c ..= (f x) {a + 1 .x. b + 2 .x. c + 3}}
+</code></pre>
+
+<p>=></p>
+
+<pre><code>(destructuring-bind (a (b) c) (f x) (values (+ a 1) (+ b 2) (+ c 3)))
+</code></pre>
+
+<p>Another example:</p>
+
+<pre><code>{{.x. 5 1 5 1} == {a b =.. (truncate 11 2) {.x. a b a b}}}
+</code></pre>
+
+<p>=> <code>t</code></p>
+
+<p><a name="Support for macros"></a></p>
+
+<h3>Support for macros</h3>
+
+<p>If BINFIX terms <em>only</em> are inserted under backquote, everything should work
+fine, </p>
+
+<pre><code>'{let t1 = 'x
+      t2 = '{x + x}
+     `{x -&gt; ,t1 / ,t2}}
+</code></pre>
+
+<p>=></p>
+
+<pre><code>(let ((t1 'x) (t2 '(+ x x)))
+  `(lambda (x) (/ ,t1 ,t2)))
+</code></pre>
+
+<p>Replacing, however, BINFIX operations inside a backquoted BINFIX will <em>not</em>
+work.  This is currently not considered as a problem because direct call of
+<code>binfix</code> will cover some important cases of macro transformations in a 
+straightforward manner:</p>
+
+<pre><code>{m x y :==
+   let a = (gensym)
+       b = (gensym)
+     binfix `(let ,a double-float = ,x
+                  ,b double-float = ,y
+                {{,a - ,b} / {,a + ,b}})}
+</code></pre>
+
+<p>Now macro <code>m</code> works as expected:</p>
+
+<pre><code>(macroexpand-1 '(m (f x y) {a + b}))
+</code></pre>
+
+<p>=></p>
+
+<pre><code>(let ((#:g805 (f x y)) (#:g806 (+ a b)))
+  (declare (type double-float #:g806)
+           (type double-float #:g805))
+  (/ (- #:g805 #:g806) (+ #:g805 #:g806)))
+t
+</code></pre>
+
+<p>See more in <a href="#binfix macros">implementation details</a></p>
+
+<p><a name="More involved examples"></a></p>
+
+<h3>More involved examples</h3>
+
+<p><a name="ordinal"></a></p>
+
+<h4><code>ordinal</code></h4>
+
+<p>Converting an integer into ordinal string in English can be defined as</p>
+
+<pre><code>{ordinal i :integer :=
+   let* a = {i mod 10}
+        b = {i mod 100}
+      suf = {cond $ a = b = 1 || a = 1 &amp;&amp; 21 &lt;= b &lt;= 91 ? "st"
+                  $ a = b = 2 || a = 2 &amp;&amp; 22 &lt;= b &lt;= 92 ? "nd"
+                  $ a = b = 3 || a = 3 &amp;&amp; 23 &lt;= b &lt;= 93 ? "rd"
+                  $                                  t  ? "th"}
+        format () "~D~a" i suf}
+</code></pre>
+
+<p>It can be also written in a more "lispy" way without parens as</p>
+
+<pre><code>{ordinal1 i :integer :=
+   let* a = {i mod 10}
+        b = {i mod 100}
+      suf = {cond $ = a b 1 or = a 1 and &lt;= b 21 91 ? "st"
+                  $ = a b 2 or = a 2 and &lt;= b 22 92 ? "nd"
+                  $ = a b 3 or = a 3 and &lt;= b 23 93 ? "rd"
+                  $                              t  ? "th"}
+        format () "~D~a" i suf}
+</code></pre>
+
+<p>which can be tried using <code>@.</code> (<code>mapcar</code>)</p>
+
+<pre><code>{#'ordinal @. '(0 1 12 22 43 57 1901)}
+</code></pre>
+
+<p>=> <code>("0th" "1st" "12th" "22nd" "43rd" "57th" "1901st")</code></p>
+
+<p>(This example is picked up from <a href="http://blog.rust-lang.org/2015/04/17/Enums-match-mutation-and-moves.html">Rust
+blog</a>)</p>
+
+<p><a name="join"></a></p>
+
+<h4><code>join</code></h4>
+
+<p>APL-ish joining of things into list:</p>
+
+<pre><code>{
+  defgeneric join (a b) &amp;
+
+  join a :list  b :list :- append a b        &amp;
+  join a :t     b :list :- cons a b          &amp;
+  join a :list  b :t    :- append a (list b) &amp;
+  join a :t     b :t    :- list a b          &amp;
+
+  defbinfix '++ 'join 
+}
+; Must close here in order to use ++
+
+{let e = '{2 in 'x ++ '(1 2 3) ++ '((a)) ++ -1 * 2}
+    format t "~S~%=&gt; ~S" e (eval e)}
+</code></pre>
+
+<p>Evaluation of the above returns <code>t</code> and prints the following</p>
+
+<pre><code>(member 2 (join 'x (join '(1 2 3) (join '((a)) (* -1 2)))))
+=&gt; (2 3 (a) -2)
+</code></pre>
+
+<p><a name="values-bind"></a></p>
+
+<h4><code>values-bind</code></h4>
+
+<p>Macro <code>multiple-value-bind</code> with symbol <code>_</code> in variable list standing for
+an ignored value can be defined as</p>
+
+<pre><code>{values-bind v e &amp;rest r :==
+  let*  _ = ()
+     vars = {a -&gt; if {a == '_} {car $ push (gensym) _} a @. v}
+      `(multiple-value-bind ,vars ,e
+          ,@(if _ `({declare $ ignore ,@_}))
+          ,@r)}
+</code></pre>
+
+<p>So, for instance,</p>
+
+<pre><code>(macroexpand-1 '(values-bind (a _) (truncate 10 3) a))
+</code></pre>
+
+<p>=></p>
+
+<pre><code>(multiple-value-bind (a #:g823) (truncate 10 3) (declare (ignore #:g823)) a)
+t
+</code></pre>
+
+<p><a name="Implementation"></a></p>
+
+<h2>Implementation</h2>
+
+<p>BINFIX expression is written as a list enclosed in curly brackets <code>{</code> ... <code>}</code>
+handled through LISP reader, so the usual syntax rules of LISP apply, e.g <code>a+b</code>
+is a single symbol, while <code>a + b</code> is three symbols.  Lisp reader after
+tokenization calls the function <code>binfix</code> which does shallow transformation of
+BINFIX into S-expr representation of the expression.</p>
+
+<p>BINFIX uses a simple rewrite algorithm that divides a list in two, LHS and RHS
+of the lowest priority infix operator found within the list, then recursively
+processes each one.  It also shaves off one level of parens in some cases.</p>
+
+<p><a name="protoBINFIX"></a></p>
+
+<h3>protoBINFIX</h3>
+
+<p>Bootstraping is done beginning with protoBINFIX,</p>
+
+<pre><code>(defparameter *binfix*
+  '(( &amp;  progn)
+    (:== def defmacro)
+    (:=  def defun)
+    (:-  def defmethod)
+    ( =. setq)
+    (.=  setf)
+    (-&gt;  def lambda)
+    ($)
+    (let  let= let)
+    (let* let= let*)
+    (cons cons)
+    (||   or)
+    (&amp;&amp;   and)
+    (==   eql)
+    (=c=  char=)
+    (in   member)
+    ( !   aref)))
+
+(defun binfix (e &amp;optional (ops *binfix*))
+  (cond ((atom e) e)
+        ((null ops) (if (cdr e) e (car e)))
+        (t (let* ((op (car ops))
+                  (i (position (pop op) e)))
+             (if (null i)
+               (binfix e (cdr ops))
+              `(,@op
+                ,(if (member (car op) '(def let=))
+                    (subseq e 0 i)
+                    (binfix (subseq e 0 i) (cdr ops)))
+                ,(binfix (subseq e (1+ i)) ops)))))))
+
+(set-macro-character #\{
+  (lambda (s ch) (declare (ignore ch))
+    (binfix (read-delimited-list #\} s t))))
+
+(set-macro-character #\} (get-macro-character #\) ))
+</code></pre>
+
+<p>which captures the basics of BINFIX.
+The next bootstrap phase defines macro <code>def</code>,</p>
+
+<pre><code>(defmacro def (what args body)
+  `(,what ,@(if {what == 'lambda}
+              `(,(if {args &amp;&amp; atom args} `(,args) args))
+               (if (atom args) `(,args ()) `(,(car args),(cdr args))))
+          ,body))
+</code></pre>
+
+<p>and <code>let=</code>,</p>
+
+<pre><code>{let= let nil body &amp;aux vars :==
+  loop while {cadr body == '=}
+     do (push `(,(car body),(caddr body)) vars)
+        {body =. cdddr body}
+     finally (return `(,let ,(nreverse vars) ,@body))}
+</code></pre>
+
+<p>which wraps up protoBINFIX.</p>
+
+<p>The rest is written using this syntax, and consists of handling of lambda lists
+and <code>lets</code>, longer list of OPs with properties, redefined <code>binfix</code> to
+its full capability, and, finally, several convinience functions for
+dealing with OPs (<code>lsbinfix</code>, <code>defbinfix</code> and <code>rmbinfix</code>).</p>
+
+<p>Priorities of operations are given only relatively, with no numerical values and
+thus with no two operations of the same priority.</p>
+
+<p><a name="binfix macros"></a>
+Since shallow transformation into standard syntax is done by function <code>binfix</code>
+invoked recursively by the reader, <code>binfix</code> cannot be directly called for
+arbitrary macro transformation of BINFIX into BINFIX when standard macro
+helpers BACKTICK, COMA and COMA-AT are used. The reason is that <code>{</code>...<code>}</code> is
+invoked before them while the correct order would be after them.
+Examples of succesful combinations of backquoting and BINFIX are given
+<a href="#Support for macros">above</a>.</p>
+
+<p><a name="Appendix"></a></p>
+
+<h2>Appendix</h2>
+
+<p><a name="Operation properties"></a></p>
+
+<h3>Operation properties</h3>
+
+<p><code>:def</code> -- Operation (OP) is a definition requiring LHS to has a name and lambda
+list.</p>
+
+<p><code>:defm</code> -- OP is a definition requiring LHS to has a name and method lambda
+list.</p>
+
+<p><code>:lhs-lambda</code> -- OP has lambda list as its LHS.</p>
+
+<p><code>:unreduce</code> -- All appearances of OP at the current level should be unreduced,
+i.e replaced with a single call with multiple arguments.</p>
+
+<p><code>:left-assoc</code> -- OP is left--associative (OPs are right-associative by default.)</p>
+
+<p><code>:also-prefix</code> -- OP can be used as prefix OP when LHS is missing.</p>
+
+<p><code>:also-unary</code> -- OP can be used as unary when LHS is missing.</p>
+
+<p><code>:also-postfix</code> -- OP can be used as postfix OP when RHS is missing.</p>
+
+<p><code>:allows-decl</code> -- OP allows <code>declare</code> form(s) at the beginning of its RHS.</p>
+
+<p><code>#'my-fun</code> -- function <code>my-fun</code> will be applied to the untransformed RHS.</p>
+
+<p><code>:splitter</code> -- OP splits the expr at this point.</p>
+
+<p><code>:rhs-args</code> -- OP takes LHS as 1st and RHS as remaining arguments.</p>
+
+<p><a name="List of all operations"></a></p>
+
+<h3>List of all operations</h3>
+
+<pre><code>(lsbinfix)
+</code></pre>
+
+<p>provides the list:</p>
+
+<pre><code>BINFIX         LISP            Properties
+============================================================
+&amp;                progn           :unreduce       
+let              #&lt;FUNCTION binfix::let-binfix&gt;  
+let*             #&lt;FUNCTION binfix::let-binfix&gt;  
+flet             #&lt;FUNCTION binfix::flet-binfix&gt; 
+labels           #&lt;FUNCTION binfix::flet-binfix&gt; 
+macrolet         #&lt;FUNCTION binfix::flet-binfix&gt; 
+symbol-macrolet  #&lt;FUNCTION binfix::let-binfix&gt;  
+loop             #&lt;FUNCTION identity&gt;            
+:==              defmacro        :def            
+:=               defun           :def            
+:-               defmethod       :defm           
+?                binfix::binfix-interleave       :unreduce       
+$                nil             :split          
+.=               setf            
++=               incf            
+-=               decf            
+=.               setq            
+.=.              set             
+mapc             mapc            
+@.               mapcar          :rhs-args       
+@n               mapcan          :rhs-args       
+@..              maplist         :rhs-args       
+@.n              mapcon          :rhs-args       
+:-&gt;              function        :lhs-lambda     
+-&gt;               lambda          :lhs-lambda     
+@@               apply           :rhs-args       
+@                funcall         :rhs-args       :left-assoc     :also-postfix
+.x.              values          :unreduce       :also-prefix    
+=..              multiple-value-bind             :allows-decl    
+..=              destructuring-bind              :allows-decl    
+||               or              :unreduce       
+or               or              :unreduce       :also-prefix    
+&amp;&amp;               and             :unreduce       
+and              and             :unreduce       :also-prefix    
+&lt;                &lt;               :unreduce       :also-prefix    
+&gt;                &gt;               :unreduce       :also-prefix    
+&lt;=               &lt;=              :unreduce       :also-prefix    
+&gt;=               &gt;=              :unreduce       :also-prefix    
+===              equalp          
+equalp           equalp          
+equal            equal           
+==               eql             :also-prefix    
+eql              eql             :also-prefix    
+=s=              string=         
+=c=              char=           :unreduce       
+=                =               :unreduce       :also-prefix    
+/=               /=              :unreduce       :also-prefix    
+eq               eq              
+subtypep         subtypep        
+in               member          
+coerce           coerce          
+cons             cons            :also-prefix    
+elt              elt             
+svref            svref           
+!!               aref            
+logior           logior          :unreduce       
+logand           logand          :unreduce       
+&lt;&lt;               ash             
+mod              mod             
+min              min             :also-prefix    :unreduce       
+max              max             :also-prefix    :unreduce       
++                +               :also-prefix    :unreduce       
+-                -               :also-unary     :unreduce       
+floor            floor           
+ceiling          ceiling         
+truncate         truncate        
+/                /               :also-unary     
+*                *               :also-prefix    :unreduce       
+**               expt            
+expt             expt            :also-unary     
+!                aref            :rhs-args       
+------------------------------------------------------------
+</code></pre>
+
+<p>=> <code>nil</code></p>
