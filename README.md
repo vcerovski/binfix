@@ -2,7 +2,7 @@
 
 # BINFIX
 
-Viktor Cerovski, Jully 2015.
+Viktor Cerovski, Aug 2015.
 
 <a name="Introduction"></a>
 ## Introduction
