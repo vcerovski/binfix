@@ -8,3 +8,7 @@
            #:.= #:=. #:.=. #:..= #:=.. #:+= #:-=  #:<<  #:!  #:?
            #:$  #:** #:@   #:@@  #:@n  #:@. #:@.. #:@.n #:.x.))
 
+#+clisp (shadowing-import '! :binfix)
+  #+ecl (shadowing-import '@ :binfix)
+  #+ccl (shadowing-import '@ :binfix)
+
