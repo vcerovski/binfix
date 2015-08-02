@@ -70,14 +70,14 @@ with numerous capabilities:</p>
 
 <h2>Instalation</h2>
 
-<p><a href="https://www.quicklisp.org/">Quicklisp</a> makes the
-downloading/installation/loading trivial:</p>
+<p><a href="https://www.quicklisp.org/">Quicklisp</a> makes the installation/loading trivial:</p>
 
 <pre><code>(ql:quickload :binfix)
 </code></pre>
 
 <p>Currently BINFIX is <em>not</em> registered in the Quicklisp repositories so in order
-to have above command work it is sufficient to symlink binfix directory as
+to have the above command work it is necessary to download binfix manually,
+and then sufficient to symlink binfix directory as
 <code>local-projects/binfix</code> directory of quicklisp (for instance:
 <code>ln -s ~/src/binfix ~/quicklisp/local-projects/binfix</code>.)</p>
 
@@ -89,10 +89,11 @@ to have above command work it is sufficient to symlink binfix directory as
 <p>BINFIX is developed using
 <a href="https://en.wikipedia.org/wiki/Steel_Bank_Common_Lisp">SBCL</a>, and checked to
 work fine with <a href="https://en.wikipedia.org/wiki/CLISP">CLISP</a>,
-<a href="https://en.wikipedia.org/wiki/Embeddable_Common_Lisp">ECL</a> and <a href="https://en.wikipedia.org/wiki/Clozure_CL">Clozure
-CL</a>, with a caveat:
-in the case of CLISP and Clozure CL, there is a single symbol clash that has to
-be resolved manually (symbols <code>!</code> and <code>@</code>, respectivelly) during <code>use-package</code>.</p>
+and <a href="https://en.wikipedia.org/wiki/Clozure_CL">Clozure CL</a>,
+while with <a href="https://en.wikipedia.org/wiki/Embeddable_Common_Lisp">ECL</a> BINFIX
+passes tests when hand-loaded but does not go through package system yet.</p>
+
+<p>BINFIX shadows <code>!</code> in CLISP (<code>ext:!</code>) and <code>@</code> in Clozure CL and ECL.</p>
 
 <p><a name="Examples"></a></p>
 

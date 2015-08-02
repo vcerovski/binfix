@@ -52,13 +52,13 @@ with numerous capabilities:
 <a name="Instalation"></a>
 ## Instalation
 
-[Quicklisp](https://www.quicklisp.org/) makes the
-downloading/installation/loading trivial:
+[Quicklisp](https://www.quicklisp.org/) makes the installation/loading trivial:
 
     (ql:quickload :binfix)
 
 Currently BINFIX is _not_ registered in the Quicklisp repositories so in order
-to have above command work it is sufficient to symlink binfix directory as
+to have the above command work it is necessary to download binfix manually,
+and then sufficient to symlink binfix directory as
 `local-projects/binfix` directory of quicklisp (for instance:
 `ln -s ~/src/binfix ~/quicklisp/local-projects/binfix`.)
 
@@ -69,10 +69,11 @@ After loading the package, the next step is to allow use of its symbols
 BINFIX is developed using
 [SBCL](https://en.wikipedia.org/wiki/Steel_Bank_Common_Lisp), and checked to
 work fine with [CLISP](https://en.wikipedia.org/wiki/CLISP),
-[ECL](https://en.wikipedia.org/wiki/Embeddable_Common_Lisp) and [Clozure
-CL](https://en.wikipedia.org/wiki/Clozure_CL), with a caveat:
-in the case of CLISP and Clozure CL, there is a single symbol clash that has to
-be resolved manually (symbols `!` and `@`, respectivelly) during `use-package`.
+and [Clozure CL](https://en.wikipedia.org/wiki/Clozure_CL),
+while with [ECL](https://en.wikipedia.org/wiki/Embeddable_Common_Lisp) BINFIX
+passes tests when hand-loaded but does not go through the package system yet.
+
+BINFIX shadows `!` in CLISP (`ext:!`) and `@` in Clozure CL and ECL.
 
 <a name="Examples"></a>
 ## Examples
@@ -342,7 +343,7 @@ Another splitter is `?`, as described in the next section.
 <a name="Multiple-choice forms"></a>
 ### Multiple-choice forms (`cond`, `case`, ...)
 
-An alternative syntax to describe multiple-choice forms is to use `?`
+An alternative syntax to describe multiple-choice forms is to use `$` and `?`
 
     {cond $
        p x ? f x $
