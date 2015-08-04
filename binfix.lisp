@@ -13,12 +13,6 @@
                  ,@(if decl `((declare,@decl)))
                  ,@(if {symbolp s && cdr e} `(,e) e))))} &
 
- =flet e &optional binds :=
-   cond {null e $ =flet '(()) binds}
-        {symbolp (car e) && listp (cadr e) && '= == caddr e $
-            =flet (cddddr e) (cons `(,(car e),(cadr e),(cadddr e)) binds)}
-        (t `(,(nreverse binds) ,@(if {symbolp (car e) && cdr e} `(,e) e))) &
-
  interleave &rest r :==
    let body = (reverse (pop r))
      {loop while (cdr r) do
@@ -68,6 +62,15 @@
                  {car l == '= $ collect-&parts `(&optional,s,@l) arg types}
                  {          t $ lambda-list l `(,s,@arg) types}))
          (error "BINFIX: lambda-list expects symbol, not ~S" s))} &
+
+ =flet e &optional binds name lambdal decl :=
+   cond {null e      $ `(,(nreverse binds),@(car decl),@(cons name (nreverse lambdal)))}
+        {null name   $ =flet (cdr e) binds (car e) () ()}
+        {car e == '= $ =flet (cdr e) binds name (lambda-list (nreverse lambdal)) '(())}
+        {decl && listp (car e) && caar e == 'declare
+                     $ =flet (cdr e) binds name lambdal `(,{car e cons car decl})}
+        {decl        $ =flet (cddr e)`((,name ,@lambdal ,@(nreverse (car decl)) ,(car e)),@binds) (cadr e) () ()}
+        {t           $ =flet (cdr e) binds name `(,(car e),@lambdal) ()} &
 
  method-lambda-list l &optional arg :=
    if (null l)
@@ -151,7 +154,7 @@
      ( expt         :also-unary )
      ((! aref)      :rhs-args)) &
 
-binfix e &optional (ops *binfix*) :=
+ binfix e &optional (ops *binfix*) :=
   labels ((singleton (x)
             (declare (inline))
             (if {consp x && null (cdr x)} (car x) x))
