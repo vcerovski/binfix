@@ -212,9 +212,9 @@
                    `(,op-lisp ,lhs ,(car rhs) ,@(declare-then-binfix (cdr rhs) ops))}
                 {:split in op-prop $
                    `(,(if (= i 1) (car e) (binfix lhs (cdr ops)))
-                     ,(when rhs
-                        {let e = (binfix rhs ops)
-                            (if (cdr e) e (car e))}))}
+                     ,{when rhs
+                         let e = (binfix rhs ops)
+                            (if (cdr e) e (car e))})}
                 (t `(,op-lisp
                      ,(if (= i 1) (car e) (binfix lhs (cdr ops)))
                      ,@(cond {null (cdr rhs) $ rhs}
