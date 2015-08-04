@@ -286,8 +286,8 @@ of
 
 Various `flet` forms require lambda-list before `=` symbol:
 
-    '{flet f (x) = {sqrt x * sin x}
-        f 0.5}
+    '{flet f x = {sqrt x * sin x}
+        (f 0.5)}
 
 =>
 

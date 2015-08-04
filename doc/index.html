@@ -344,8 +344,8 @@ of </p>
 
 <p>Various <code>flet</code> forms require lambda-list before <code>=</code> symbol:</p>
 
-<pre><code>'{flet f (x) = {sqrt x * sin x}
-    f 0.5}
+<pre><code>'{flet f x = {sqrt x * sin x}
+    (f 0.5)}
 </code></pre>
 
 <p>=></p>
