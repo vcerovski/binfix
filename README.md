@@ -52,15 +52,10 @@ with numerous capabilities:
 <a name="Instalation"></a>
 ## Instalation
 
-[Quicklisp](https://www.quicklisp.org/) makes the installation/loading trivial:
+[Quicklisp](https://www.quicklisp.org/) makes the downloading/installation/loading
+trivial:
 
     (ql:quickload :binfix)
-
-Currently BINFIX is _not_ registered in the Quicklisp repositories so in order
-to have the above command work it is necessary to download binfix manually,
-and then sufficient to symlink binfix directory as
-`local-projects/binfix` directory of quicklisp (for instance:
-`ln -s ~/src/binfix ~/quicklisp/local-projects/binfix`.)
 
 After loading the package, the next step is to allow use of its symbols
 
