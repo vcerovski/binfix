@@ -31,7 +31,7 @@
                                    if i {prop =. cddr (elt *binfix* i) & i}
                                         (error "DEFBINFIX: undefined ~S" op)}}
      (every {p -> etypecase p (property p)} prop)
-     (rembinfix op)
+     (rmbinfix op)
      {*binfix* =. append (subseq *binfix* 0 i)
                         `((,op ,lisp-op ,@prop))
                          (subseq *binfix* i)}
