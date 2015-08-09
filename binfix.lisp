@@ -64,10 +64,19 @@
          (error "BINFIX: lambda-list expects symbol, not ~S" s))} &
 
  =flet e &optional binds name lambdal decl :=
-   cond {null e       $ `(,(nreverse binds),@(car decl),@{name cons reverse lambdal})}
-        {null name    $ =flet (cdr e) binds (car e) lambdal ()}
-        {car e == ':= $ =flet (cddr e) `((,name,@(lambda-list (reverse lambdal)),(cadr e)),@binds) () () ()}
-        {t            $ =flet (cdr e) binds name `(,(car e),@lambdal) ()} &
+   cond {null e      $ `(,(reverse binds),@(car decl),@{name cons reverse lambdal})}
+        {null name   $ =flet (cdr e) binds (car e) lambdal ()}
+        {car e ==':= $ =flet (cdr e) binds name lambdal '(())}
+        {decl && listp (car e) && caar e == 'declare
+                     $ =flet (cdr e) binds name lambdal `((,(car e),@(car decl)))}
+        {car e == 'declare
+                     $ =flet (cddr e) binds name lambdal `(((declare,(cadr e)),@(car decl)))}
+        {decl        $ =flet (cdr e) `((,name
+                                         ,@(lambda-list (reverse lambdal))
+                                          ,@(car decl)
+                                           ,(car e))
+                                       ,@binds) () () ()}
+        {t           $ =flet (cdr e) binds name {car e cons lambdal} ()} &
 
  method-lambda-list l &optional arg :=
    if (null l)
