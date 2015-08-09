@@ -279,9 +279,9 @@ of
       (declare (type bit x))
       (+ x y))
 
-Various `flet` forms require lambda-list before `=` symbol:
+`flet`/`labels` forms require name and lambda-list before `:=` symbol:
 
-    '{flet f x = {sqrt x * sin x}
+    '{flet f x := {sqrt x * sin x}
         (f 0.5)}
 
 =>
