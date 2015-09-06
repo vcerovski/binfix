@@ -2,7 +2,7 @@
 
 # BINFIX
 
-Viktor Cerovski, Aug 2015.
+Viktor Cerovski, Sep 2015.
 
 <a name="Introduction"></a>
 ## Introduction
@@ -42,6 +42,7 @@ with numerous capabilities:
     * [ordinal](#ordinal)
     * [join](#join)
     * [values-bind](#values-bind)
+    * [for](#for)
 * [Implementation](#Implementation)
     * [protoBINFIX](#protoBINFIX)
 * [Appendix](#Appendix)
@@ -496,6 +497,26 @@ So, for instance,
 =>
 
     (multiple-value-bind (a #:g823) (truncate 10 3) (declare (ignore #:g823)) a)
+    t
+
+<a name="for"></a>
+#### `for`
+
+Nested BINFIX lambda lists can be used in definitions of macros, as in the
+following example of a procedural for loop macro
+
+    {for (v :symbol from below by = 1) &rest r :==
+      `(loop for,v fixnum from,from below,below ,@{by /= 1 && `(by,by)}
+             do ,@r)}
+
+Now
+
+    (macroexpand-1 '(for (i 0 n) {a ! i .= 1+ i}))
+
+=>
+
+    (loop for i fixnum from 0 below n
+          do (setf (aref a i) (1+ i)))
     t
 
 <a name="Implementation"></a>

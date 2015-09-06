@@ -61,7 +61,10 @@
            (cond { &symbolp s $ collect-&parts l `(,s,@arg) types}
                  {car l == '= $ collect-&parts `(&optional,s,@l) arg types}
                  {          t $ lambda-list l `(,s,@arg) types}))
-         (error "BINFIX: lambda-list expects symbol, not ~S" s))} &
+         (if (listp s)
+           {let ll = (lambda-list s)
+             (lambda-list l {car ll cons reverse arg} (revappend (cdadr ll) types))}
+           (error "BINFIX: lambda-list expects symbol or list, not ~S" s)))} &
 
  =flet e &optional binds name lambdal decl :=
    cond {null e      $ `(,(reverse binds),@(car decl),@{name cons reverse lambdal})}

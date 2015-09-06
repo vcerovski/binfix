@@ -2,7 +2,7 @@
 
 <h1>BINFIX</h1>
 
-<p>Viktor Cerovski, Aug 2015.</p>
+<p>Viktor Cerovski, Sep 2015.</p>
 
 <p><a name="Introduction"></a></p>
 
@@ -52,6 +52,7 @@ with numerous capabilities:</p>
 <li><a href="#ordinal">ordinal</a></li>
 <li><a href="#join">join</a></li>
 <li><a href="#values-bind">values-bind</a></li>
+<li><a href="#for">for</a></li>
 </ul></li>
 <li><a href="#Implementation">Implementation</a>
 <ul>
@@ -586,6 +587,30 @@ an ignored value can be defined as</p>
 <p>=></p>
 
 <pre><code>(multiple-value-bind (a #:g823) (truncate 10 3) (declare (ignore #:g823)) a)
+t
+</code></pre>
+
+<p><a name="for"></a></p>
+
+<h4><code>for</code></h4>
+
+<p>Nested BINFIX lambda lists can be used in definitions of macros, as in the
+following example of a procedural for loop macro</p>
+
+<pre><code>{for (v :symbol from below by = 1) &amp;rest r :==
+  `(loop for,v fixnum from,from below,below ,@{by /= 1 &amp;&amp; `(by,by)}
+         do ,@r)}
+</code></pre>
+
+<p>Now</p>
+
+<pre><code>(macroexpand-1 '(for (i 0 n) {a ! i .= 1+ i}))
+</code></pre>
+
+<p>=></p>
+
+<pre><code>(loop for i fixnum from 0 below n
+      do (setf (aref a i) (1+ i)))
 t
 </code></pre>
 
