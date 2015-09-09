@@ -51,20 +51,21 @@
              {t $ error "BINFIX: cannot collect-&parts of ~S" l})} &
 
  lambda-list l &optional arg types :=
-   if (null l) `(,(reverse arg) ,@(if types`((declare ,@(nreverse types))))) ; nreverse is not necessary.
+   if (null l) {nreverse arg cons (if types`((declare ,@(nreverse types))))}
      {let s = (pop l)
-       (if (symbolp s)
-         (if (keywordp (car l))
-           (if {cadr l == '=}
-             (collect-&parts `(&optional,s,@l) arg types)
-             (lambda-list (cdr l) `(,s,@arg) `((type,(keyword-to-S-expr (car l)),s),@types)))
-           (cond { &symbolp s $ collect-&parts l `(,s,@arg) types}
-                 {car l == '= $ collect-&parts `(&optional,s,@l) arg types}
-                 {          t $ lambda-list l `(,s,@arg) types}))
-         (if (listp s)
-           {let ll = (lambda-list s)
-             (lambda-list l {car ll cons reverse arg} (revappend (cdadr ll) types))}
-           (error "BINFIX: lambda-list expects symbol or list, not ~S" s)))} &
+       (cond {symbolp s $
+               cond {keywordp (car l) $
+                      if {cadr l == '=}
+                        (collect-&parts `(&optional,s,@l) arg types)
+                        (lambda-list (cdr l) `(,s,@arg) `((type,(keyword-to-S-expr (car l)),s),@types))}
+                    {&symbolp s $ collect-&parts l `(,s,@arg) types}
+                    {car l =='= $ collect-&parts `(&optional,s,@l) arg types}
+                    {         t $ lambda-list l `(,s,@arg) types}}
+             {listp s $
+               let ll = (lambda-list s)
+                 (lambda-list l {car ll cons reverse arg} (revappend (cdadr ll) types))}
+             {t $ error "BINFIX: lambda-list expects symbol or list, not ~S" s})} &
+
 
  =flet e &optional binds name lambdal decl :=
    cond {null e      $ `(,(reverse binds),@(car decl),@{name cons reverse lambdal})}
