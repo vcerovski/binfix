@@ -722,7 +722,6 @@ provides the list:
     /                /               :also-unary     
     *                *               :also-prefix    :unreduce       
     **               expt            
-    expt             expt            :also-unary     
     !                aref            :rhs-args       
     ------------------------------------------------------------
 

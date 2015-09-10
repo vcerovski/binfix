@@ -161,7 +161,6 @@
      ( /            :also-unary )
      ( *            :also-prefix :unreduce )
      ((** expt))
-     ( expt         :also-unary )
      ((! aref)      :rhs-args)) &
 
  binfix e &optional (ops *binfix*) :=
