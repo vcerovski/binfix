@@ -661,7 +661,7 @@ processes each one.  It also shaves off one level of parens in some cases.</p>
              (if (null i)
                (binfix e (cdr ops))
               `(,@op
-                ,(if (member (car op) '(def let=))
+                ,(if (eql (car op) 'def)
                     (subseq e 0 i)
                     (binfix (subseq e 0 i) (cdr ops)))
                 ,(binfix (subseq e (1+ i)) ops)))))))
@@ -689,7 +689,8 @@ The next bootstrap phase defines macro <code>def</code>,</p>
   loop while {cadr body == '=}
      do (push `(,(car body),(caddr body)) vars)
         {body =. cdddr body}
-     finally (return `(,let ,(nreverse vars) ,@body))}
+     finally (return (let ((let `(,let ,(nreverse vars) ,@body)))
+                       (if lhs `(,@lhs ,let) let)))}
 </code></pre>
 
 <p>which wraps up protoBINFIX.</p>
@@ -826,7 +827,6 @@ truncate         truncate
 /                /               :also-unary     
 *                *               :also-prefix    :unreduce       
 **               expt            
-expt             expt            :also-unary     
 !                aref            :rhs-args       
 ------------------------------------------------------------
 </code></pre>

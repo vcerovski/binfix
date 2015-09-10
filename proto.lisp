@@ -29,7 +29,7 @@
              (if (null i)
                (binfix e (cdr ops))
               `(,@op
-                ,(if (member (car op) '(def let=))
+                ,(if (eql (car op) 'def)
                     (subseq e 0 i)
                     (binfix (subseq e 0 i) (cdr ops)))
                 ,(binfix (subseq e (1+ i)) ops)))))))

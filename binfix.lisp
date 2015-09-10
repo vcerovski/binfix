@@ -37,7 +37,7 @@
    if (null l)
      `(,(reverse arg)
        ,@{types && `((declare ,@(nreverse types)))}) ; nreverse is not necessary.
-     {let s = (pop l)
+     let s = (pop l)
        (cond {listp s || &symbolp s $ collect-&parts l (cons s arg) types}
              {symbolp s $
                let n = (car l)
@@ -48,11 +48,11 @@
                  (if {n == '=}
                    (collect-&parts (cddr l) `((,s,(cadr l)),@arg) types)
                    (collect-&parts l `(,s,@arg) types))}
-             {t $ error "BINFIX: cannot collect-&parts of ~S" l})} &
+             {t $ error "BINFIX: cannot collect-&parts of ~S" l}) &
 
  lambda-list l &optional arg types :=
    if (null l) {nreverse arg cons (if types`((declare ,@(nreverse types))))}
-     {let s = (pop l)
+     let s = (pop l)
        (cond {symbolp s $
                cond {keywordp (car l) $
                       if {cadr l == '=}
@@ -64,7 +64,7 @@
              {listp s $
                let ll = (lambda-list s)
                  (lambda-list l {car ll cons reverse arg} (revappend (cdadr ll) types))}
-             {t $ error "BINFIX: lambda-list expects symbol or list, not ~S" s})} &
+             {t $ error "BINFIX: lambda-list expects symbol or list, not ~S" s}) &
 
 
  =flet e &optional binds name lambdal decl :=
@@ -179,10 +179,10 @@
                   {car rhs == 'declare $
                      declare-then-binfix (cddr rhs) ops `((declare,(cadr rhs)),@decls) t}
                   {t `(,@(nreverse decls) ,(if (cdr rhs) (binfix rhs ops) (car rhs)))})))
-  (if {atom e || null ops} e
-    {let* i = (position (caar ops) e)
-      (if (null i) (binfix e (cdr ops))
-        {let lhs = (subseq e 0 i)
+  {if {atom e || null ops} e
+    let* i = (position (caar ops) e)
+      {if (null i) (binfix e (cdr ops))
+         let lhs = (subseq e 0 i)
              rhs = (subseq e (1+ i))
              op = (caar ops)
              op-lisp = (cadar ops)
@@ -228,7 +228,7 @@
                      ,(if (= i 1) (car e) (binfix lhs (cdr ops)))
                      ,@(cond {null (cdr rhs) $ rhs}
                              {:rhs-args in op-prop $ rhs}
-                             {t `(,(binfix rhs ops))}))))})})}
+                             {t `(,(binfix rhs ops))}))))}}}
 
 ;===== BINFIX defined =====
 #|

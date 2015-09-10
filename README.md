@@ -564,7 +564,7 @@ Bootstraping is done beginning with protoBINFIX,
                  (if (null i)
                    (binfix e (cdr ops))
                   `(,@op
-                    ,(if (member (car op) '(def let=))
+                    ,(if (eql (car op) 'def)
                         (subseq e 0 i)
                         (binfix (subseq e 0 i) (cdr ops)))
                     ,(binfix (subseq e (1+ i)) ops)))))))
@@ -590,7 +590,8 @@ and `let=`,
       loop while {cadr body == '=}
          do (push `(,(car body),(caddr body)) vars)
             {body =. cdddr body}
-         finally (return `(,let ,(nreverse vars) ,@body))}
+         finally (return (let ((let `(,let ,(nreverse vars) ,@body)))
+                           (if lhs `(,@lhs ,let) let)))}
 
 which wraps up protoBINFIX.
 
