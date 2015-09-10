@@ -227,7 +227,7 @@
                 (t `(,op-lisp
                      ,(if (= i 1) (car e) (binfix lhs (cdr ops)))
                      ,@(cond {null (cdr rhs) $ rhs}
-                             {:rhs-args in op-prop $ if {op in rhs} `(,(binfix rhs)) rhs}
+                             {:rhs-args in op-prop $ if {op in rhs} `(,(binfix rhs ops)) rhs}
                              {t `(,(binfix rhs ops))}))))}}}
 
 ;===== BINFIX defined =====
