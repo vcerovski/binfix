@@ -97,10 +97,10 @@
      ((labels         ,#'=flet))
      ((macrolet       ,#'=flet))
      ((symbol-macrolet,#'=let))
-     ((loop           ,#'identity));-------------------OPS W/UNCHANGED RHS
      ((:== defmacro)  :def )
      ((:= defun)      :def )
      ((:- defmethod)  :defm )
+     ((loop           ,#'identity));-------------------OPS W/UNCHANGED RHS
      ((? interleave)  :unreduce);----------------------$pliter
      (($ ())          :split)
      ((.=   setf)) ;-----------------------------------ASSIGNMENT
