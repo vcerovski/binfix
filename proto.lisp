@@ -13,7 +13,7 @@
     ($)
     (let  let= let)
     (let* let= let*)
-    (cons cons)
+    (:.   cons)
     (||   or)
     (&&   and)
     (==   eql)

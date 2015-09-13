@@ -19,7 +19,7 @@
          {let ab = (pop r) ; cannot use loop for clause here b/c of ecl
               {car body .= list (car body) (pop ab)}
               (push (pop ab) body)} &
-      when r {car body .= car body cons r} &
+      when r {car body .= car body :. r} &
       funcall {b -> if (atom (car b)) b ; funcall only b/c sbcl complains.
                         (append (car b) (cdr b))}
               (reverse body)} &
@@ -38,7 +38,7 @@
      `(,(reverse arg)
        ,@{types && `((declare ,@(nreverse types)))}) ; nreverse is not necessary.
      let s = (pop l)
-       (cond {listp s || &symbolp s $ collect-&parts l (cons s arg) types}
+       (cond {listp s || &symbolp s $ collect-&parts l {s :. arg} types}
              {symbolp s $
                let n = (car l)
                  (when (keywordp n)
@@ -51,7 +51,7 @@
              {t $ error "BINFIX: cannot collect-&parts of ~S" l}) &
 
  lambda-list l &optional arg types :=
-   if (null l) {nreverse arg cons (if types`((declare ,@(nreverse types))))}
+   if (null l) {nreverse arg :. (if types`((declare ,@(nreverse types))))}
      let s = (pop l)
        (cond {symbolp s $
                cond {keywordp (car l) $
@@ -63,12 +63,12 @@
                     {         t $ lambda-list l `(,s,@arg) types}}
              {listp s $
                let ll = (lambda-list s)
-                 (lambda-list l {car ll cons reverse arg} (revappend (cdadr ll) types))}
+                 (lambda-list l {car ll :. reverse arg} (revappend (cdadr ll) types))}
              {t $ error "BINFIX: lambda-list expects symbol or list, not ~S" s}) &
 
 
  =flet e &optional binds name lambdal decl :=
-   cond {null e      $ `(,(reverse binds),@(car decl),@{name cons reverse lambdal})}
+   cond {null e      $ `(,(reverse binds),@(car decl),@{name :. reverse lambdal})}
         {null name   $ =flet (cdr e) binds (car e) lambdal ()}
         {car e ==':= $ =flet (cdr e) binds name lambdal '(())}
         {decl && listp (car e) && caar e == 'declare
@@ -80,7 +80,7 @@
                                           ,@(car decl)
                                            ,(car e))
                                        ,@binds) () () ()}
-        {t           $ =flet (cdr e) binds name {car e cons lambdal} ()} &
+        {t           $ =flet (cdr e) binds name {car e :. lambdal} ()} &
 
  method-lambda-list l &optional arg :=
    if (null l)
@@ -120,6 +120,7 @@
      ((.x.  values)   :unreduce :also-prefix)
      ((=..  multiple-value-bind) :allows-decl );-------DESTRUCTURING
      ((..=  destructuring-bind) :allows-decl )
+     ((:. cons));--------------------------------------CONSING
      ((|| or)       :unreduce );-----------------------LOGICAL OPS
      ( or           :unreduce :also-prefix )
      ((&& and)      :unreduce )
@@ -131,7 +132,7 @@
      ((=== equalp))
      ( equalp )
      ( equal )
-     ((==  eql)     :also-prefix)           ; :also-prefix should go away.
+     ((==  eql)     :also-prefix)           ; :also-prefix depreciated.
      ( eql          :also-prefix )
      ((=s= string=))
      ((=c= char=)   :unreduce )
@@ -168,14 +169,14 @@
             (declare (inline))
             (if {consp x && null (cdr x)} (car x) x))
           (unreduce (e op &optional args arg)
-            (cond {null e      $ reverse {binfix (reverse arg) ops cons args}}
-                  {car e == op $ unreduce (cdr e) op {binfix (reverse arg) ops cons args}}
-                  {t           $ unreduce (cdr e) op args {car e cons arg}}))
+            (cond {null e      $ reverse {binfix (reverse arg) ops :. args}}
+                  {car e == op $ unreduce (cdr e) op {binfix (reverse arg) ops :. args}}
+                  {t           $ unreduce (cdr e) op args {car e :. arg}}))
           (declare-then-binfix (rhs ops &optional decls rest)
             (cond {null rest && stringp (car rhs) $
-                     declare-then-binfix (cdr rhs) ops {car rhs cons decls} t}
+                     declare-then-binfix (cdr rhs) ops {car rhs :. decls} t}
                   {consp (car rhs) && caar rhs == 'declare $
-                     declare-then-binfix (cdr rhs) ops {car rhs cons decls} t}
+                     declare-then-binfix (cdr rhs) ops {car rhs :. decls} t}
                   {car rhs == 'declare $
                      declare-then-binfix (cddr rhs) ops `((declare,(cadr rhs)),@decls) t}
                   {t `(,@(nreverse decls) ,(if (cdr rhs) (binfix rhs ops) (car rhs)))})))
@@ -194,8 +195,8 @@
                                with l.h.s:~%~S" op op-lisp lhs)}
                 {functionp op-lisp $
                    if (zerop i)
-                      {op cons funcall op-lisp rhs}
-                      (binfix `(,@lhs,{op cons funcall op-lisp rhs}))}
+                      {op :. funcall op-lisp rhs}
+                      (binfix `(,@lhs,{op :. funcall op-lisp rhs}))}
                 {:lhs-lambda in op-prop $
                    `(,op-lisp ,@(lambda-list lhs)
                               ,@(declare-then-binfix rhs ops))}

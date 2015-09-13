@@ -31,6 +31,7 @@ with numerous capabilities:</p>
 <li><a href="#Examples">Examples</a>
 <ul>
 <li><a href="#Arithmetic and logical expressions">Arithmetic and logical expressions</a></li>
+<li><a href="#Consing">Consing</a></li>
 <li><a href="#Lambdas, definitions and type annotations">Lambdas, definitions and type annotations</a>
 <ul>
 <li><a href="#lambda">lambda</a></li>
@@ -155,10 +156,28 @@ produce the same result. The inner brackets, however, can be removed:</p>
 
 <p>=> <code>(or (and (listp a) (eql (car a) 'x) (cdr x)) a)</code></p>
 
-<pre><code>{cons -2 loop for i to 9 collect i}
+<p><a name="Consing"></a></p>
+
+<h3>Consing</h3>
+
+<p>Operation <code>:.</code> stands for <code>cons</code>. For instance,</p>
+
+<pre><code>{-2 :. loop for i to 9 collect i}
 </code></pre>
 
 <p>=> <code>(-2 0 1 2 3 4 5 6 7 8 9)</code></p>
+
+<p>with the familiar behaviour:</p>
+
+<pre><code>{{1 :. 2 :. 3} equal '(1 2 . 3)}
+</code></pre>
+
+<p>=> <code>t</code></p>
+
+<pre><code>{{1 :. 2 :. 3 :. {}} equal '(1 2 3)}
+</code></pre>
+
+<p>=> <code>t</code></p>
 
 <p><a name="Lambdas, definitions and type annotations"></a></p>
 
@@ -216,7 +235,7 @@ produce the same result. The inner brackets, however, can be removed:</p>
 <p>More complicated types can be also explicitely given after the
 argument, </p>
 
-<pre><code>'{x :|or symbol number| -&gt; cons x x}
+<pre><code>'{x :|or symbol number| -&gt; x :. x}
 </code></pre>
 
 <p>=></p>
@@ -645,7 +664,7 @@ processes each one.  It also shaves off one level of parens in some cases.</p>
     ($)
     (let  let= let)
     (let* let= let*)
-    (cons cons)
+    (:.   cons)
     (||   or)
     (&amp;&amp;   and)
     (==   eql)
@@ -743,7 +762,7 @@ i.e replaced with a single call with multiple arguments.</p>
 
 <p><code>#'my-fun</code> -- function <code>my-fun</code> will be applied to the untransformed RHS.</p>
 
-<p><code>:splitter</code> -- OP splits the expr at this point.</p>
+<p><code>:split</code> -- OP splits the expr at this point.</p>
 
 <p><code>:rhs-args</code> -- OP takes LHS as 1st and RHS as remaining arguments.</p>
 
@@ -759,17 +778,17 @@ i.e replaced with a single call with multiple arguments.</p>
 <pre><code>BINFIX         LISP            Properties
 ============================================================
 &amp;                progn           :unreduce       
-let              #&lt;FUNCTION binfix::let-binfix&gt;  
-let*             #&lt;FUNCTION binfix::let-binfix&gt;  
-flet             #&lt;FUNCTION binfix::flet-binfix&gt; 
-labels           #&lt;FUNCTION binfix::flet-binfix&gt; 
-macrolet         #&lt;FUNCTION binfix::flet-binfix&gt; 
-symbol-macrolet  #&lt;FUNCTION binfix::let-binfix&gt;  
-loop             #&lt;FUNCTION identity&gt;            
+let              #&lt;FUNCTION binfix::=let&gt;        
+let*             #&lt;FUNCTION binfix::=let&gt;        
+flet             #&lt;FUNCTION binfix::=flet&gt;       
+labels           #&lt;FUNCTION binfix::=flet&gt;       
+macrolet         #&lt;FUNCTION binfix::=flet&gt;       
+symbol-macrolet  #&lt;FUNCTION binfix::=let&gt;        
 :==              defmacro        :def            
 :=               defun           :def            
 :-               defmethod       :defm           
-?                binfix::binfix-interleave       :unreduce       
+loop             #&lt;FUNCTION identity&gt;            
+?                binfix::interleave              :unreduce       
 $                nil             :split          
 .=               setf            
 +=               incf            
@@ -784,10 +803,11 @@ mapc             mapc
 :-&gt;              function        :lhs-lambda     
 -&gt;               lambda          :lhs-lambda     
 @@               apply           :rhs-args       
-@                funcall         :rhs-args       :left-assoc     :also-postfix
+@                funcall         :rhs-args       :left-assoc     :also-postfix   
 .x.              values          :unreduce       :also-prefix    
 =..              multiple-value-bind             :allows-decl    
 ..=              destructuring-bind              :allows-decl    
+:|.|             cons            
 ||               or              :unreduce       
 or               or              :unreduce       :also-prefix    
 &amp;&amp;               and             :unreduce       

@@ -25,6 +25,7 @@ with numerous capabilities:
 * [Installation](#Instalation)
 * [Examples](#Examples)
     * [Arithmetic and logical expressions](#Arithmetic and logical expressions)
+    * [Consing](#Consing)
     * [Lambdas, definitions and type annotations](#Lambdas, definitions and type annotations)
         * [lambda](#lambda)
         * [defun](#defun)
@@ -125,9 +126,25 @@ produce the same result. The inner brackets, however, can be removed:
 
 => `(or (and (listp a) (eql (car a) 'x) (cdr x)) a)`
 
-    {cons -2 loop for i to 9 collect i}
+<a name="Consing"></a>
+### Consing
+
+Operation `:.` stands for `cons`. For instance,
+
+    {-2 :. loop for i to 9 collect i}
 
 => `(-2 0 1 2 3 4 5 6 7 8 9)`
+
+with the familiar behaviour:
+
+    {{1 :. 2 :. 3} equal '(1 2 . 3)}
+
+=> `t`
+
+    {{1 :. 2 :. 3 :. {}} equal '(1 2 3)}
+
+=> `t`
+
 
 <a name="Lambdas, definitions and type annotations"></a>
 ### Lambdas, definitions and type annotations
@@ -176,7 +193,7 @@ Indeed, `@` is left-associative, standing for `funcall`.
 More complicated types can be also explicitely given after the
 argument, 
 
-    '{x :|or symbol number| -> cons x x}
+    '{x :|or symbol number| -> x :. x}
 
 =>
 
@@ -548,7 +565,7 @@ Bootstraping is done beginning with protoBINFIX,
         ($)
         (let  let= let)
         (let* let= let*)
-        (cons cons)
+        (:.   cons)
         (||   or)
         (&&   and)
         (==   eql)
@@ -641,7 +658,7 @@ i.e replaced with a single call with multiple arguments.
 
 `#'my-fun` -- function `my-fun` will be applied to the untransformed RHS.
 
-`:splitter` -- OP splits the expr at this point.
+`:split` -- OP splits the expr at this point.
 
 `:rhs-args` -- OP takes LHS as 1st and RHS as remaining arguments.
 
@@ -655,17 +672,17 @@ provides the list:
     BINFIX         LISP            Properties
     ============================================================
     &                progn           :unreduce       
-    let              #<FUNCTION binfix::let-binfix>  
-    let*             #<FUNCTION binfix::let-binfix>  
-    flet             #<FUNCTION binfix::flet-binfix> 
-    labels           #<FUNCTION binfix::flet-binfix> 
-    macrolet         #<FUNCTION binfix::flet-binfix> 
-    symbol-macrolet  #<FUNCTION binfix::let-binfix>  
-    loop             #<FUNCTION identity>            
+    let              #<FUNCTION binfix::=let>        
+    let*             #<FUNCTION binfix::=let>        
+    flet             #<FUNCTION binfix::=flet>       
+    labels           #<FUNCTION binfix::=flet>       
+    macrolet         #<FUNCTION binfix::=flet>       
+    symbol-macrolet  #<FUNCTION binfix::=let>        
     :==              defmacro        :def            
     :=               defun           :def            
     :-               defmethod       :defm           
-    ?                binfix::binfix-interleave       :unreduce       
+    loop             #<FUNCTION identity>            
+    ?                binfix::interleave              :unreduce       
     $                nil             :split          
     .=               setf            
     +=               incf            
@@ -680,10 +697,11 @@ provides the list:
     :->              function        :lhs-lambda     
     ->               lambda          :lhs-lambda     
     @@               apply           :rhs-args       
-    @                funcall         :rhs-args       :left-assoc     :also-postfix
+    @                funcall         :rhs-args       :left-assoc     :also-postfix   
     .x.              values          :unreduce       :also-prefix    
     =..              multiple-value-bind             :allows-decl    
     ..=              destructuring-bind              :allows-decl    
+    :|.|             cons            
     ||               or              :unreduce       
     or               or              :unreduce       :also-prefix    
     &&               and             :unreduce       
