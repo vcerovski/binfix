@@ -31,12 +31,12 @@
          (format () "(~A)" (subseq str 1 {1- $ length str}))
          str)) &
 
- &symbolp s :== `{string ,s ! 0 =c= #\& } & ; ecl does not compile #\&}
+ &lambdap s :== `{,s in lambda-list-keywords} &
 
  collect-&parts l &optional arg types :=
    if (null l) {reverse arg :. types && `((declare ,@(reverse types)))}
      let s = (pop l)
-       (cond {listp s || &symbolp s $ collect-&parts l {s :. arg} types}
+       (cond {listp s || &lambdap s $ collect-&parts l {s :. arg} types}
              {symbolp s $
                let n = (car l)
                  (when (keywordp n)
@@ -56,7 +56,7 @@
                       if {cadr l == '=}
                         (collect-&parts `(&optional,s,@l) arg types)
                         (lambda-list (cdr l) `(,s,@arg) `((type,(keyword-to-S-expr (car l)),s),@types))}
-                    {&symbolp s $ collect-&parts l `(,s,@arg) types}
+                    {&lambdap s $ collect-&parts l `(,s,@arg) types}
                     {car l =='= $ collect-&parts `(&optional,s,@l) arg types}
                     {         t $ lambda-list l `(,s,@arg) types}}
              {listp s $
