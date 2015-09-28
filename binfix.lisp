@@ -56,12 +56,13 @@
                       if {cadr l == '=}
                         (collect-&parts `(&optional,s,@l) arg types)
                         (lambda-list (cdr l) `(,s,@arg) `((type,(keyword-to-S-expr (car l)),s),@types))}
-                    {&lambdap s $ collect-&parts l `(,s,@arg) types}
-                    {car l =='= $ collect-&parts `(&optional,s,@l) arg types}
-                    {         t $ lambda-list l `(,s,@arg) types}}
+                    {s =='&whole $ lambda-list (cdr l) `(,(car l),s,@arg) types}
+                    { &lambdap s $ collect-&parts l `(,s,@arg) types}
+                    {car l == '= $ collect-&parts `(&optional,s,@l) arg types}
+                    {          t $ lambda-list l `(,s,@arg) types}}
              {listp s $
                let ll = (lambda-list s)
-                 (lambda-list l {car ll :. reverse arg} (revappend (cdadr ll) types))}
+                 (lambda-list l {car ll :. arg} (revappend (cdadr ll) types))}
              {t $ error "BINFIX: lambda-list expects symbol or list, not ~S" s}) &
 
 
