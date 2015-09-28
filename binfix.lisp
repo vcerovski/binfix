@@ -4,14 +4,14 @@
 
 {=let e &optional binds decl :=
   if (null e) (=let '(()) binds decl)
-    {let s = (car e)
+    let s = (car e)
       (cond {symbolp s && cadr e == '= $
               =let (cdddr e) `((,s,(caddr e)),@binds) decl}
             {symbolp s && caddr e == '= $
               =let (cddddr e) `((,s,(cadddr e)),@binds) `((type,(cadr e),s),@decl)}
             (t `(,(nreverse binds)
                  ,@(if decl `((declare,@decl)))
-                 ,@(if {symbolp s && cdr e} `(,e) e))))} &
+                 ,@(if {symbolp s && cdr e} `(,e) e)))) &
 
  interleave &rest r :==
    let body = (reverse (pop r))
@@ -34,9 +34,7 @@
  &symbolp s :== `{string ,s ! 0 =c= #\& } & ; ecl does not compile #\&}
 
  collect-&parts l &optional arg types :=
-   if (null l)
-     `(,(reverse arg)
-       ,@{types && `((declare ,@(nreverse types)))}) ; nreverse is not necessary.
+   if (null l) {reverse arg :. types && `((declare ,@(reverse types)))}
      let s = (pop l)
        (cond {listp s || &symbolp s $ collect-&parts l {s :. arg} types}
              {symbolp s $
@@ -51,7 +49,7 @@
              {t $ error "BINFIX: cannot collect-&parts of ~S" l}) &
 
  lambda-list l &optional arg types :=
-   if (null l) {nreverse arg :. (if types`((declare ,@(nreverse types))))}
+   if (null l) {nreverse arg :. types && `((declare ,@(nreverse types)))}
      let s = (pop l)
        (cond {symbolp s $
                cond {keywordp (car l) $
