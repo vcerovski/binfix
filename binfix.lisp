@@ -88,80 +88,80 @@
         (method-lambda-list (cddr l) `((,(car l),(keyword-to-S-expr (cadr l))),@arg))
         (method-lambda-list  (cdr l) `(,(car l),@arg))) &
 
- *binfix* =. mapcar {op &aux (o (car op)) -> append (if (listp o) o `(,o,o)) (cdr op)}
-   `(((&  progn)      :unreduce )
-     ((let            ,#'=let));-----------------------LET constructs
-     ((let*           ,#'=let))
-     ((flet           ,#'=flet))
-     ((labels         ,#'=flet))
-     ((macrolet       ,#'=flet))
-     ((symbol-macrolet,#'=let))
-     ((:== defmacro)  :def )
-     ((:= defun)      :def )
-     ((:- defmethod)  :defm )
-     ((loop           ,#'identity));-------------------OPS W/UNCHANGED RHS
-     ((? interleave)  :unreduce);----------------------$pliter
-     (($ ())          :split)
-     ((.=   setf)) ;-----------------------------------ASSIGNMENT
-     ((+=   incf))
-     ((-=   decf))
-     (( =.  setq))
-     ((.=.  set))
-     ( mapc ) ;----------------------------------------MAPPING
-     ((@.   mapcar)   :rhs-args)
-     ((@n   mapcan)   :rhs-args)
-     ((@..  maplist)  :rhs-args)
-     ((@.n  mapcon)   :rhs-args)
-     ((:->  function) :lhs-lambda);--------------------LAMBDA/FUNCALL
-     ((->   lambda)   :lhs-lambda)
-     ((@@   apply)    :rhs-args )
-     ((@    funcall)  :rhs-args :left-assoc :also-postfix )
-     ((.x.  values)   :unreduce :also-prefix)
-     ((=..  multiple-value-bind) :allows-decl );-------DESTRUCTURING
-     ((..=  destructuring-bind) :allows-decl )
-     ((:. cons));--------------------------------------CONSING
-     ((|| or)       :unreduce );-----------------------LOGICAL OPS
-     ( or           :unreduce :also-prefix )
-     ((&& and)      :unreduce )
-     ( and          :unreduce :also-prefix )
-     ( <            :unreduce :also-prefix );----------COMPARISONS/PREDICATES
-     ( >            :unreduce :also-prefix )
-     ( <=           :unreduce :also-prefix )
-     ( >=           :unreduce :also-prefix )
-     ((=== equalp))
-     ( equalp )
-     ( equal )
-     ((==  eql)     :also-prefix)           ; :also-prefix depreciated.
-     ( eql          :also-prefix )
-     ((=s= string=))
-     ((=c= char=)   :unreduce )
-     ( =            :unreduce :also-prefix )
-     ( /=           :unreduce :also-prefix )
-     ( eq )
-     ( subtypep )
-     ((in member));------------------------------------END OF COMPARISONS/PREDICATES
+ *binfix* =.
+   `(( &               progn      :unreduce)
+     ( let             ,#'=let);----------------------------LET constructs
+     ( let*            ,#'=let)
+     ( flet            ,#'=flet)
+     ( labels          ,#'=flet)
+     ( macrolet        ,#'=flet)
+     ( symbol-macrolet ,#'=let)
+     ( :==  defmacro   :def)
+     ( :=   defun      :def)
+     ( :-   defmethod  :defm)
+     ( loop ,#'identity);-----------------------------------OPS W/UNCHANGED RHS
+     (  ?   interleave :unreduce);--------------------------$pliter
+     (  $   ()         :split)
+     ( .=   setf) ;-----------------------------------------ASSIGNMENT
+     ( +=   incf)
+     ( -=   decf)
+     (  =.  setq)
+     ( .=.  set)
+     ( mapc mapc) ;-----------------------------------------MAPPING
+     ( @.   mapcar     :rhs-args)
+     ( @n   mapcan     :rhs-args)
+     ( @..  maplist    :rhs-args)
+     ( @.n  mapcon     :rhs-args)
+     ( :->  function   :lhs-lambda);------------------------LAMBDA/FUNCALL
+     ( ->   lambda     :lhs-lambda)
+     ( @@   apply      :rhs-args)
+     ( @    funcall    :rhs-args :left-assoc :also-postfix)
+     ( .x.  values     :unreduce :also-prefix)
+     ( =..  multiple-value-bind  :allows-decl);-------------DESTRUCTURING
+     ( ..=  destructuring-bind   :allows-decl)
+     ( :.   cons);------------------------------------------CONSING
+     ( ||       or     :unreduce);--------------------------LOGICAL OPS
+     ( or       or     :unreduce :also-prefix)
+     ( &&       and    :unreduce)
+     ( and      and    :unreduce :also-prefix)
+     ( <        <      :unreduce :also-prefix);-------------COMPARISONS/PREDICATES
+     ( >        >      :unreduce :also-prefix)
+     ( <=       <=     :unreduce :also-prefix)
+     ( >=       >=     :unreduce :also-prefix)
+     ( ===      equalp)
+     ( equalp   equalp)
+     ( equal    equal)
+     ( ==       eql    :also-prefix)           ; :also-prefix depreciated.
+     ( eql      eql    :also-prefix)
+     ( =s=      string=)
+     ( =c=      char=  :unreduce)
+     (  =        =     :unreduce :also-prefix)
+     ( /=       /=     :unreduce :also-prefix)
+     ( eq       eq)
+     ( subtypep subtypep)
+     ( in       member);------------------------------------END OF COMPARISONS/PREDICATES
      ;================= :lower  binding user defined ops go here =================
      ;================= :higher binding user defined ops go here =================
-     ( coerce )
-     ( cons         :also-prefix )          ; could be also represented with .
-     ( elt )
-     ( svref )
-     ((!! aref))
-     ( logior       :unreduce );-----------------------BIT ARITHMETICS
-     ( logand       :unreduce )
-     ((<< ash))
-     ( mod );------------------------------------------ARITHMETICS
-     ( min          :also-prefix :unreduce )
-     ( max          :also-prefix :unreduce )
-     ( +            :also-prefix :unreduce )
-     ( -            :also-unary  :unreduce )
-     ( floor )
-     ( ceiling )
-     ( truncate )
-     ( /            :also-unary )
-     ( *            :also-prefix :unreduce )
-     ((** expt))
-     ((! aref)      :rhs-args)) &
+     ( coerce   coerce)
+     ( cons     cons    :also-prefix)
+     ( elt      elt)
+     ( svref    svref)
+     ( !!       aref)
+     ( logior   logior  :unreduce);-------------------------BIT ARITHMETICS
+     ( logand   logand  :unreduce)
+     ( <<       ash)
+     ( mod      mod);---------------------------------------ARITHMETICS
+     ( min      min     :also-prefix :unreduce)
+     ( max      max     :also-prefix :unreduce)
+     (  +        +      :also-prefix :unreduce)
+     (  -        -      :also-unary  :unreduce)
+     ( floor    floor)
+     ( ceiling  ceiling)
+     ( truncate truncate)
+     (  /        /      :also-unary)
+     (  *        *      :also-prefix :unreduce)
+     ( **       expt)
+     (  !       aref    :rhs-args)) &
 
  binfix e &optional (ops *binfix*) :=
   labels ((singleton (x)
@@ -204,7 +204,7 @@
                 {zerop i $ cond {:also-unary  in op-prop $ `(,op-lisp ,(singleton (binfix rhs ops)))}
                                 {:also-prefix in op-prop $ `(,op-lisp ,@(binfix rhs ops))}
                                 {t $ error "BINFIX: missing l.h.s. of ~S (~S)~@
-                                           with r.h.s:~%~S" op op-lisp rhs}}
+                                            with r.h.s:~%~S" op op-lisp rhs}}
                 {:def in op-prop $ `(,op-lisp ,(car e)
                                      ,@(lambda-list (cdr lhs))
                                      ,@(declare-then-binfix rhs ops))}
