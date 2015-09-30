@@ -65,6 +65,20 @@
                  (lambda-list l {car ll :. arg} (revappend (cdadr ll) types))}
              {t $ error "BINFIX: lambda-list expects symbol or list, not ~S" s}) &
 
+ method-lambda-list l &optional args :=
+   if (null l) (list (nreverse args))
+     let s = (pop l)
+       (cond {symbolp s $
+               cond {keywordp (car l) $
+                      if {cadr l == '=}
+                        (collect-&parts `(&optional,s,@l) args)
+                        (method-lambda-list (cdr l) {`(,s,(keyword-to-S-expr (car l))) :. args})}
+                    {&lambdap s  $ collect-&parts l {s :. args}}
+                    {car l =='=  $ collect-&parts `(&optional,s,@l) args}
+                    {car l =='== $ method-lambda-list (cddr l) {`(,s (eql,(cadr l))) :. args}}
+                    {         t  $ method-lambda-list l {s :. args}}}
+             {listp s $ method-lambda-list l {s :. args}}
+             {t $ error "BINFIX: method-lambda-list expects symbol or list, not ~S" s}) &
 
  =flet e &optional binds name lambdal decl :=
    cond {null e      $ `(,(reverse binds),@(car decl),@{name :. reverse lambdal})}
@@ -80,13 +94,6 @@
                                            ,(car e))
                                        ,@binds) () () ()}
         {t           $ =flet (cdr e) binds name {car e :. lambdal} ()} &
-
- method-lambda-list l &optional arg :=
-   if (null l)
-     (list (nreverse arg))
-     (if {cdr l && keywordp (cadr l)}
-        (method-lambda-list (cddr l) `((,(car l),(keyword-to-S-expr (cadr l))),@arg))
-        (method-lambda-list  (cdr l) `(,(car l),@arg))) &
 
  *binfix* =.
    `(( &               progn      :unreduce)
@@ -208,9 +215,11 @@
                 {:def in op-prop $ `(,op-lisp ,(car e)
                                      ,@(lambda-list (cdr lhs))
                                      ,@(declare-then-binfix rhs ops))}
-                {:defm in op-prop $`(,op-lisp ,(car e)
-                                     ,@(method-lambda-list (cdr lhs))
-                                     ,@(declare-then-binfix rhs ops))}
+                {:defm in op-prop $
+                   `(,op-lisp ,(pop lhs) ,@(cond {consp (car lhs) && null (cdar lhs) $ pop lhs}
+                                                 {keywordp (car lhs) $ list (pop lhs)})
+                      ,@(method-lambda-list lhs)
+                      ,@(declare-then-binfix rhs ops))}
                 {:left-assoc in op-prop && position op rhs $
                    let* j = (position op rhs)
                        lrhs = (subseq rhs 0 j)

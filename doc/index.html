@@ -57,7 +57,7 @@ with numerous capabilities:</p>
 </ul></li>
 <li><a href="#Implementation">Implementation</a>
 <ul>
-<li><a href="#protoBINFIX">protoBINFIX</a></li>
+<li><a href="#proto-BINFIX">proto-BINFIX</a></li>
 </ul></li>
 <li><a href="#Appendix">Appendix</a>
 <ul>
@@ -306,6 +306,12 @@ argument, </p>
       1
       (* n (f (1- n)))))
 </code></pre>
+
+<p><code>:-</code> supports also eql-specialization via <code>==</code> op, analogous to
+the way <code>=</code> is used for optional arguments initialization, as well as an
+optional method qualifier, given as the first argument after the method name,
+that can be either a keyword or an atom surrounded by parens (i.e <code>:around</code>,
+<code>(reduce)</code> etc.)</p>
 
 <p><a name="defmacro"></a></p>
 
@@ -614,7 +620,7 @@ t
 <h4><code>for</code></h4>
 
 <p>Nested BINFIX lambda lists can be used in definitions of macros, as in the
-following example of a procedural for loop macro</p>
+following example of a procedural for-loop macro</p>
 
 <pre><code>{for (v :symbol from below by = 1) &amp;rest r :==
   `(loop for,v fixnum from,from below,below ,@{by /= 1 &amp;&amp; `(by,by)}
@@ -647,11 +653,11 @@ BINFIX into S-expr representation of the expression.</p>
 of the lowest priority infix operator found within the list, then recursively
 processes each one.  It also shaves off one level of parens in some cases.</p>
 
-<p><a name="protoBINFIX"></a></p>
+<p><a name="proto-BINFIX"></a></p>
 
-<h3>protoBINFIX</h3>
+<h3>proto-BINFIX</h3>
 
-<p>Bootstraping is done beginning with protoBINFIX,</p>
+<p>Bootstraping is done beginning with proto-BINFIX,</p>
 
 <pre><code>(defparameter *binfix*
   '(( &amp;  progn)
@@ -712,11 +718,11 @@ The next bootstrap phase defines macro <code>def</code>,</p>
                        (if lhs `(,@lhs ,let) let)))}
 </code></pre>
 
-<p>which wraps up protoBINFIX.</p>
+<p>which wraps up proto-BINFIX.</p>
 
 <p>The rest is written using this syntax, and consists of handling of lambda lists
-and <code>lets</code>, longer list of OPs with properties, redefined <code>binfix</code> to
-its full capability, and, finally, several convinience functions for
+and <code>let</code>s, a longer list of OPs with properties, redefined <code>binfix</code> to
+its full capability, and, finally, several interface functions for
 dealing with OPs (<code>lsbinfix</code>, <code>defbinfix</code> and <code>rmbinfix</code>).</p>
 
 <p>Priorities of operations are given only relatively, with no numerical values and
