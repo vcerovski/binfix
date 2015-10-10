@@ -125,7 +125,7 @@
      ( @    funcall    :rhs-args :left-assoc :also-postfix)
      ( .x.  values     :unreduce :also-prefix)
      ( =..  multiple-value-bind  :allows-decl);-------------DESTRUCTURING
-     ( ..=  destructuring-bind   :allows-decl)
+     ( ..=  destructuring-bind   :lambda/expr)
      ( :.   cons);------------------------------------------CONSING
      ( ||       or     :unreduce);--------------------------LOGICAL OPS
      ( or       or     :unreduce :also-prefix)
@@ -226,6 +226,10 @@
                        rrhs = (subseq rhs j)
                       (binfix`((,op-lisp ,(singleton (binfix  lhs (cdr ops)))
                                          ,(singleton (binfix lrhs (cdr ops)))) ,@rrhs) ops)}
+                {:lambda/expr in op-prop $
+                   destructuring-bind (llist &rest decls) (lambda-list lhs)
+                      `(,op-lisp ,llist ,(car rhs) ,@decls
+                                 ,@(declare-then-binfix (cdr rhs) ops))}
                 {:allows-decl in op-prop $
                    `(,op-lisp ,lhs ,(car rhs) ,@(declare-then-binfix (cdr rhs) ops))}
                 {:split in op-prop $

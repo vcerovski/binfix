@@ -2,7 +2,7 @@
 
 # BINFIX
 
-Viktor Cerovski, Sep 2015.
+Viktor Cerovski, Oct 2015.
 
 <a name="Introduction"></a>
 ## Introduction
@@ -659,6 +659,8 @@ i.e replaced with a single call with multiple arguments.
 `:also-unary` -- OP can be used as unary when LHS is missing.
 
 `:also-postfix` -- OP can be used as postfix OP when RHS is missing.
+
+`:lambda/expr` -- OP takes lambda-list at LHS and an expression at RHS, followed by body.
 
 `:allows-decl` -- OP allows `declare` form(s) at the beginning of its RHS.
 
