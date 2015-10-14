@@ -24,12 +24,12 @@
                         (append (car b) (cdr b))}
               (reverse body)} &
 
- keyword-to-S-expr k :=
-   let* str = (subseq (format () "~S" k) 1)
-     (read-from-string
-       (if {str ! 0 =c= #\| } ; ecl does not compile |}
-         (format () "(~A)" (subseq str 1 {1- $ length str}))
-         str)) &
+ singleton x := if {consp x && null (cdr x)} (car x) x &
+
+ keyword-type-spec k :=
+   let S = {singleton $ read-from-string (concatenate 'string "(" (symbol-name k) ")") () :eof}
+     (if {symbolp S && not (keywordp S) || listp S} S
+        (error "Incorrect BINFIX keyword-type specifier ~S" k)) &
 
  &lambdap s :== `{,s in lambda-list-keywords} &
 
@@ -40,7 +40,7 @@
              {symbolp s $
                let n = (car l)
                  (when (keywordp n)
-                   {push `(type,(keyword-to-S-expr n),s) types &
+                   {push `(type,(keyword-type-spec n),s) types &
                     pop l &
                     n =. car l})
                  (if {n == '=}
@@ -55,7 +55,7 @@
                cond {keywordp (car l) $
                       if {cadr l == '=}
                         (collect-&parts `(&optional,s,@l) arg types)
-                        (lambda-list (cdr l) `(,s,@arg) `((type,(keyword-to-S-expr (car l)),s),@types))}
+                        (lambda-list (cdr l) `(,s,@arg) `((type,(keyword-type-spec (car l)),s),@types))}
                     {s =='&whole $ lambda-list (cdr l) `(,(car l),s,@arg) types}
                     { &lambdap s $ collect-&parts l `(,s,@arg) types}
                     {car l == '= $ collect-&parts `(&optional,s,@l) arg types}
@@ -72,7 +72,7 @@
                cond {keywordp (car l) $
                       if {cadr l == '=}
                         (collect-&parts `(&optional,s,@l) args)
-                        (method-lambda-list (cdr l) {`(,s,(keyword-to-S-expr (car l))) :. args})}
+                        (method-lambda-list (cdr l) {`(,s,(keyword-type-spec (car l))) :. args})}
                     {&lambdap s  $ collect-&parts l {s :. args}}
                     {car l =='=  $ collect-&parts `(&optional,s,@l) args}
                     {car l =='== $ method-lambda-list (cddr l) {`(,s (eql,(cadr l))) :. args}}
@@ -170,14 +170,13 @@
      ( **       expt)
      (  !       aref    :rhs-args)) &
 
+
  binfix e &optional (ops *binfix*) :=
-  labels ((singleton (x)
-            (declare (inline))
-            (if {consp x && null (cdr x)} (car x) x))
-          (unreduce (e op &optional args arg)
+  labels ((unreduce (e op &optional args arg)
             (cond {null e      $ reverse {binfix (reverse arg) ops :. args}}
                   {car e == op $ unreduce (cdr e) op {binfix (reverse arg) ops :. args}}
                   {t           $ unreduce (cdr e) op args {car e :. arg}}))
+
           (declare-then-binfix (rhs ops &optional decls rest)
             (cond {null rest && stringp (car rhs) $
                      declare-then-binfix (cdr rhs) ops {car rhs :. decls} t}
