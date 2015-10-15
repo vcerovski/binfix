@@ -72,6 +72,13 @@ passes tests when hand-loaded but does not go through the package system yet.
 
 BINFIX shadows `!` in CLISP (`ext:!`) and `@` in Clozure CL and ECL.
 
+The latest version is available at [gihub](https://github.com/vcerovski/binfix),
+and can be cloned by command
+
+    git clone https://github.com/vcerovski/binfix.git
+
+presumably in your local Quicklisp folder `local-projects`.
+
 <a name="Examples"></a>
 ## Examples
 
@@ -569,6 +576,7 @@ Bootstraping is done beginning with proto-BINFIX,
         (.=  setf)
         (->  def lambda)
         ($)
+        (labels flet= labels)
         (let  let= let)
         (let* let= let*)
         (:.   cons)
@@ -599,22 +607,30 @@ Bootstraping is done beginning with proto-BINFIX,
     (set-macro-character #\} (get-macro-character #\) ))
 
 which captures the basics of BINFIX.
-The next bootstrap phase defines macro `def`,
 
-    (defmacro def (what args body)
+The next bootstrap phase defines macro `def` and, in the same 
+single BINFIX expression, macros `let=` and `flet=`
+
+    {defmacro def (what args body)
       `(,what ,@(if {what == 'lambda}
                   `(,(if {args && atom args} `(,args) args))
                    (if (atom args) `(,args ()) `(,(car args),(cdr args))))
-              ,body))
+              ,body) &
 
-and `let=`,
-    
-    {let= let nil body &aux vars :==
+     let= let lhs body &aux vars :==
       loop while {cadr body == '=}
-         do (push `(,(car body),(caddr body)) vars)
-            {body =. cdddr body}
+         do {push `(,(car body),(caddr body)) vars &
+             body =. cdddr body}
          finally (return (let ((let `(,let ,(nreverse vars) ,@body)))
-                           (if lhs `(,@lhs ,let) let)))}
+                           (if lhs `(,@lhs ,let) let))) &
+
+     flet= flet lhs body &aux funs :==
+      loop for r = {'= in body} while r
+           for (name . lambda) = (ldiff body r)
+           do {push `(,name ,lambda ,(cadr r)) funs &
+               body =. cddr r}
+           finally (return (let ((flet `(,flet ,(nreverse funs) ,@body)))
+                             (if lhs `(,@lhs ,flet) flet)))}
 
 which wraps up proto-BINFIX.
 

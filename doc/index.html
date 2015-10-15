@@ -92,6 +92,14 @@ passes tests when hand-loaded but does not go through the package system yet.</p
 
 <p>BINFIX shadows <code>!</code> in CLISP (<code>ext:!</code>) and <code>@</code> in Clozure CL and ECL.</p>
 
+<p>The latest version is available at <a href="https://github.com/vcerovski/binfix">gihub</a>,
+and can be cloned by command</p>
+
+<pre><code>git clone https://github.com/vcerovski/binfix.git
+</code></pre>
+
+<p>presumably in your local Quicklisp folder <code>local-projects</code>.</p>
+
 <p><a name="Examples"></a></p>
 
 <h2>Examples</h2>
@@ -668,6 +676,7 @@ processes each one.  It also shaves off one level of parens in some cases.</p>
     (.=  setf)
     (-&gt;  def lambda)
     ($)
+    (labels flet= labels)
     (let  let= let)
     (let* let= let*)
     (:.   cons)
@@ -698,24 +707,31 @@ processes each one.  It also shaves off one level of parens in some cases.</p>
 (set-macro-character #\} (get-macro-character #\) ))
 </code></pre>
 
-<p>which captures the basics of BINFIX.
-The next bootstrap phase defines macro <code>def</code>,</p>
+<p>which captures the basics of BINFIX.</p>
 
-<pre><code>(defmacro def (what args body)
+<p>The next bootstrap phase defines macro <code>def</code> and, in the same 
+single BINFIX expression, macros <code>let=</code> and <code>flet=</code></p>
+
+<pre><code>{defmacro def (what args body)
   `(,what ,@(if {what == 'lambda}
               `(,(if {args &amp;&amp; atom args} `(,args) args))
                (if (atom args) `(,args ()) `(,(car args),(cdr args))))
-          ,body))
-</code></pre>
+          ,body) &amp;
 
-<p>and <code>let=</code>,</p>
-
-<pre><code>{let= let nil body &amp;aux vars :==
+ let= let lhs body &amp;aux vars :==
   loop while {cadr body == '=}
-     do (push `(,(car body),(caddr body)) vars)
-        {body =. cdddr body}
+     do {push `(,(car body),(caddr body)) vars &amp;
+         body =. cdddr body}
      finally (return (let ((let `(,let ,(nreverse vars) ,@body)))
-                       (if lhs `(,@lhs ,let) let)))}
+                       (if lhs `(,@lhs ,let) let))) &amp;
+
+ flet= flet lhs body &amp;aux funs :==
+  loop for r = {'= in body} while r
+       for (name . lambda) = (ldiff body r)
+       do {push `(,name ,lambda ,(cadr r)) funs &amp;
+           body =. cddr r}
+       finally (return (let ((flet `(,flet ,(nreverse funs) ,@body)))
+                         (if lhs `(,@lhs ,flet) flet)))}
 </code></pre>
 
 <p>which wraps up proto-BINFIX.</p>

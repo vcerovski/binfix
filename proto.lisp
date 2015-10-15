@@ -11,6 +11,7 @@
     (.=  setf)
     (->  def lambda)
     ($)
+    (labels flet= labels)
     (let  let= let)
     (let* let= let*)
     (:.   cons)

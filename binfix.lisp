@@ -27,7 +27,9 @@
  singleton x := if {consp x && null (cdr x)} (car x) x &
 
  keyword-type-spec k :=
-   let S = {singleton $ read-from-string (concatenate 'string "(" (symbol-name k) ")") () :eof}
+   let S = {singleton $ read-from-string
+                          (concatenate 'string "(" (symbol-name k) ")")
+                          () :eof}
      (if {symbolp S && not (keywordp S) || listp S} S
         (error "Incorrect BINFIX keyword-type specifier ~S" k)) &
 
@@ -172,19 +174,21 @@
 
 
  binfix e &optional (ops *binfix*) :=
-  labels ((unreduce (e op &optional args arg)
+   labels
+          unreduce e op &optional args arg =
             (cond {null e      $ reverse {binfix (reverse arg) ops :. args}}
                   {car e == op $ unreduce (cdr e) op {binfix (reverse arg) ops :. args}}
-                  {t           $ unreduce (cdr e) op args {car e :. arg}}))
+                  {t           $ unreduce (cdr e) op args {car e :. arg}})
 
-          (declare-then-binfix (rhs ops &optional decls rest)
+          declare-then-binfix rhs ops &optional decls rest =
             (cond {null rest && stringp (car rhs) $
                      declare-then-binfix (cdr rhs) ops {car rhs :. decls} t}
                   {consp (car rhs) && caar rhs == 'declare $
                      declare-then-binfix (cdr rhs) ops {car rhs :. decls} t}
                   {car rhs == 'declare $
                      declare-then-binfix (cddr rhs) ops `((declare,(cadr rhs)),@decls) t}
-                  {t `(,@(nreverse decls) ,(if (cdr rhs) (binfix rhs ops) (car rhs)))})))
+                  {t `(,@(nreverse decls) ,(if (cdr rhs) (binfix rhs ops) (car rhs)))})
+
   {if {atom e || null ops} e
     let* i = (position (caar ops) e)
       {if (null i) (binfix e (cdr ops))
