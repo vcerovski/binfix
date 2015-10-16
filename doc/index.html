@@ -43,6 +43,7 @@ with numerous capabilities:</p>
 <li><a href="#Type function">Type <code>function</code></a></li>
 </ul></li>
 <li><a href="#LETs">LETs</a></li>
+<li><a href="#SETs">SETs</a></li>
 <li><a href="#Implicit/Explicit progn">Implicit/Explicit <code>progn</code></a></li>
 <li><a href="#<code>$</code>plitter"><code>$</code>plitter</a></li>
 <li><a href="#Multiple-choice forms">Multiple-choice forms</a></li>
@@ -337,7 +338,7 @@ the type (for instance <code>:fixnum</code>, <code>:my-class</code>, <code>:|sim
 <code>:|{symbol or number}|</code>, etc.)</p>
 
 <p>OPs that represent LISP forms which allow declaration(s), in BINFIX can 
-have, in addition to the standard <code>(declare ...)</code> form, also unparenthesized
+have in addition to the standard <code>(declare ...)</code> form also unparenthesized
 variant:</p>
 
 <pre><code>'{f x :fixnum y = 2 :=
@@ -409,6 +410,51 @@ an optional type-annotation:</p>
 <pre><code>(flet ((f (x)
          (* (sqrt x) (sin x))))
   (f 0.5))
+</code></pre>
+
+<p><a name="SETs"></a></p>
+
+<h3>SETs</h3>
+
+<p>Assignments via SETs are also done using <code>=</code> to eliminate parens,</p>
+
+<pre><code>'{psetq x = a * x + b * y
+        y = b * x - a * y}
+</code></pre>
+
+<p>=></p>
+
+<pre><code>(psetq x (+ (* a x) (* b y))
+       y (- (* b x) (* a y)))
+</code></pre>
+
+<p>In the case of SETF assignments, RHS are represented with a single expression:</p>
+
+<pre><code>'{psetf a ! 0 = {a ! 1}
+        a ! 1 = {a ! 0}}
+</code></pre>
+
+<p>=></p>
+
+<pre><code>(psetf (aref a 0) (aref a 1)
+       (aref a 1) (aref a 0))
+</code></pre>
+
+<p>Since BINFIX has free-form syntax, it is also possible 
+to mix infix SETFs with other expressions:</p>
+
+<pre><code>'{f x + setf a = b
+             c = d
+      * h a c}
+</code></pre>
+
+<p>=></p>
+
+<pre><code>(+ (f x)
+   (*
+    (setf a b
+          c d)
+    (h a c)))
 </code></pre>
 
 <p><a name="Implicit/Explicit progn"></a></p>
@@ -791,12 +837,20 @@ Examples of succesful combinations of backquoting and BINFIX are given
 <p><code>:def</code> -- Operation (OP) is a definition requiring LHS to has a name and lambda
 list.</p>
 
-<p><code>:defm</code> -- OP is a definition requiring LHS to has a name and method lambda
+<p><code>:defm</code> -- OP is a definition requiring LHS to has a name, and method lambda
 list.</p>
 
 <p><code>:lhs-lambda</code> -- OP has lambda list as its LHS.</p>
 
-<p><code>:rhs-lbinds</code> -- OP has let-binds at the beginning of its LHS.</p>
+<p><code>:rhs-lbinds</code> -- OP has let-binds at the beginning of its LHS,<br>
+[<em>symbol</em> [<em>keyword</em>] <strong><code>=</code></strong> <em>expr</em>]* <em>declaration</em>*</p>
+
+<p><code>:rhs-sbinds</code> -- OP has symbol-binds as its RHS. They are let-binds without
+annotations or declarations,
+[<em>symbol</em> <strong><code>=</code></strong> <em>expr</em><sup>+</sup>]<sup>+</sup></p>
+
+<p><code>:rhs-ebinds</code> -- OP has expr-binds at the beginning of its RHS,
+[<em>expr</em><sup>+</sup> <strong><code>=</code></strong> <em>expr</em>]*</p>
 
 <p><code>:unreduce</code> -- All appearances of OP at the current level should be unreduced,
 i.e replaced with a single call with multiple arguments.</p>
@@ -848,6 +902,11 @@ $                nil             :split
 -=               decf            
 =.               setq            
 .=.              set             
+setq             setq            :rhs-sbinds     
+set              set             :rhs-sbinds     
+psetq            psetq           :rhs-sbinds     
+setf             setf            :rhs-ebinds     
+psetf            psetf           :rhs-ebinds     
 mapc             mapc            
 @.               mapcar          :rhs-args       
 @n               mapcan          :rhs-args       

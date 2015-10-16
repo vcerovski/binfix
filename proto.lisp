@@ -12,6 +12,7 @@
     (->  def lambda)
     ($)
     (labels flet= labels)
+    (symbol-macrolet  let= symbol-macrolet)
     (let  let= let)
     (let* let= let*)
     (:.   cons)

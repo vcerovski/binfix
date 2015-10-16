@@ -35,6 +35,7 @@ with numerous capabilities:
         * [Type annotations and declarations](#type annotations)
         * [Type `function`](#Type function)
     * [LETs](#LETs)
+    * [SETs](#SETs)
     * [Implicit/Explicit `progn`](#Implicit/Explicit progn)
     * [`$`plitter](#`$`plitter)
     * [Multiple-choice forms](#Multiple-choice forms)
@@ -281,7 +282,7 @@ the type (for instance `:fixnum`, `:my-class`, `:|simple-array single-float|`,
 `:|{symbol or number}|`, etc.)
 
 OPs that represent LISP forms which allow declaration(s), in BINFIX can 
-have, in addition to the standard `(declare ...)` form, also unparenthesized
+have in addition to the standard `(declare ...)` form also unparenthesized
 variant:
 
     '{f x :fixnum y = 2 :=
@@ -345,6 +346,45 @@ an optional type-annotation:
     (flet ((f (x)
              (* (sqrt x) (sin x))))
       (f 0.5))
+
+<a name="SETs"></a>
+### SETs
+
+Assignments via SETs are also done using `=` to eliminate parens,
+
+    '{psetq x = a * x + b * y
+            y = b * x - a * y}
+
+=>
+
+    (psetq x (+ (* a x) (* b y))
+           y (- (* b x) (* a y)))
+
+In the case of SETF assignments, RHS are represented with a single expression:
+
+    '{psetf a ! 0 = {a ! 1}
+            a ! 1 = {a ! 0}}
+
+=>
+
+    (psetf (aref a 0) (aref a 1)
+           (aref a 1) (aref a 0))
+
+
+Since BINFIX has free-form syntax, it is also possible 
+to mix infix SETFs with other expressions:
+
+    '{f x + setf a = b
+                 c = d
+          * h a c}
+
+=>
+
+    (+ (f x)
+       (*
+        (setf a b
+              c d)
+        (h a c)))
 
 <a name="Implicit/Explicit progn"></a>
 ### Implicit/Explicit `progn`
@@ -685,12 +725,20 @@ Examples of succesful combinations of backquoting and BINFIX are given
 `:def` -- Operation (OP) is a definition requiring LHS to has a name and lambda
 list.
 
-`:defm` -- OP is a definition requiring LHS to has a name and method lambda
+`:defm` -- OP is a definition requiring LHS to has a name, and method lambda
 list.
 
 `:lhs-lambda` -- OP has lambda list as its LHS.
 
-`:rhs-lbinds` -- OP has let-binds at the beginning of its LHS.
+`:rhs-lbinds` -- OP has let-binds at the beginning of its LHS,<br>
+[*symbol* [*keyword*] **`=`** *expr*]\* *declaration*\*
+
+`:rhs-sbinds` -- OP has symbol-binds as its RHS. They are let-binds without
+annotations or declarations,
+[*symbol* **`=`** *expr*<sup>+</sup>]<sup>+</sup>
+
+`:rhs-ebinds` -- OP has expr-binds at the beginning of its RHS,
+[*expr*<sup>+</sup> **`=`** *expr*]\*
 
 `:unreduce` -- All appearances of OP at the current level should be unreduced,
 i.e replaced with a single call with multiple arguments.
@@ -740,6 +788,11 @@ provides the list:
     -=               decf            
     =.               setq            
     .=.              set             
+    setq             setq            :rhs-sbinds     
+    set              set             :rhs-sbinds     
+    psetq            psetq           :rhs-sbinds     
+    setf             setf            :rhs-ebinds     
+    psetf            psetf           :rhs-ebinds     
     mapc             mapc            
     @.               mapcar          :rhs-args       
     @n               mapcan          :rhs-args       

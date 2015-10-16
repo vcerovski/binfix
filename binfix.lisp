@@ -104,6 +104,7 @@
            {t $ reverse binds :. multiple-value-bind (decl body) (decls e decls)
                                    `(,@decl ,@{body && `(,{singleton $ binfix body})})}) &
 
+
  *binfix* =.
    `(( &               progn      :unreduce)
      ( let             let        :rhs-lbinds);-------------LET constructs
@@ -123,6 +124,11 @@
      ( -=   decf)
      (  =.  setq)
      ( .=.  set)
+     ( setq setq  :rhs-sbinds)
+     ( set  set   :rhs-sbinds)
+     (psetq psetq :rhs-sbinds)
+     ( setf setf  :rhs-ebinds)
+     (psetf psetf :rhs-ebinds)
      ( mapc mapc) ;-----------------------------------------MAPPING
      ( @.   mapcar     :rhs-args)
      ( @n   mapcan     :rhs-args)
@@ -196,6 +202,19 @@
                      declare-then-binfix (cddr rhs) ops `((declare,(cadr rhs)),@decls) t}
                   {t `(,@(nreverse decls) ,(if (cdr rhs) (binfix rhs ops) (car rhs)))})
 
+    sbinds e &optional converted s current =
+     {symbol-macrolet
+       join-to-converted = `(,(singleton (binfix (reverse current) ops)),s,@converted)
+         (cond {null e      $ cddr $ reverse join-to-converted}
+               {cadr e =='= $ sbinds (cddr e) join-to-converted (car e)}
+               {t           $ sbinds (cdr e)  converted s {car e :. current}})}
+
+    ebinds e &optional converted current =
+      (cond {null e      $ reverse converted :. reverse current}
+            {car e == '= $ ebinds (cddr e)
+                                 `(,(cadr e),(singleton (binfix (reverse current) ops)),@converted)}
+            {t           $ ebinds (cdr e) converted {car e :. current}})
+
   {if {atom e || null ops} e
     let* i = (position (caar ops) e)
       {if (null i) (binfix e (cdr ops))
@@ -210,6 +229,9 @@
                        (error "BINFIX: missing r.h.s. of ~S (~S)~@
                                with l.h.s:~%~S" op op-lisp lhs)}
                 {:rhs-lbinds in op-prop $ singleton (binfix `(,@lhs (,op-lisp ,@(lbinds rhs))) ops)}
+                {:rhs-sbinds in op-prop $ singleton (binfix `(,@lhs (,op-lisp ,@(sbinds rhs))) ops)}
+                {:rhs-ebinds in op-prop $ destructuring-bind (assgn &rest r) (ebinds rhs)
+                                            (singleton (binfix `(,@lhs (,op-lisp ,@assgn) ,@r) ops))}
                 {functionp op-lisp $
                    if (zerop i)
                       {op :. funcall op-lisp rhs}
