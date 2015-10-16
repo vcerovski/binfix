@@ -39,6 +39,7 @@ with numerous capabilities:</p>
 <li><a href="#&amp;optional">&amp;optional</a></li>
 <li><a href="#defmethod">defmethod</a></li>
 <li><a href="#defmacro">defmacro</a></li>
+<li><a href="#type annotations">Type annotations and declarations</a></li>
 <li><a href="#Type function">Type <code>function</code></a></li>
 </ul></li>
 <li><a href="#LETs">LETs</a></li>
@@ -95,10 +96,8 @@ passes tests when hand-loaded but does not go through the package system yet.</p
 <p>The latest version is available at <a href="https://github.com/vcerovski/binfix">gihub</a>,
 and can be cloned by command</p>
 
-<pre><code>git clone https://github.com/vcerovski/binfix.git
+<pre><code>git clone https://github.com/vcerovski/binfix
 </code></pre>
-
-<p>presumably in your local Quicklisp folder <code>local-projects</code>.</p>
 
 <p><a name="Examples"></a></p>
 
@@ -328,6 +327,34 @@ that can be either a keyword or an atom surrounded by parens (i.e <code>:around<
 <p>Macros are defined via <code>:==</code> operation, similar to the previous examples.
 See Sec. <a href="#Support for macros">Support for macros</a>.</p>
 
+<p><a name="type annotations"></a></p>
+
+<h4>Type annotations and declarations</h4>
+
+<p>The examples shown so far demonstrate the possibility to type-annotate
+symbols in binds and lambda-lists by an (optional) keyword representing
+the type (for instance <code>:fixnum</code>, <code>:my-class</code>, <code>:|simple-array single-float|</code>,
+<code>:|{symbol or number}|</code>, etc.)</p>
+
+<p>OPs that represent LISP forms which allow declaration(s), in BINFIX can 
+have, in addition to the standard <code>(declare ...)</code> form, also unparenthesized
+variant:</p>
+
+<pre><code>'{f x :fixnum y = 2 :=
+   declare (inline)
+   declare (fixnum y)
+   x + y ** 2}
+</code></pre>
+
+<p>=></p>
+
+<pre><code>(defun f (x &amp;optional (y 2))
+  (declare (type fixnum x))
+  (declare (inline))
+  (declare (fixnum y))
+  (+ x (expt y 2)))
+</code></pre>
+
 <p><a name="Type function"></a></p>
 
 <h4>Type <code>function</code></h4>
@@ -356,12 +383,12 @@ SBCL 1.1.17 function <code>sin</code> has declared type that can be written as</
 
 <h3>LETs</h3>
 
-<p>Various <code>let</code> forms currently covered by BINFIX all follow the pattern
-of </p>
+<p>LET-binding forms (<code>let</code>, <code>let*</code> and <code>symbol-macrolet</code>) in BINFIX use <code>=</code>  with
+an optional type-annotation:</p>
 
-<pre><code>'{let x bit = 1
+<pre><code>'{let x :bit = 1
       y = 2
-    {x + y}}
+    x + y}
 </code></pre>
 
 <p>=></p>
@@ -388,9 +415,9 @@ of </p>
 
 <h3>Implicit/Explicit <code>progn</code></h3>
 
-<p>Lambda written in BINFIX has no implicit progn (a nod to purely functional
-programming,) while <code>let</code>s have it.  This in particular means that if a prog is
-needed in the body of lambda, it should be explicitely given:</p>
+<p>Lambda's and LET's written in BINFIX have no implicit progn.  This in
+particular means that if a prog is needed in the body of lambda or LET, it
+should be explicitely given:</p>
 
 <pre><code>{x -&gt; prog2 (format t "Calculating... ")
             {f $ x * x}
@@ -506,8 +533,8 @@ straightforward manner:</p>
 <pre><code>{m x y :==
    let a = (gensym)
        b = (gensym)
-     binfix `(let ,a double-float = ,x
-                  ,b double-float = ,y
+     binfix `(let ,a :double-float = ,x
+                  ,b :double-float = ,y
                 {{,a - ,b} / {,a + ,b}})}
 </code></pre>
 
@@ -769,6 +796,8 @@ list.</p>
 
 <p><code>:lhs-lambda</code> -- OP has lambda list as its LHS.</p>
 
+<p><code>:rhs-lbinds</code> -- OP has let-binds at the beginning of its LHS.</p>
+
 <p><code>:unreduce</code> -- All appearances of OP at the current level should be unreduced,
 i.e replaced with a single call with multiple arguments.</p>
 
@@ -802,12 +831,12 @@ i.e replaced with a single call with multiple arguments.</p>
 <pre><code>BINFIX         LISP            Properties
 ============================================================
 &amp;                progn           :unreduce       
-let              #&lt;FUNCTION binfix::=let&gt;        
-let*             #&lt;FUNCTION binfix::=let&gt;        
+let              let             :rhs-lbinds
+let*             let*            :rhs-lbinds
 flet             #&lt;FUNCTION binfix::=flet&gt;       
 labels           #&lt;FUNCTION binfix::=flet&gt;       
 macrolet         #&lt;FUNCTION binfix::=flet&gt;       
-symbol-macrolet  #&lt;FUNCTION binfix::=let&gt;        
+symbol-macrolet  symbol-macrolet :rhs-lbinds
 :==              defmacro        :def            
 :=               defun           :def            
 :-               defmethod       :defm           

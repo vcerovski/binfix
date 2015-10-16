@@ -12,7 +12,7 @@
    '(member :first :last :earlier :later :before :after :replace) &
 
  deftype property ()
-   '(member :lhs-lambda :def :defm :split :unreduce :allows-decl :lambda/expr
+   '(member :lhs-lambda :def :defm :split :unreduce :allows-decl :lambda/expr :rhs-lbinds
             :also-prefix :also-unary :also-postfix :left-assoc :rhs-args) &
 
  rmbinfix op :symbol := *binfix* =. delete op *binfix* :key #'car &
@@ -30,6 +30,7 @@
                     $ :replace ? {let i = (position op *binfix* :key #'car)
                                    if i {prop =. cddr (elt *binfix* i) & i}
                                         (error "DEFBINFIX: undefined ~S" op)}}
+    progn
      (every {p -> etypecase p (property p)} prop)
      (rmbinfix op)
      {*binfix* =. append (subseq *binfix* 0 i)

@@ -2,18 +2,7 @@
 
 (in-package :binfix)
 
-{=let e &optional binds decl :=
-  if (null e) (=let '(()) binds decl)
-    let s = (car e)
-      (cond {symbolp s && cadr e == '= $
-              =let (cdddr e) `((,s,(caddr e)),@binds) decl}
-            {symbolp s && caddr e == '= $
-              =let (cddddr e) `((,s,(cadddr e)),@binds) `((type,(cadr e),s),@decl)}
-            (t `(,(nreverse binds)
-                 ,@(if decl `((declare,@decl)))
-                 ,@(if {symbolp s && cdr e} `(,e) e)))) &
-
- interleave &rest r :==
+{interleave &rest r :==
    let body = (reverse (pop r))
      {loop while (cdr r) do
          {let ab = (pop r) ; cannot use loop for clause here b/c of ecl
@@ -97,14 +86,32 @@
                                        ,@binds) () () ()}
         {t           $ =flet (cdr e) binds name {car e :. lambdal} ()} &
 
+ decls e &optional decls doc :=
+  let s = (car e)
+    (cond {               s == 'declare $ decls (cddr e) {cadr e :. decls} doc}
+          {listp s && car s == 'declare $ decls (cdr e) (revappend (cdr s) decls) doc}
+          {t $ values `(,@doc ,@{decls && `((declare ,@(reverse decls)))}) e}) &
+
+
+ lbinds e &optional binds decls :=
+   let s = (car e)
+     (cond {symbolp s && cadr e  == '=
+              $ lbinds (cdddr e) `((,s,(caddr e)) ,@binds)  decls}
+           {symbolp s && keywordp (cadr e) && caddr e == '=
+              $ lbinds (cddddr e)
+                      `((,s,(cadddr e)),@binds)
+                      `((type,(keyword-type-spec (cadr e)),s),@decls)}
+           {t $ reverse binds :. multiple-value-bind (decl body) (decls e decls)
+                                   `(,@decl ,@{body && `(,{singleton $ binfix body})})}) &
+
  *binfix* =.
    `(( &               progn      :unreduce)
-     ( let             ,#'=let);----------------------------LET constructs
-     ( let*            ,#'=let)
+     ( let             let        :rhs-lbinds);-------------LET constructs
+     ( let*            let*       :rhs-lbinds)
      ( flet            ,#'=flet)
      ( labels          ,#'=flet)
      ( macrolet        ,#'=flet)
-     ( symbol-macrolet ,#'=let)
+     ( symbol-macrolet symbol-macrolet :rhs-lbinds)
      ( :==  defmacro   :def)
      ( :=   defun      :def)
      ( :-   defmethod  :defm)
@@ -202,6 +209,7 @@
                       `(,op-lisp,@(binfix lhs ops))
                        (error "BINFIX: missing r.h.s. of ~S (~S)~@
                                with l.h.s:~%~S" op op-lisp lhs)}
+                {:rhs-lbinds in op-prop $ singleton (binfix `(,@lhs (,op-lisp ,@(lbinds rhs))) ops)}
                 {functionp op-lisp $
                    if (zerop i)
                       {op :. funcall op-lisp rhs}

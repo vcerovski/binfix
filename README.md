@@ -32,6 +32,7 @@ with numerous capabilities:
         * [&optional](#&optional)
         * [defmethod](#defmethod)
         * [defmacro](#defmacro)
+        * [Type annotations and declarations](#type annotations)
         * [Type `function`](#Type function)
     * [LETs](#LETs)
     * [Implicit/Explicit `progn`](#Implicit/Explicit progn)
@@ -75,9 +76,7 @@ BINFIX shadows `!` in CLISP (`ext:!`) and `@` in Clozure CL and ECL.
 The latest version is available at [gihub](https://github.com/vcerovski/binfix),
 and can be cloned by command
 
-    git clone https://github.com/vcerovski/binfix.git
-
-presumably in your local Quicklisp folder `local-projects`.
+    git clone https://github.com/vcerovski/binfix
 
 <a name="Examples"></a>
 ## Examples
@@ -273,6 +272,32 @@ that can be either a keyword or an atom surrounded by parens (i.e `:around`,
 Macros are defined via `:==` operation, similar to the previous examples.
 See Sec. [Support for macros](#Support for macros).
 
+<a name="type annotations"></a>
+#### Type annotations and declarations
+
+The examples shown so far demonstrate the possibility to type-annotate
+symbols in binds and lambda-lists by an (optional) keyword representing
+the type (for instance `:fixnum`, `:my-class`, `:|simple-array single-float|`,
+`:|{symbol or number}|`, etc.)
+
+OPs that represent LISP forms which allow declaration(s), in BINFIX can 
+have, in addition to the standard `(declare ...)` form, also unparenthesized
+variant:
+
+    '{f x :fixnum y = 2 :=
+       declare (inline)
+       declare (fixnum y)
+       x + y ** 2}
+
+=>
+
+    (defun f (x &optional (y 2))
+      (declare (type fixnum x))
+      (declare (inline))
+      (declare (fixnum y))
+      (+ x (expt y 2)))
+
+
 <a name="Type function"></a>
 #### Type `function`
 
@@ -297,12 +322,12 @@ SBCL 1.1.17 function `sin` has declared type that can be written as
 <a name="LETs"></a>
 ### LETs
 
-Various `let` forms currently covered by BINFIX all follow the pattern
-of 
+LET-binding forms (`let`, `let*` and `symbol-macrolet`) in BINFIX use `=`  with
+an optional type-annotation:
 
-    '{let x bit = 1
+    '{let x :bit = 1
           y = 2
-        {x + y}}
+        x + y}
 
 =>
 
@@ -324,9 +349,9 @@ of
 <a name="Implicit/Explicit progn"></a>
 ### Implicit/Explicit `progn`
 
-Lambda written in BINFIX has no implicit progn (a nod to purely functional
-programming,) while `let`s have it.  This in particular means that if a prog is
-needed in the body of lambda, it should be explicitely given:
+Lambda's and LET's written in BINFIX have no implicit progn.  This in
+particular means that if a prog is needed in the body of lambda or LET, it
+should be explicitely given:
 
     {x -> prog2 (format t "Calculating... ")
                 {f $ x * x}
@@ -427,8 +452,8 @@ straightforward manner:
     {m x y :==
        let a = (gensym)
            b = (gensym)
-         binfix `(let ,a double-float = ,x
-                      ,b double-float = ,y
+         binfix `(let ,a :double-float = ,x
+                      ,b :double-float = ,y
                     {{,a - ,b} / {,a + ,b}})}
 
 Now macro `m` works as expected:
@@ -665,6 +690,8 @@ list.
 
 `:lhs-lambda` -- OP has lambda list as its LHS.
 
+`:rhs-lbinds` -- OP has let-binds at the beginning of its LHS.
+
 `:unreduce` -- All appearances of OP at the current level should be unreduced,
 i.e replaced with a single call with multiple arguments.
 
@@ -696,12 +723,12 @@ provides the list:
     BINFIX         LISP            Properties
     ============================================================
     &                progn           :unreduce       
-    let              #<FUNCTION binfix::=let>        
-    let*             #<FUNCTION binfix::=let>        
+    let              let             :rhs-lbinds
+    let*             let*            :rhs-lbinds
     flet             #<FUNCTION binfix::=flet>       
     labels           #<FUNCTION binfix::=flet>       
     macrolet         #<FUNCTION binfix::=flet>       
-    symbol-macrolet  #<FUNCTION binfix::=let>        
+    symbol-macrolet  symbol-macrolet :rhs-lbinds
     :==              defmacro        :def            
     :=               defun           :def            
     :-               defmethod       :defm           
