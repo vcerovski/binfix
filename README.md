@@ -8,16 +8,10 @@ Viktor Cerovski, Oct 2015.
 ## Introduction
 
 BINFIX (blend from "Binary Infix") is a poweful infix syntax notation for
-S-expressions of Common LISP.  There are many packages that do something similar,
-and BINFIX differs from them in the sheer scope of the offered infix operations
-with numerous capabilities:
+S-expressions of Common LISP ranging from simple arithmetic and logical
+forms to whole programs.
 
-* Infix arithmetic operations, comparisons, logical connectives, etc
-* Simple notation for lambda lists including optional arguments
-* Simpler `LET`s and assignments
-* Simpler multiple-choice forms
-* Explicit annotation of types in lambda lists and `LET`s
-* Overall reduction of the number of parens in definitions.
+It is in experimental phase with a few important new features still to come.
 
 -----------------------
 ## Content
@@ -30,10 +24,10 @@ with numerous capabilities:
         * [lambda](#lambda)
         * [defun](#defun)
         * [&optional](#&optional)
+        * [Local functions](#Local functions)
         * [defmethod](#defmethod)
         * [defmacro](#defmacro)
         * [Type annotations and declarations](#type annotations)
-        * [Type `function`](#Type function)
     * [LETs](#LETs)
     * [SETs](#SETs)
     * [Implicit/Explicit `progn`](#Implicit/Explicit progn)
@@ -75,7 +69,7 @@ passes tests when hand-loaded but does not go through the package system yet.
 BINFIX shadows `!` in CLISP (`ext:!`) and `@` in Clozure CL and ECL.
 
 The latest version is available at [gihub](https://github.com/vcerovski/binfix),
-and can be cloned by command
+and can be obtained by
 
     git clone https://github.com/vcerovski/binfix
 
@@ -92,6 +86,9 @@ printer is first `setq` (operation `=.`) to lowercase output with
 
 => `:downcase`
 
+BINFIX is a free-form notation (just like S-expr), i.e any number of empty
+spaces (including tabs and newlines) between tokens is treated the same as a
+single white space.
 
 <a name="Arithmetic and logical expressions"></a>
 ### Arithmetic and logical expressions
@@ -246,6 +243,28 @@ As you may by now expect, the following is also permited
       if {n <= 0} m
          {fac {n - 1} {n * m}}}
 
+<a name="Local functions"></a>
+#### Local functions
+
+Version of `fac` with a local recursive function `f`:
+
+   '{fac n :integer :=
+      labels
+        f n m := {if {n = 0} m
+                     {f (1- n) {n * m}}}
+       (f n 1)}
+
+=>
+
+    (defun fac (n)
+      (declare (type integer n))
+      (labels ((f (n m)
+                 (if (= n 0)
+                     m
+                     (f (1- n) (* n m)))))
+
+The same syntax is used in the case of `flet` and `macrolet`.
+
 <a name="defmethod"></a>
 #### `defmethod`
 
@@ -298,10 +317,6 @@ variant:
       (declare (fixnum y))
       (+ x (expt y 2)))
 
-
-<a name="Type function"></a>
-#### Type `function`
-
 Operation `:->` can be used to specify function type. For example, in
 SBCL 1.1.17 function `sin` has declared type that can be written as
 
@@ -350,17 +365,19 @@ an optional type-annotation:
 <a name="SETs"></a>
 ### SETs
 
-Assignments via SETs are also done using `=` to eliminate parens,
+In addition to `=.` and `.=` OPs representing, respectively, a single `setq`
+and `setf` assignment, multiple assignments via SETs can be done using `=`,
 
-    '{psetq x = a * x + b * y
-            y = b * x - a * y}
+    '{psetq x =   cos a * x + sin a * y
+            y = - sin a * x + cos a * y}
 
 =>
 
-    (psetq x (+ (* a x) (* b y))
-           y (- (* b x) (* a y)))
+    (psetq x (+ (* (cos a) x) (* (sin a) y))
+           y (+ (- (* (sin a) x)) (* (cos a) y)))
 
-In the case of SETF assignments, RHS are represented with a single expression:
+and in the case of SETF assignments, RHS are represented with a single
+expression,
 
     '{psetf a ! 0 = {a ! 1}
             a ! 1 = {a ! 0}}
@@ -371,8 +388,7 @@ In the case of SETF assignments, RHS are represented with a single expression:
            (aref a 1) (aref a 0))
 
 
-Since BINFIX has free-form syntax, it is also possible 
-to mix infix SETFs with other expressions:
+It is also possible to mix infix SETFs with other expressions:
 
     '{f x + setf a = b
                  c = d
@@ -581,9 +597,9 @@ an ignored value can be defined as
     {values-bind v e &rest r :==
       let*  _ = ()
          vars = {a -> if {a == '_} {car $ push (gensym) _} a @. v}
-          `(multiple-value-bind ,vars ,e
-              ,@(if _ `({declare $ ignore ,@_}))
-              ,@r)}
+        `(multiple-value-bind ,vars ,e
+            ,@(if _ `({declare $ ignore ,@_}))
+            ,@r)}
 
 So, for instance,
 
@@ -625,7 +641,7 @@ BINFIX into S-expr representation of the expression.
 
 BINFIX uses a simple rewrite algorithm that divides a list in two, LHS and RHS
 of the lowest priority infix operator found within the list, then recursively
-processes each one.  It also shaves off one level of parens in some cases.
+processes each one.
 
 <a name="proto-BINFIX"></a>
 ### proto-BINFIX
