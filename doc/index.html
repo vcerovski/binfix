@@ -299,11 +299,12 @@ argument, </p>
 
 <p>Version of <code>fac</code> with a local recursive function <code>f</code>:</p>
 
-<p>'{fac n :integer :=
-      labels
-        f n m := {if {n = 0} m
-                     {f (1- n) {n * m}}}
-       (f n 1)}</p>
+<pre><code>'{fac n :integer :=
+   labels
+     f n m := {if {n = 0} m
+                  {f (1- n) {n * m}}}
+    (f n 1)}
+</code></pre>
 
 <p>=></p>
 

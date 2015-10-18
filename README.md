@@ -248,11 +248,11 @@ As you may by now expect, the following is also permited
 
 Version of `fac` with a local recursive function `f`:
 
-   '{fac n :integer :=
-      labels
-        f n m := {if {n = 0} m
-                     {f (1- n) {n * m}}}
-       (f n 1)}
+    '{fac n :integer :=
+       labels
+         f n m := {if {n = 0} m
+                      {f (1- n) {n * m}}}
+        (f n 1)}
 
 =>
 
