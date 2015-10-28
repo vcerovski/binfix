@@ -90,7 +90,7 @@
   let s = (car e)
     (cond {               s == 'declare $ decls (cddr e) {cadr e :. decls} doc}
           {listp s && car s == 'declare $ decls (cdr e) (revappend (cdr s) decls) doc}
-          {t $ values `(,@doc ,@{decls && `((declare ,@(reverse decls)))}) e});
+          {t $ `(,@doc ,@{decls && `((declare ,@(reverse decls)))}) .x. e});
 
 
  lbinds e &optional binds decls :=
@@ -101,8 +101,8 @@
               $ lbinds (cddddr e)
                       `((,s,(cadddr e)),@binds)
                       `((type,(keyword-type-spec (cadr e)),s),@decls)}
-           {t $ reverse binds :. multiple-value-bind (decl body) (decls e decls)
-                                   `(,@decl ,@{body && `(,{singleton $ binfix body})})});
+           {t $ reverse binds :. {decl body =.. (decls e decls)
+                                   `(,@decl ,@{body && `(,{singleton $ binfix body})})}});
 
 
  *binfix* =.

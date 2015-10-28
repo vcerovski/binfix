@@ -15,6 +15,8 @@
     (symbol-macrolet  let= symbol-macrolet)
     (let  let= let)
     (let* let= let*)
+    (=..  var-bind multiple-value-bind)
+    (.x.  values)
     (:.   cons)
     (||   or)
     (&&   and)

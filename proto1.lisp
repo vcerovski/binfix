@@ -21,7 +21,9 @@
        do {push `(,name ,lambda ,(cadr r)) funs;
            body =. cddr r}
        finally (return (let ((flet `(,flet ,(reverse funs) ,@body)))
-                         (if lhs `(,@lhs ,flet) flet)))}
+                         (if lhs `(,@lhs ,flet) flet)));
+
+ var-bind op lhs rhs :== `(,op,lhs,@rhs)}
 
 ;BOOTSTRAP PHASE 2 DONE. (DEFs and LETs in proto BINFIX defined)
 
