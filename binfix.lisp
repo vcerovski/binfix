@@ -5,24 +5,24 @@
 {interleave &rest r :==
    let body = (reverse (pop r))
      {loop while (cdr r) do
-         {let ab = (pop r) ; cannot use loop for clause here b/c of ecl
-              {car body .= list (car body) (pop ab)}
-              (push (pop ab) body)} &
-      when r {car body .= car body :. r} &
-      funcall {b -> if (atom (car b)) b ; funcall only b/c sbcl complains.
+         {let ab = (pop r) ;; cannot use loop for clause here b/c of ecl
+              {car body .= list (car body) (pop ab);
+               push (pop ab) body}};
+      when r {car body .= car body :. r};
+      funcall {b -> if (atom (car b)) b ;; funcall only b/c sbcl complains.
                         (append (car b) (cdr b))}
-              (reverse body)} &
+              (reverse body)};
 
- singleton x := if {consp x && null (cdr x)} (car x) x &
+ singleton x := if {consp x && null (cdr x)} (car x) x;
 
  keyword-type-spec k :=
    let S = {singleton $ read-from-string
                           (concatenate 'string "(" (symbol-name k) ")")
                           () :eof}
      (if {symbolp S && not (keywordp S) || listp S} S
-        (error "Incorrect BINFIX keyword-type specifier ~S" k)) &
+        (error "Incorrect BINFIX keyword-type specifier ~S" k));
 
- &lambdap s :== `{,s in lambda-list-keywords} &
+ &lambdap s :== `{,s in lambda-list-keywords};
 
  collect-&parts l &optional arg types :=
    if (null l) {reverse arg :. types && `((declare ,@(reverse types)))}
@@ -31,13 +31,13 @@
              {symbolp s $
                let n = (car l)
                  (when (keywordp n)
-                   {push `(type,(keyword-type-spec n),s) types &
-                    pop l &
+                   {push `(type,(keyword-type-spec n),s) types;
+                    pop l;
                     n =. car l})
                  (if {n == '=}
                    (collect-&parts (cddr l) `((,s,(cadr l)),@arg) types)
                    (collect-&parts l `(,s,@arg) types))}
-             {t $ error "BINFIX: cannot collect-&parts of ~S" l}) &
+             {t $ error "BINFIX: cannot collect-&parts of ~S" l});
 
  lambda-list l &optional arg types :=
    if (null l) {nreverse arg :. types && `((declare ,@(nreverse types)))}
@@ -54,7 +54,7 @@
              {listp s $
                let ll = (lambda-list s)
                  (lambda-list l {car ll :. arg} (revappend (cdadr ll) types))}
-             {t $ error "BINFIX: lambda-list expects symbol or list, not ~S" s}) &
+             {t $ error "BINFIX lambda-list expects symbol or list, not ~S" s});
 
  method-lambda-list l &optional args :=
    if (null l) (list (nreverse args))
@@ -69,7 +69,7 @@
                     {car l =='== $ method-lambda-list (cddr l) {`(,s (eql,(cadr l))) :. args}}
                     {         t  $ method-lambda-list l {s :. args}}}
              {listp s $ method-lambda-list l {s :. args}}
-             {t $ error "BINFIX: method-lambda-list expects symbol or list, not ~S" s}) &
+             {t $ error "BINFIX method-lambda-list expects symbol or list, not ~S" s});
 
  =flet e &optional binds name lambdal decl :=
    cond {null e      $ `(,(reverse binds),@(car decl),@{name :. reverse lambdal})}
@@ -84,30 +84,30 @@
                                           ,@(car decl)
                                            ,(car e))
                                        ,@binds) () () ()}
-        {t           $ =flet (cdr e) binds name {car e :. lambdal} ()} &
+        {t           $ =flet (cdr e) binds name {car e :. lambdal} ()};
 
  decls e &optional decls doc :=
   let s = (car e)
     (cond {               s == 'declare $ decls (cddr e) {cadr e :. decls} doc}
           {listp s && car s == 'declare $ decls (cdr e) (revappend (cdr s) decls) doc}
-          {t $ values `(,@doc ,@{decls && `((declare ,@(reverse decls)))}) e}) &
+          {t $ values `(,@doc ,@{decls && `((declare ,@(reverse decls)))}) e});
 
 
  lbinds e &optional binds decls :=
    let s = (car e)
-     (cond {symbolp s && cadr e  == '=
+     (cond {symbolp s && cadr e == '=
               $ lbinds (cdddr e) `((,s,(caddr e)) ,@binds)  decls}
            {symbolp s && keywordp (cadr e) && caddr e == '=
               $ lbinds (cddddr e)
                       `((,s,(cadddr e)),@binds)
                       `((type,(keyword-type-spec (cadr e)),s),@decls)}
            {t $ reverse binds :. multiple-value-bind (decl body) (decls e decls)
-                                   `(,@decl ,@{body && `(,{singleton $ binfix body})})}) &
+                                   `(,@decl ,@{body && `(,{singleton $ binfix body})})});
 
 
  *binfix* =.
    `(( &               progn      :unreduce)
-     ( let             let        :rhs-lbinds);-------------LET constructs
+     ( let             let        :rhs-lbinds);;------------LET constructs
      ( let*            let*       :rhs-lbinds)
      ( flet            ,#'=flet)
      ( labels          ,#'=flet)
@@ -116,10 +116,10 @@
      ( :==  defmacro   :def)
      ( :=   defun      :def)
      ( :-   defmethod  :defm)
-     ( loop ,#'identity);-----------------------------------OPS W/UNCHANGED RHS
-     (  ?   interleave :unreduce);--------------------------$pliter
+     ( loop ,#'identity);;----------------------------------OPS W/UNCHANGED RHS
+     (  ?   interleave :unreduce);;-------------------------$pliter
      (  $   ()         :split)
-     ( .=   setf) ;-----------------------------------------ASSIGNMENT
+     ( .=   setf) ;;----------------------------------------ASSIGNMENT
      ( +=   incf)
      ( -=   decf)
      (  =.  setq)
@@ -129,31 +129,31 @@
      (psetq psetq :rhs-sbinds)
      ( setf setf  :rhs-ebinds)
      (psetf psetf :rhs-ebinds)
-     ( mapc mapc) ;-----------------------------------------MAPPING
+     ( mapc mapc) ;;----------------------------------------MAPPING
      ( @.   mapcar     :rhs-args)
      ( @n   mapcan     :rhs-args)
      ( @..  maplist    :rhs-args)
      ( @.n  mapcon     :rhs-args)
-     ( :->  function   :lhs-lambda);------------------------LAMBDA/FUNCALL
+     ( :->  function   :lhs-lambda);;-----------------------LAMBDA/FUNCALL
      ( ->   lambda     :lhs-lambda)
      ( @@   apply      :rhs-args)
      ( @    funcall    :rhs-args :left-assoc :also-postfix)
      ( .x.  values     :unreduce :also-prefix)
-     ( =..  multiple-value-bind  :allows-decl);-------------DESTRUCTURING
+     ( =..  multiple-value-bind  :allows-decl);;------------DESTRUCTURING
      ( ..=  destructuring-bind   :lambda/expr)
-     ( :.   cons);------------------------------------------CONSING
-     ( ||       or     :unreduce);--------------------------LOGICAL OPS
+     ( :.   cons);;-----------------------------------------CONSING
+     ( ||       or     :unreduce);;-------------------------LOGICAL OPS
      ( or       or     :unreduce :also-prefix)
      ( &&       and    :unreduce)
      ( and      and    :unreduce :also-prefix)
-     ( <        <      :unreduce :also-prefix);-------------COMPARISONS/PREDICATES
+     ( <        <      :unreduce :also-prefix);;------------COMPARISONS/PREDICATES
      ( >        >      :unreduce :also-prefix)
      ( <=       <=     :unreduce :also-prefix)
      ( >=       >=     :unreduce :also-prefix)
      ( ===      equalp)
      ( equalp   equalp)
      ( equal    equal)
-     ( ==       eql    :also-prefix)           ; :also-prefix depreciated.
+     ( ==       eql    :also-prefix)          ;; :also-prefix depreciated.
      ( eql      eql    :also-prefix)
      ( =s=      string=)
      ( =c=      char=  :unreduce)
@@ -161,18 +161,18 @@
      ( /=       /=     :unreduce :also-prefix)
      ( eq       eq)
      ( subtypep subtypep)
-     ( in       member);------------------------------------END OF COMPARISONS/PREDICATES
-     ;================= :lower  binding user defined ops go here =================
-     ;================= :higher binding user defined ops go here =================
+     ( in       member);;-----------------------------------END OF COMPARISONS/PREDICATES
+     ;;================ :lower  binding user defined ops go here =================
+     ;;================ :higher binding user defined ops go here =================
      ( coerce   coerce)
      ( cons     cons    :also-prefix)
      ( elt      elt)
      ( svref    svref)
      ( !!       aref)
-     ( logior   logior  :unreduce);-------------------------BIT ARITHMETICS
+     ( logior   logior  :unreduce);;------------------------BIT ARITHMETICS
      ( logand   logand  :unreduce)
      ( <<       ash)
-     ( mod      mod);---------------------------------------ARITHMETICS
+     ( mod      mod);;--------------------------------------ARITHMETICS
      ( min      min     :also-prefix :unreduce)
      ( max      max     :also-prefix :unreduce)
      (  +        +      :also-prefix :unreduce)
@@ -183,7 +183,7 @@
      (  /        /      :also-unary)
      (  *        *      :also-prefix :unreduce)
      ( **       expt)
-     (  !       aref    :rhs-args)) &
+     (  !       aref    :rhs-args));
 
 
  binfix e &optional (ops *binfix*) :=
@@ -239,7 +239,7 @@
                 {:lhs-lambda in op-prop $
                    `(,op-lisp ,@(lambda-list lhs)
                               ,@(declare-then-binfix rhs ops))}
-                {:unreduce in op-prop && position op rhs $ ;position necessary...
+                {:unreduce in op-prop && position op rhs $ ;;position necessary...
                     mapcar #'singleton (unreduce rhs op `(,(binfix lhs (cdr ops)),op-lisp))}
                 {zerop i $ cond {:also-unary  in op-prop $ `(,op-lisp ,(singleton (binfix rhs ops)))}
                                 {:also-prefix in op-prop $ `(,op-lisp ,@(binfix rhs ops))}

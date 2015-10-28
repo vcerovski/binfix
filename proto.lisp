@@ -3,7 +3,7 @@
 (in-package :binfix)
 
 (defparameter *binfix*
-  '(( &  progn)
+  '((|;| progn)
     (:== def defmacro)
     (:=  def defun)
     (:-  def defmethod)
@@ -36,9 +36,21 @@
                     (binfix (subseq e 0 i) (cdr ops)))
                 ,(binfix (subseq e (1+ i)) ops)))))))
 
+(defun semicolon (s ch)
+  (declare (ignore ch))
+  (if (char= #\; (peek-char nil s))
+    (loop until (char= #\Newline (read-char s nil #\Newline t))
+          finally (return (values)))
+    #+(or sbcl ccl)          (intern ";")
+    #+(or clisp ecl) (values (intern ";"))))
+
 (set-macro-character #\{
   (lambda (s ch) (declare (ignore ch))
-    (binfix (read-delimited-list #\} s t))))
+    (let ((semicolon (get-macro-character #\;)))
+      (unwind-protect
+        (progn (set-macro-character #\; #'semicolon)
+               (binfix (read-delimited-list #\} s t)))
+        (set-macro-character #\; semicolon)))))
 
 (set-macro-character #\} (get-macro-character #\) ))
 

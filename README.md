@@ -715,6 +715,11 @@ single BINFIX expression, macros `let=` and `flet=`
 
 which wraps up proto-BINFIX.
 
+Since v0.15, BINFIX interns a symbol consisting of a single `;` char not
+followed by `;` char, while two or more consequtive `;` are interpreted
+as starting a comment.  This behavior is limited to BINFIX
+expressions only, while outside of them the standard LISP rules apply.
+
 The rest is written using this syntax, and consists of handling of lambda lists
 and `let`s, a longer list of OPs with properties, redefined `binfix` to
 its full capability, and, finally, several interface functions for
