@@ -2,18 +2,7 @@
 
 (in-package :binfix)
 
-{interleave &rest r :==
-   let body = (reverse (pop r))
-     {loop while (cdr r) do
-         {let ab = (pop r) ;; cannot use loop for clause here b/c of ecl
-              {car body .= list (car body) (pop ab);
-               push (pop ab) body}};
-      when r {car body .= car body :. r};
-      funcall {b -> if (atom (car b)) b ;; funcall only b/c sbcl complains.
-                        (append (car b) (cdr b))}
-              (reverse body)};
-
- singleton x := if {consp x && null (cdr x)} (car x) x;
+{singleton x := if {consp x && null (cdr x)} (car x) x;
 
  keyword-type-spec k :=
    let S = {singleton $ read-from-string
@@ -116,8 +105,20 @@
      ( :==  defmacro   :def)
      ( :=   defun      :def)
      ( :-   defmethod  :defm)
+     ( block    block     :prefix);;------------------------PREFIX FORMS
+     ( tagbody  tagbody   :prefix)
+     ( catch    catch     :prefix)
+     ( progn    progn     :prefix)
+     ( cond     cond      :prefix);;------------------------COND/CASE FORMS
+     ( case     case      :prefix)
+     ( ccase    ccase     :prefix)
+     ( ecase    ecase     :prefix)
+     ( typecase typecase  :prefix)
+     (etypecase etypecase :prefix)
+     (ctypecase ctypecase :prefix)
+     ( if       if        :prefix)
      ( loop ,#'identity);;----------------------------------OPS W/UNCHANGED RHS
-     (  ?   interleave :unreduce);;-------------------------$pliter
+     (  ?   ()         :split);;----------------------------$pliters
      (  $   ()         :split)
      ( .=   setf) ;;----------------------------------------ASSIGNMENT
      ( +=   incf)
@@ -193,6 +194,11 @@
                   {car e == op $ unreduce (cdr e) op {binfix (reverse arg) ops :. args}}
                   {t           $ unreduce (cdr e) op args {car e :. arg}})
 
+     binfix+ e &optional (ops ops) =
+       (if {'; in e}
+          (singleton (mapcar #'singleton (unreduce e ';)))
+         `(,(singleton (binfix e ops))))
+
           declare-then-binfix rhs ops &optional decls rest =
             (cond {null rest && stringp (car rhs) $
                      declare-then-binfix (cdr rhs) ops {car rhs :. decls} t}
@@ -257,7 +263,10 @@
                 {:unreduce in op-prop && position op rhs $ ;;position necessary...
                     mapcar #'singleton (unreduce rhs op `(,(binfix lhs (cdr ops)),op-lisp))}
                 {zerop i $ cond {:also-unary  in op-prop $ `(,op-lisp ,(singleton (binfix rhs ops)))}
-                                {:also-prefix in op-prop $ `(,op-lisp ,@(binfix rhs ops))}
+                                {:also-prefix in op-prop || :prefix in op-prop
+                                                         $ `(,op-lisp ,@(if {'; in rhs}
+                                                                          (binfix+ rhs)
+                                                                          (binfix rhs)))}
                                 {t $ error "BINFIX: missing l.h.s. of ~S (~S)~@
                                             with r.h.s:~%~S" op op-lisp rhs}}
                 {:def in op-prop $ `(,op-lisp ,(car e)
@@ -285,6 +294,7 @@
                      ,{when rhs
                          let e = (binfix rhs ops)
                             (if (cdr e) e (car e))})}
+                {:prefix in op-prop $ binfix `(,@lhs ,(binfix `(,op,@rhs) ops))}
                 (t `(,op-lisp
                      ,(if (= i 1) (car e) (binfix lhs (cdr ops)))
                      ,@(cond {null (cdr rhs) $ rhs}

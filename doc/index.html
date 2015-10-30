@@ -542,30 +542,22 @@ Or perphaps:</p>
       (t x))
 </code></pre>
 
-<p>Another splitter is <code>?</code>, as described in the next section.</p>
+<p>Another splitter is <code>?</code>, which can be used instead of <code>$</code> in the previous
+example, as well as described in the next section.</p>
 
 <p><a name="Multiple-choice forms"></a></p>
 
 <h3>Multiple-choice forms (<code>cond</code>, <code>case</code>, ...)</h3>
 
-<p>An alternative syntax to describe multiple-choice forms is to use <code>$</code> and <code>?</code></p>
+<p>An alternative syntax to describe multiple-choice forms is to use <code>?</code> and <code>;</code></p>
 
-<pre><code>{cond $
-   p x ? f x $
-   q x ? g x $
-   r x ? h x $
-     t ? x}
+<pre><code>{cond p x ? f x;
+      q x ? g x;
+      r x ? h x;
+        t ? x}
 </code></pre>
 
-<p>which can be written also as</p>
-
-<pre><code>{cond $ p x ? f x
-      $ q x ? g x
-      $ r x ? h x
-      $   t ? x}
-</code></pre>
-
-<p>See <a href="#ordinal"><code>ordinal</code> example below</a>.</p>
+<p>See also <a href="#ordinal"><code>ordinal</code> example below</a>.</p>
 
 <p><a name="Destructuring, multiple values"></a></p>
 
@@ -649,10 +641,11 @@ t
 <pre><code>{ordinal i :integer :=
    let* a = {i mod 10}
         b = {i mod 100}
-      suf = {cond $ a = b = 1 || a = 1 &amp;&amp; 21 &lt;= b &lt;= 91 ? "st"
-                  $ a = b = 2 || a = 2 &amp;&amp; 22 &lt;= b &lt;= 92 ? "nd"
-                  $ a = b = 3 || a = 3 &amp;&amp; 23 &lt;= b &lt;= 93 ? "rd"
-                  $                                  t  ? "th"}
+      suf = {cond
+               a = b = 1 || a = 1 &amp;&amp; 21 &lt;= b &lt;= 91 ? "st";
+               a = b = 2 || a = 2 &amp;&amp; 22 &lt;= b &lt;= 92 ? "nd";
+               a = b = 3 || a = 3 &amp;&amp; 23 &lt;= b &lt;= 93 ? "rd";
+                                                t  ? "th"}
         format () "~D~a" i suf}
 </code></pre>
 
@@ -661,10 +654,11 @@ t
 <pre><code>{ordinal1 i :integer :=
    let* a = {i mod 10}
         b = {i mod 100}
-      suf = {cond $ = a b 1 or = a 1 and &lt;= b 21 91 ? "st"
-                  $ = a b 2 or = a 2 and &lt;= b 22 92 ? "nd"
-                  $ = a b 3 or = a 3 and &lt;= b 23 93 ? "rd"
-                  $                              t  ? "th"}
+      suf = {cond
+               = a b 1 or = a 1 and &lt;= b 21 91 ? "st";
+               = a b 2 or = a 2 and &lt;= b 22 92 ? "nd";
+               = a b 3 or = a 3 and &lt;= b 23 93 ? "rd";
+                                            t  ? "th"}
         format () "~D~a" i suf}
 </code></pre>
 
@@ -898,6 +892,8 @@ i.e replaced with a single call with multiple arguments.</p>
 
 <p><code>:left-assoc</code> -- OP is left--associative (OPs are right-associative by default.)</p>
 
+<p><code>:prefix</code> -- OP is prefix with RHS being its arguments.</p>
+
 <p><code>:also-prefix</code> -- OP can be used as prefix OP when LHS is missing.</p>
 
 <p><code>:also-unary</code> -- OP can be used as unary when LHS is missing.</p>
@@ -921,20 +917,33 @@ i.e replaced with a single call with multiple arguments.</p>
 <pre><code>(lsbinfix)
 </code></pre>
 
-<p>provides the list:</p>
+<p>prints the table of all BINFIX OPs and their properties from the weakest-
+to the strongest-binding OP:</p>
 
-<pre><code>BINFIX         LISP            Properties
+<pre><code>BINFIX           LISP            Properties
 ============================================================
 &amp;                progn           :unreduce       
-let              let             :rhs-lbinds
-let*             let*            :rhs-lbinds
+let              let             :rhs-lbinds     
+let*             let*            :rhs-lbinds     
 flet             #&lt;FUNCTION binfix::=flet&gt;       
 labels           #&lt;FUNCTION binfix::=flet&gt;       
 macrolet         #&lt;FUNCTION binfix::=flet&gt;       
-symbol-macrolet  symbol-macrolet :rhs-lbinds
+symbol-macrolet  symbol-macrolet :rhs-lbinds     
 :==              defmacro        :def            
 :=               defun           :def            
 :-               defmethod       :defm           
+block            block           :prefix         
+tagbody          tagbody         :prefix         
+catch            catch           :prefix         
+progn            progn           :prefix         
+cond             cond            :prefix         
+case             case            :prefix         
+ccase            ccase           :prefix         
+ecase            ecase           :prefix         
+typecase         typecase        :prefix         
+etypecase        etypecase       :prefix         
+ctypecase        ctypecase       :prefix         
+if               if              :prefix         
 loop             #&lt;FUNCTION identity&gt;            
 ?                binfix::interleave              :unreduce       
 $                nil             :split          
@@ -959,7 +968,7 @@ mapc             mapc
 @                funcall         :rhs-args       :left-assoc     :also-postfix   
 .x.              values          :unreduce       :also-prefix    
 =..              multiple-value-bind             :allows-decl    
-..=              destructuring-bind              :allows-decl    
+..=              destructuring-bind              :lambda/expr    
 :|.|             cons            
 ||               or              :unreduce       
 or               or              :unreduce       :also-prefix    
