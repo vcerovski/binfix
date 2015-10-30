@@ -12,7 +12,11 @@
 S-expressions of Common LISP ranging from simple arithmetic and logical
 forms to whole programs.</p>
 
-<p>It is in experimental phase with a few important new features still to come.</p>
+<p>It is in experimental phase with a few important new features still to come.
+One of them is use of a single <code>;</code> symbol as <a href="#SETF expr-termination">expression terminator</a>,
+available from v0.16.</p>
+
+<p>Once they've been implemented, BINFIX will go to RC and then a reference 1.0 version.</p>
 
 <hr />
 
@@ -451,6 +455,20 @@ expression,</p>
 
 <pre><code>'{psetf a ! 0 = {a ! 1}
         a ! 1 = {a ! 0}}
+</code></pre>
+
+<p>=></p>
+
+<pre><code>(psetf (aref a 0) (aref a 1)
+       (aref a 1) (aref a 0))
+</code></pre>
+
+<p><a name="SETF expr-termination"></a>
+Alternatively, it is possible to use a single <code>;</code> as an expression-termination
+symbol,</p>
+
+<pre><code>'{psetf a ! 0 = a ! 1; ;; expr. termination via single ;
+        a ! 1 = a ! 0}
 </code></pre>
 
 <p>=></p>
