@@ -206,10 +206,10 @@
 
  binfix e &optional (ops *binfix*) :=
    labels
-          unreduce e op &optional args arg =
-            (cond {null e      $ reverse {binfix (reverse arg) ops :. args}}
-                  {car e == op $ unreduce (cdr e) op {binfix (reverse arg) ops :. args}}
-                  {t           $ unreduce (cdr e) op args {car e :. arg}})
+     unreduce e op &optional args arg =
+       (cond {null e      $ reverse {binfix (reverse arg) ops :. args}}
+             {car e == op $ unreduce (cdr e) op {binfix (reverse arg) ops :. args}}
+             {t           $ unreduce (cdr e) op args {car e :. arg}})
 
      binfix+ e &optional (ops ops) =
        (if {'; in e}
@@ -229,31 +229,31 @@
        {decl* body =.. (decls rhs decls)
          `(,@decl* ,@(binfix+ body ops))}
 
-    sbinds e &optional converted s current =
-     {symbol-macrolet
-       join-to-converted = `(,(singleton (binfix (reverse current) ops)),s,@converted)
-         (cond {null e      $ cddr $ reverse join-to-converted}
-               {cadr e =='= $ sbinds (cddr e) join-to-converted (car e)}
-               {t           $ sbinds (cdr e)  converted s {car e :. current}})}
+     sbinds e &optional converted s current =
+       {symbol-macrolet
+         convert = `(,(singleton (binfix (reverse current) ops)),s,@converted)
+           (cond {null e      $ cddr $ reverse convert}
+                 {cadr e =='= $ sbinds (cddr e) convert (car e)}
+                 {t           $ sbinds (cdr e)  converted s {car e :. current}})}
 
-    e-binds e &optional binds lhs rhs =
-      {labels b-eval-rev e = (singleton
-                               (if {consp e && > (length e) 1}
-                                  {binfix $ singleton $ nreverse e}
-                                  e))
-              bind lhs rhs = {b-eval-rev rhs :. b-eval-rev lhs :. binds}
-        (cond {null e     $ if {lhs && rhs}
-                              {nreverse (bind lhs rhs) .x. nil}
-                              {nreverse binds .x. append (nreverse lhs) (nreverse rhs) e}}
-              {car e =='= $ if (null rhs)
-                              (e-binds (cddr e) binds lhs `(,(cadr e))) 
-                              (e-binds (cddr e) (bind lhs (last rhs)) (butlast rhs) `(,(cadr e)))}
-              {car e =='; $ if {lhs && rhs}
-                              {e-binds (cdr e) (bind lhs rhs)}
-                              (error "BINFIX expression(s) bind(s), missing = in:~@
+     e-binds e &optional binds lhs rhs =
+       {labels b-eval-rev e = (singleton
+                                (if {consp e && > (length e) 1}
+                                   {binfix $ singleton $ nreverse e}
+                                   e))
+               bind lhs rhs = {b-eval-rev rhs :. b-eval-rev lhs :. binds}
+         (cond {null e     $ if {lhs && rhs}
+                               {nreverse (bind lhs rhs) .x. nil}
+                               {nreverse binds .x. append (nreverse lhs) (nreverse rhs) e}}
+               {car e =='= $ if (null rhs)
+                               (e-binds (cddr e) binds lhs `(,(cadr e))) 
+                               (e-binds (cddr e) (bind lhs (last rhs)) (butlast rhs) `(,(cadr e)))}
+               {car e =='; $ if {lhs && rhs}
+                               {e-binds (cdr e) (bind lhs rhs)}
+                               (error "BINFIX expression(s) bind(s), missing = in:~@
                                       ~A" (append (nreverse lhs) (nreverse rhs)))}
-              {rhs        $ e-binds (cdr e) binds           lhs {car e :. rhs}}
-              {t          $ e-binds (cdr e) binds {car e :. lhs}          rhs})}
+               {rhs        $ e-binds (cdr e) binds           lhs {car e :. rhs}}
+               {t          $ e-binds (cdr e) binds {car e :. lhs}          rhs})}
 
   {if {atom e || null ops} e
     let* i = (position (caar ops) e)
