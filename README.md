@@ -302,7 +302,7 @@ See Sec. [Support for macros](#Support for macros).
 The examples shown so far demonstrate the possibility to type-annotate
 symbols in binds and lambda-lists by an (optional) keyword representing
 the type (for instance `:fixnum`, `:my-class`, `:|simple-array single-float|`,
-`:|{symbol or number}|`, etc.)
+`:|or symbol number|`, `:|{symbol or number}|`, etc.)
 
 OPs that represent LISP forms which allow declaration(s), in BINFIX can 
 have in addition to the standard `(declare ...)` form also unparenthesized
@@ -479,7 +479,7 @@ See also [`ordinal` example below](#ordinal).
 ### Destructuring, multiple values
 
 Multiple values (`values`) are represented by `.x.`, 
-`multiple-value-let` by `=..` , and `destructuring-bind` by `..=`
+`multiple-value-bind` by `=..` , and `destructuring-bind` by `..=`
 
     '{a (b) c ..= (f x) {a + 1 .x. b + 2 .x. c + 3}}
 
@@ -786,7 +786,9 @@ i.e replaced with a single call with multiple arguments.
 
 `:lambda/expr` -- OP takes lambda-list at LHS and an expression at RHS, followed by body.
 
-`:allows-decl` -- OP allows `declare` form(s) at the beginning of its RHS.
+`:syms=expr` -- OP takes a list of symbols as LHS (each with an optional
+[keyword-type](#type annotations) annotation), an expression as RHS followed
+by optional declarations and a BINFIX-expression.
 
 `#'my-fun` -- function `my-fun` will be applied to the untransformed RHS.
 
@@ -849,7 +851,7 @@ to the strongest-binding OP:
     @@               apply           :rhs-args       
     @                funcall         :rhs-args       :left-assoc     :also-postfix   
     .x.              values          :unreduce       :also-prefix    
-    =..              multiple-value-bind             :allows-decl    
+    =..              multiple-value-bind             :syms=decl    
     ..=              destructuring-bind              :lambda/expr    
     :|.|             cons            
     ||               or              :unreduce       

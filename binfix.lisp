@@ -81,6 +81,23 @@
           {listp s && car s == 'declare $ decls (cdr e) (revappend (cdr s) decls) doc}
           {t $ `(,@doc ,@{decls && `((declare ,@(reverse decls)))}) .x. e});
 
+ doc-decls e &optional decls :=
+   if {stringp (car e) && cdr e}
+      (decls (cdr e) decls `(,(car e)))
+      (decls e decls);
+
+ vbinds e &optional vars decls :=
+   cond {null e $ reverse vars .x. reverse decls}
+        {symbolp (car e) && not (keywordp (car e)) $
+            if (keywordp (cadr e))
+              (vbinds (cddr e)
+                      {car e :. vars}
+                      {`(type ,(keyword-type-spec (cadr e)),(car e)) :. decls})
+              (vbinds (cdr e)
+                      {car e :. vars}
+                      decls)}
+        {t $ error "BINFIX: symbol expected, not ~S in~@
+                   ~S" (car e) (reverse vars)};
 
  lbinds e &optional binds decls :=
    let s = (car e)
@@ -140,7 +157,7 @@
      ( @@   apply      :rhs-args)
      ( @    funcall    :rhs-args :left-assoc :also-postfix)
      ( .x.  values     :unreduce :also-prefix)
-     ( =..  multiple-value-bind  :allows-decl);;------------DESTRUCTURING
+     ( =..  multiple-value-bind  :syms=expr);;--------------DESTRUCTURING
      ( ..=  destructuring-bind   :lambda/expr)
      ( :.   cons);;-----------------------------------------CONSING
      ( ||       or     :unreduce);;-------------------------LOGICAL OPS
@@ -208,6 +225,10 @@
                      declare-then-binfix (cddr rhs) ops `((declare,(cadr rhs)),@decls) t}
                   {t `(,@(nreverse decls) ,(if (cdr rhs) (binfix rhs ops) (car rhs)))})
 
+     decl*-binfix+ rhs &optional (ops ops) decls =
+       {decl* body =.. (decls rhs decls)
+         `(,@decl* ,@(binfix+ body ops))}
+
     sbinds e &optional converted s current =
      {symbol-macrolet
        join-to-converted = `(,(singleton (binfix (reverse current) ops)),s,@converted)
@@ -248,6 +269,11 @@
                        (error "BINFIX: missing r.h.s. of ~S (~S)~@
                                with l.h.s:~%~S" op op-lisp lhs)}
                 {:rhs-lbinds in op-prop $ singleton (binfix `(,@lhs (,op-lisp ,@(lbinds rhs))) ops)}
+                {:syms=expr  in op-prop $
+                   vars decls =.. (vbinds lhs)
+                      `(,op-lisp ,vars ,(car rhs)
+                                 ,@{decls && `((declare ,@decls))}
+                                 ,@(decl*-binfix+ (cdr rhs) ops))}
                 {:rhs-sbinds in op-prop $
                    singleton (binfix `(,@lhs (,op-lisp ,@(sbinds rhs))) ops)}
                 {:rhs-ebinds in op-prop $
@@ -287,8 +313,6 @@
                    destructuring-bind (llist &rest decls) (lambda-list lhs)
                       `(,op-lisp ,llist ,(car rhs) ,@decls
                                  ,@(declare-then-binfix (cdr rhs) ops))}
-                {:allows-decl in op-prop $
-                   `(,op-lisp ,lhs ,(car rhs) ,@(declare-then-binfix (cdr rhs) ops))}
                 {:split in op-prop $
                    `(,(if (= i 1) (car e) (binfix lhs (cdr ops)))
                      ,{when rhs
