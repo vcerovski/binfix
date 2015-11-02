@@ -406,7 +406,7 @@ symbol,
 It is also possible to mix infix SETFs with other expressions:
 
     '{f x + setf a = b
-                 c = d
+                 c = d;
           * h a c}
 
 =>
