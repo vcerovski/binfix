@@ -99,16 +99,31 @@
         {t $ error "BINFIX: symbol expected, not ~S in~@
                    ~S" (car e) (reverse vars)};
 
- lbinds e &optional binds decls :=
-   let s = (car e)
-     (cond {symbolp s && cadr e == '=
-              $ lbinds (cdddr e) `((,s,(caddr e)) ,@binds)  decls}
-           {symbolp s && keywordp (cadr e) && caddr e == '=
-              $ lbinds (cddddr e)
-                      `((,s,(cadddr e)),@binds)
-                      `((type,(keyword-type-spec (cadr e)),s),@decls)}
-           {t $ reverse binds :. {decl body =.. (decls e decls)
-                                   `(,@decl ,@{body && `(,{singleton $ binfix body})})}});
+ lbinds e &optional binds s current decls :=
+   labels make-bind s e = `(,s ,(singleton (binfix (reverse e))))
+     (cond {car e == 'declare || consp (car e) && caar e == 'declare
+              $ decls e =.. (decls e decls)
+                 {cdr (reverse {make-bind s current :. binds}) :. decls .x. e}}
+           {null e
+              $ let current = (reverse current)
+                  {decls e =.. (decls (cdr current) decls)
+                    {cdr (reverse {{s :. car current :.()} :. binds}) :. decls .x. e}}}
+           {car e == ';
+              $ if {cadr e == 'declare || consp (cadr e) && caadr e == 'declare}
+                  (lbinds (cdr e) binds s current decls)
+                  {decls e =.. (decls (cdr e) decls)
+                    {cdr (reverse {make-bind s current :. binds}) :. decls .x. e}}}
+           {cadr e == '=
+              $ lbinds (cddr e)
+                       {make-bind s current :. binds} (car e) ()
+                       decls}
+           {keywordp (cadr e) && caddr e == '=
+              $ lbinds (cdddr e)
+                       {make-bind s current :. binds} (car e) ()
+                      `((type,(keyword-type-spec (cadr e)),(car e)),@decls)}
+           {t $ lbinds (cdr e)
+                       binds s {car e :. current}
+                       decls});
 
 
  *binfix* =.
@@ -268,7 +283,9 @@
                       `(,op-lisp,@(binfix lhs ops))
                        (error "BINFIX: missing r.h.s. of ~S (~S)~@
                                with l.h.s:~%~S" op op-lisp lhs)}
-                {:rhs-lbinds in op-prop $ singleton (binfix `(,@lhs (,op-lisp ,@(lbinds rhs))) ops)}
+                {:rhs-lbinds in op-prop $
+                   binds-decls* expr =.. (lbinds rhs)
+                     (singleton (binfix `(,@lhs (,op-lisp ,@binds-decls* ,@(binfix+ expr))) ops))}
                 {:syms=expr  in op-prop $
                    vars decls =.. (vbinds lhs)
                       `(,op-lisp ,vars ,(car rhs)

@@ -12,10 +12,13 @@ S-expressions of Common LISP ranging from simple arithmetic and logical
 forms to whole programs.
 
 It is in experimental phase with a few important new features still to come.
-One of them is use of a single `;` symbol as [expression terminator](#SETF expr-termination),
-available from v0.16.
+One of them, available from v0.16, is use of a single `;` symbol as
+[expression terminator](#SETF expr-termination),
+[end of LET binds symbol](#LET ; examples) as well as a simple notation for 
+parenless [implicit-progn](#LET ; progn example).
 
-Once they've been implemented, BINFIX will go to RC and then a reference 1.0 version.
+Once the rest of them have been implemented, BINFIX will go to RC and then a
+reference 1.0 version.
 
 -----------------------
 ## Content
@@ -346,14 +349,48 @@ LET-binding forms (`let`, `let*` and `symbol-macrolet`) in BINFIX use `=`  with
 an optional type-annotation:
 
     '{let x :bit = 1
-          y = 2
-        x + y}
+          y = {2 ** 3}
+          z = 4
+        x + y * z}
 
 =>
 
-    (let ((x 1) (y 2))
+    (let ((x 1) (y (expt 2 3)) (z 4))
       (declare (type bit x))
-      (+ x y))
+      (+ x (* y z)))
+
+<a name="LET ; examples"></a>
+A single `;` can be used as a terminator of bindings:
+
+    '{let x :bit = 1
+          y = 2 ** 3
+          z = f a;
+        x + y * z}
+
+=>
+
+    (let ((x 1) (y (expt 2 3)) (z (f a)))
+      (declare (type bit x))
+      (+ x (* y z)))
+
+<a name="LET ; progn example"></a>
+Finally, a single `;` can also be used to separate forms in implicit-progn,
+as in
+
+    '{let x :bit = 1
+          y = 2 ** 3
+          z = f a;         ;; end of binds
+        print "Let binds"; ;; 1st form
+        x + y * z}         ;; 2nd form of implicit-progn
+
+=>
+
+    (let ((x 1) (y (expt 2 3)) (z (f a)))
+      (declare (type bit x))
+      (print "Let binds")
+      (+ x (* y z)))
+
+
 
 `flet`/`labels` forms require name and lambda-list before `:=` symbol:
 
@@ -420,7 +457,9 @@ It is also possible to mix infix SETFs with other expressions:
 <a name="Implicit/Explicit progn"></a>
 ### Implicit/Explicit `progn`
 
-Lambda's and LET's written in BINFIX have no implicit progn.  This in
+BINFIX LETs have an implicit progn (see [LET example above](#LET ; progn example).)
+
+Lambda's written in BINFIX have no implicit progn.  This in
 particular means that if a prog is needed in the body of lambda or LET, it
 should be explicitely given:
 

@@ -13,10 +13,13 @@ S-expressions of Common LISP ranging from simple arithmetic and logical
 forms to whole programs.</p>
 
 <p>It is in experimental phase with a few important new features still to come.
-One of them is use of a single <code>;</code> symbol as <a href="#SETF expr-termination">expression terminator</a>,
-available from v0.16.</p>
+One of them, available from v0.16, is use of a single <code>;</code> symbol as
+<a href="#SETF expr-termination">expression terminator</a>,
+<a href="#LET ; examples">end of LET binds symbol</a> as well as a simple notation for 
+parenless <a href="#LET ; progn example">implicit-progn</a>.</p>
 
-<p>Once they've been implemented, BINFIX will go to RC and then a reference 1.0 version.</p>
+<p>Once the rest of them have been implemented, BINFIX will go to RC and then a
+reference 1.0 version.</p>
 
 <hr />
 
@@ -409,15 +412,51 @@ SBCL 1.1.17 function <code>sin</code> has declared type that can be written as</
 an optional type-annotation:</p>
 
 <pre><code>'{let x :bit = 1
-      y = 2
-    x + y}
+      y = {2 ** 3}
+      z = 4
+    x + y * z}
 </code></pre>
 
 <p>=></p>
 
-<pre><code>(let ((x 1) (y 2))
+<pre><code>(let ((x 1) (y (expt 2 3)) (z 4))
   (declare (type bit x))
-  (+ x y))
+  (+ x (* y z)))
+</code></pre>
+
+<p><a name="LET ; examples"></a>
+A single <code>;</code> can be used as a terminator of bindings:</p>
+
+<pre><code>'{let x :bit = 1
+      y = 2 ** 3
+      z = f a;
+    x + y * z}
+</code></pre>
+
+<p>=></p>
+
+<pre><code>(let ((x 1) (y (expt 2 3)) (z (f a)))
+  (declare (type bit x))
+  (+ x (* y z)))
+</code></pre>
+
+<p><a name="LET ; progn example"></a>
+Finally, a single <code>;</code> can also be used to separate forms in implicit-progn,
+as in</p>
+
+<pre><code>'{let x :bit = 1
+      y = 2 ** 3
+      z = f a;         ;; end of binds
+    print "Let binds"; ;; 1st form
+    x + y * z}         ;; 2nd form of implicit-progn
+</code></pre>
+
+<p>=></p>
+
+<pre><code>(let ((x 1) (y (expt 2 3)) (z (f a)))
+  (declare (type bit x))
+  (print "Let binds")
+  (+ x (* y z)))
 </code></pre>
 
 <p><code>flet</code>/<code>labels</code> forms require name and lambda-list before <code>:=</code> symbol:</p>
@@ -497,7 +536,9 @@ symbol,</p>
 
 <h3>Implicit/Explicit <code>progn</code></h3>
 
-<p>Lambda's and LET's written in BINFIX have no implicit progn.  This in
+<p>BINFIX LETs have an implicit progn (see <a href="#LET ; progn example">LET example above</a>.)</p>
+
+<p>Lambda's written in BINFIX have no implicit progn.  This in
 particular means that if a prog is needed in the body of lambda or LET, it
 should be explicitely given:</p>
 
