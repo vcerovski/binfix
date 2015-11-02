@@ -14,7 +14,7 @@
  &lambdap s :== `{,s in lambda-list-keywords};
 
  collect-&parts l &optional arg types :=
-   if (null l) {reverse arg :. types && `((declare ,@(reverse types)))}
+   if (null l) {nreverse arg .x. types}
      let s = (pop l)
        (cond {listp s || &lambdap s $ collect-&parts l {s :. arg} types}
              {symbolp s $
@@ -26,10 +26,10 @@
                  (if {n == '=}
                    (collect-&parts (cddr l) `((,s,(cadr l)),@arg) types)
                    (collect-&parts l `(,s,@arg) types))}
-             {t $ error "BINFIX: cannot collect-&parts of ~S" l});
+             {t $ error "BINFIX lambda-list cannot collect-&parts of ~S" l});
 
  lambda-list l &optional arg types :=
-   if (null l) {nreverse arg :. types && `((declare ,@(nreverse types)))}
+   if (null l) {nreverse arg .x. types}
      let s = (pop l)
        (cond {symbolp s $
                cond {keywordp (car l) $
@@ -41,12 +41,12 @@
                     {car l == '= $ collect-&parts `(&optional,s,@l) arg types}
                     {          t $ lambda-list l `(,s,@arg) types}}
              {listp s $
-               let ll = (lambda-list s)
-                 (lambda-list l {car ll :. arg} (revappend (cdadr ll) types))}
+               ll decls =.. (lambda-list s)
+                 (lambda-list l {ll :. arg} (append decls types))}
              {t $ error "BINFIX lambda-list expects symbol or list, not ~S" s});
 
  method-lambda-list l &optional args :=
-   if (null l) (list (nreverse args))
+   if (null l) {nreverse args .x. ()}
      let s = (pop l)
        (cond {symbolp s $
                cond {keywordp (car l) $
@@ -140,6 +140,7 @@
      ( block    block     :prefix);;------------------------PREFIX FORMS
      ( tagbody  tagbody   :prefix)
      ( catch    catch     :prefix)
+     ( prog2    prog2     :prefix)
      ( progn    progn     :prefix)
      ( cond     cond      :prefix);;------------------------COND/CASE FORMS
      ( case     case      :prefix)
@@ -231,18 +232,13 @@
           (singleton (mapcar #'singleton (unreduce e ';)))
          `(,(singleton (binfix e ops))))
 
-          declare-then-binfix rhs ops &optional decls rest =
-            (cond {null rest && stringp (car rhs) $
-                     declare-then-binfix (cdr rhs) ops {car rhs :. decls} t}
-                  {consp (car rhs) && caar rhs == 'declare $
-                     declare-then-binfix (cdr rhs) ops {car rhs :. decls} t}
-                  {car rhs == 'declare $
-                     declare-then-binfix (cddr rhs) ops `((declare,(cadr rhs)),@decls) t}
-                  {t `(,@(nreverse decls) ,(if (cdr rhs) (binfix rhs ops) (car rhs)))})
-
      decl*-binfix+ rhs &optional (ops ops) decls =
        {decl* body =.. (decls rhs decls)
          `(,@decl* ,@(binfix+ body ops))}
+
+     doc*-decl*-binfix+ rhs &optional (ops ops) decls =
+       {doc*-decl* body =.. (doc-decls rhs decls)
+         `(,@doc*-decl* ,@(binfix+ body ops))}
 
      sbinds e &optional converted s current =
        {symbol-macrolet
@@ -301,8 +297,8 @@
                       {op :. funcall op-lisp rhs}
                       (binfix `(,@lhs,{op :. funcall op-lisp rhs}))}
                 {:lhs-lambda in op-prop $
-                   `(,op-lisp ,@(lambda-list lhs)
-                              ,@(declare-then-binfix rhs ops))}
+                   ll decls =.. (lambda-list lhs)
+                      `(,op-lisp ,ll ,@(decl*-binfix+ rhs ops decls))}
                 {:unreduce in op-prop && position op rhs $ ;;position necessary...
                     mapcar #'singleton (unreduce rhs op `(,(binfix lhs (cdr ops)),op-lisp))}
                 {zerop i $ cond {:also-unary  in op-prop $ `(,op-lisp ,(singleton (binfix rhs ops)))}
@@ -312,14 +308,14 @@
                                                                           (binfix rhs)))}
                                 {t $ error "BINFIX: missing l.h.s. of ~S (~S)~@
                                             with r.h.s:~%~S" op op-lisp rhs}}
-                {:def in op-prop $ `(,op-lisp ,(car e)
-                                     ,@(lambda-list (cdr lhs))
-                                     ,@(declare-then-binfix rhs ops))}
+                {:def in op-prop $ ll decls =.. (lambda-list (cdr lhs))
+                                    `(,op-lisp ,(car lhs) ,ll
+                                               ,@(doc*-decl*-binfix+ rhs ops decls))}
                 {:defm in op-prop $
                    `(,op-lisp ,(pop lhs) ,@(cond {consp (car lhs) && null (cdar lhs) $ pop lhs}
                                                  {keywordp (car lhs) $ list (pop lhs)})
-                      ,@(method-lambda-list lhs)
-                      ,@(declare-then-binfix rhs ops))}
+                              ,@{ll decls =.. (method-lambda-list lhs)
+                                  `(,ll ,@(doc*-decl*-binfix+ rhs ops decls))})}
                 {:left-assoc in op-prop && position op rhs $
                    let* j = (position op rhs)
                        lrhs = (subseq rhs 0 j)
@@ -327,9 +323,9 @@
                       (binfix`((,op-lisp ,(singleton (binfix  lhs (cdr ops)))
                                          ,(singleton (binfix lrhs (cdr ops)))) ,@rrhs) ops)}
                 {:lambda/expr in op-prop $
-                   destructuring-bind (llist &rest decls) (lambda-list lhs)
-                      `(,op-lisp ,llist ,(car rhs) ,@decls
-                                 ,@(declare-then-binfix (cdr rhs) ops))}
+                   llist decls =.. (lambda-list lhs)
+                     `(,op-lisp ,llist ,(car rhs)
+                                ,@(decl*-binfix+ (cdr rhs) ops decls))}
                 {:split in op-prop $
                    `(,(if (= i 1) (car e) (binfix lhs (cdr ops)))
                      ,{when rhs

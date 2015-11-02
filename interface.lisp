@@ -29,15 +29,14 @@
               :later   ? position 'coerce *binfix* :key #'car;
               :before  ? position (pop prop) *binfix* :key #'car;
               :after   ? position (pop prop) *binfix* :key #'car + 1;
-              :replace ? {let i = (position op *binfix* :key #'car)
-                           if i {prop =. cddr (elt *binfix* i) & i}
-                                (error "DEFBINFIX: undefined ~S" op)}}
-    progn
-     (every {p -> etypecase p (property p)} prop)
-     (rmbinfix op)
-     {*binfix* =. append (subseq *binfix* 0 i)
-                        `((,op ,lisp-op ,@prop))
-                         (subseq *binfix* i)}
+              :replace ? let i = (position op *binfix* :key #'car)
+                          if i {prop =. cddr (elt *binfix* i) & i}
+                               (error "DEFBINFIX: undefined ~S" op)};
+     every {p -> etypecase p (property p)} prop;
+     rmbinfix op;
+     *binfix* =. append (subseq *binfix* 0 i)
+                       `((,op ,lisp-op ,@prop))
+                        (subseq *binfix* i);
      t &
 
  lsbinfix s :stream = *standard-output* :=

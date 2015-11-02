@@ -12,10 +12,10 @@ S-expressions of Common LISP ranging from simple arithmetic and logical
 forms to whole programs.
 
 It is in experimental phase with a few important new features still to come.
-One of them, available from v0.16, is use of a single `;` symbol as
-[expression terminator](#SETF expr-termination),
-[end of LET binds symbol](#LET ; examples) as well as a simple notation for 
-parenless [implicit-progn](#LET ; progn example).
+One of them, available from v0.16, is use of a single `;` symbol as a
+form-separating symbol in [implicit-progn](#LET ; progn example), 
+[expression terminator](#SETF expr-termination) for SETFs, or as
+[end of LET binds symbol](#LET ; examples).
 
 Once the rest of them have been implemented, BINFIX will go to RC and then a
 reference 1.0 version.
@@ -37,7 +37,7 @@ reference 1.0 version.
         * [Type annotations and declarations](#type annotations)
     * [LETs](#LETs)
     * [SETs](#SETs)
-    * [Implicit/Explicit `progn`](#Implicit/Explicit progn)
+    * [Implicit `progn`](#Implicit progn)
     * [`$`plitter](#`$`plitter)
     * [Multiple-choice forms](#Multiple-choice forms)
     * [Destructuring, multiple values](#Destructuring, multiple values)
@@ -454,18 +454,31 @@ It is also possible to mix infix SETFs with other expressions:
               c d)
         (h a c)))
 
-<a name="Implicit/Explicit progn"></a>
-### Implicit/Explicit `progn`
+<a name="Implicit progn"></a>
+### Implicit `progn`
 
-BINFIX LETs have an implicit progn (see [LET example above](#LET ; progn example).)
+An implicit `progn` in BINFIX is achieved with a single `;` separating the
+forms forming the progn.  In all cases (`->`, `:=`, `:-` and LETs) the syntax
+is following that of the [LET example above](#LET ; progn example).
 
-Lambda's written in BINFIX have no implicit progn.  This in
-particular means that if a prog is needed in the body of lambda or LET, it
-should be explicitely given:
+As expected, other `prog`s have to be explicitly given,
 
-    {x -> prog2 (format t "Calculating... ")
-                {f $ x * x}
-                (format t "done.~%")}
+    '{x -> prog2 (format t "Calculating... ")
+                 {f $ x * x}
+                 (format t "done.~%")}
+
+or as in
+
+    '{x -> prog2
+             format t "Calculating... ";
+             f {x * x};
+             format t "done.~%"}
+
+both producing the following form
+
+    (lambda (x)
+      (prog2 (format t "Calculating... ") (f (* x x)) (format t "done.~%")))
+
 
 <a name="`$`plitter"></a>
 ### `$`plitter

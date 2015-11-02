@@ -13,10 +13,10 @@ S-expressions of Common LISP ranging from simple arithmetic and logical
 forms to whole programs.</p>
 
 <p>It is in experimental phase with a few important new features still to come.
-One of them, available from v0.16, is use of a single <code>;</code> symbol as
-<a href="#SETF expr-termination">expression terminator</a>,
-<a href="#LET ; examples">end of LET binds symbol</a> as well as a simple notation for 
-parenless <a href="#LET ; progn example">implicit-progn</a>.</p>
+One of them, available from v0.16, is use of a single <code>;</code> symbol as a
+form-separating symbol in <a href="#LET ; progn example">implicit-progn</a>, 
+<a href="#SETF expr-termination">expression terminator</a> for SETFs, or as
+<a href="#LET ; examples">end of LET binds symbol</a>.</p>
 
 <p>Once the rest of them have been implemented, BINFIX will go to RC and then a
 reference 1.0 version.</p>
@@ -43,7 +43,7 @@ reference 1.0 version.</p>
 </ul></li>
 <li><a href="#LETs">LETs</a></li>
 <li><a href="#SETs">SETs</a></li>
-<li><a href="#Implicit/Explicit progn">Implicit/Explicit <code>progn</code></a></li>
+<li><a href="#Implicit progn">Implicit <code>progn</code></a></li>
 <li><a href="#<code>$</code>plitter"><code>$</code>plitter</a></li>
 <li><a href="#Multiple-choice forms">Multiple-choice forms</a></li>
 <li><a href="#Destructuring, multiple values">Destructuring, multiple values</a></li>
@@ -532,19 +532,33 @@ symbol,</p>
     (h a c)))
 </code></pre>
 
-<p><a name="Implicit/Explicit progn"></a></p>
+<p><a name="Implicit progn"></a></p>
 
-<h3>Implicit/Explicit <code>progn</code></h3>
+<h3>Implicit <code>progn</code></h3>
 
-<p>BINFIX LETs have an implicit progn (see <a href="#LET ; progn example">LET example above</a>.)</p>
+<p>An implicit <code>progn</code> in BINFIX is achieved with a single <code>;</code> separating the
+forms forming the progn.  In all cases (<code>-&gt;</code>, <code>:=</code>, <code>:-</code> and LETs) the syntax
+is following that of the <a href="#LET ; progn example">LET example above</a>.</p>
 
-<p>Lambda's written in BINFIX have no implicit progn.  This in
-particular means that if a prog is needed in the body of lambda or LET, it
-should be explicitely given:</p>
+<p>As expected, other <code>prog</code>s have to be explicitly given,</p>
 
-<pre><code>{x -&gt; prog2 (format t "Calculating... ")
-            {f $ x * x}
-            (format t "done.~%")}
+<pre><code>'{x -&gt; prog2 (format t "Calculating... ")
+             {f $ x * x}
+             (format t "done.~%")}
+</code></pre>
+
+<p>or as in</p>
+
+<pre><code>'{x -&gt; prog2
+         format t "Calculating... ";
+         f {x * x};
+         format t "done.~%"}
+</code></pre>
+
+<p>both producing the following form</p>
+
+<pre><code>(lambda (x)
+  (prog2 (format t "Calculating... ") (f (* x x)) (format t "done.~%")))
 </code></pre>
 
 <p><a name="<code>$</code>plitter"></a></p>
