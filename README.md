@@ -13,9 +13,9 @@ forms to whole programs.
 
 It is in experimental phase with a few important new features still to come.
 One of them, available from v0.16, is use of a single `;` symbol as a
-form-separating symbol in [implicit-progn](#LET ; progn example), 
-[expression terminator](#SETF expr-termination) for SETFs, or as
-[end of LET binds symbol](#LET ; examples).
+form-separating symbol in [implicit-progn](#LET ; progn example), [expression
+terminator](#SETF expr-termination) for SETFs, or as end of [LET binds
+symbol](#LET ; examples) or [local functions definition](#Local functions).
 
 Once the rest of them have been implemented, BINFIX will go to RC and then a
 reference 1.0 version.
@@ -255,13 +255,28 @@ As you may by now expect, the following is also permited
 
 Version of `fac` with a local recursive function `f`:
 
-    '{fac n :integer :=
-       labels
-         f n m := {if {n = 0} m
-                      {f (1- n) {n * m}}}
-        (f n 1)}
+    {fac n :integer :=
+      labels
+        f n m := {if {n = 0} m
+                     {f (1- n) {n * m}}}
+       f n 1}
 
-=>
+Another syntax to specify a local function is to use a single `;` as in
+
+    {fac n :integer :=
+      labels
+        f n m := if {n = 0} m
+                    {f (1- n) {n * m}};
+       f n 1}
+
+There is also yet another way to write the definition of `fac`, as
+
+    {fac n :integer :=
+      labels
+        f n m := {if n = 0; m; f (1- n) {n * m}}
+       f n 1}
+
+All three above definitions of `fac` are transformed by `binfix` to
 
     (defun fac (n)
       (declare (type integer n))
@@ -270,17 +285,21 @@ Version of `fac` with a local recursive function `f`:
                      m
                      (f (1- n) (* n m)))))
 
-The same syntax is used in the case of `flet` and `macrolet`.
+which can be demonstrated by simply evaluating the quoted expressions.
+
+The same syntax is used also in the case of `flet` and `macrolet`.
 
 <a name="defmethod"></a>
 #### `defmethod`
 
-Generic versions of `f`
+The following generic versions of `f`
 
     '{f n :integer :- if {n <= 0} 1 {n * f {1- n}}}
     '{f (n integer):- if {n <= 0} 1 {n * f {1- n}}}
+    '{f n :integer :- {if n <= 0; 1;
+                          n * f(1- n)}}
 
-both produce
+all produce
 
     (defmethod f ((n integer))
       (if (<= n 0)
@@ -816,6 +835,9 @@ list.
 `:rhs-lbinds` -- OP has let-binds at the beginning of its LHS,<br>
 [*symbol* [*keyword*] **`=`** *expr*]\* *declaration*\*
 
+`:rhs-fbinds` -- OP has flet-binds at the beginning of its LHS, including
+optional declarations.
+
 `:rhs-sbinds` -- OP has symbol-binds as its RHS. They are let-binds without
 annotations or declarations,
 [*symbol* **`=`** *expr*<sup>+</sup>]<sup>+</sup>
@@ -828,13 +850,14 @@ i.e replaced with a single call with multiple arguments.
 
 `:left-assoc` -- OP is left--associative (OPs are right-associative by default.)
 
-`:prefix` -- OP is prefix with RHS being its arguments.
+`:prefix` -- OP is prefix with RHS being its arguments, given as one or more
+atoms/S-expr or a single `;` separated B-expr.
 
-`:also-prefix` -- OP can be used as prefix OP when LHS is missing.
+`:also-prefix` -- OP can be used as prefix when LHS is missing.
 
 `:also-unary` -- OP can be used as unary when LHS is missing.
 
-`:also-postfix` -- OP can be used as postfix OP when RHS is missing.
+`:also-postfix` -- OP can be used as postfix when RHS is missing.
 
 `:lambda/expr` -- OP takes lambda-list at LHS and an expression at RHS, followed by body.
 
@@ -861,92 +884,93 @@ to the strongest-binding OP:
     &                progn           :unreduce       
     let              let             :rhs-lbinds     
     let*             let*            :rhs-lbinds     
-    flet             #<FUNCTION binfix::=flet>       
-    labels           #<FUNCTION binfix::=flet>       
-    macrolet         #<FUNCTION binfix::=flet>       
+    flet             flet            :rhs-fbinds     
+    labels           labels          :rhs-fbinds     
+    macrolet         macrolet        :rhs-fbinds     
     symbol-macrolet  symbol-macrolet :rhs-lbinds     
     :==              defmacro        :def            
     :=               defun           :def            
     :-               defmethod       :defm           
-    block            block           :prefix         
-    tagbody          tagbody         :prefix         
-    catch            catch           :prefix         
-    progn            progn           :prefix         
-    cond             cond            :prefix         
-    case             case            :prefix         
-    ccase            ccase           :prefix         
-    ecase            ecase           :prefix         
-    typecase         typecase        :prefix         
-    etypecase        etypecase       :prefix         
-    ctypecase        ctypecase       :prefix         
-    if               if              :prefix         
-    loop             #<FUNCTION identity>            
-    ?                binfix::interleave              :unreduce       
-    $                nil             :split          
-    .=               setf            
-    +=               incf            
-    -=               decf            
-    =.               setq            
-    .=.              set             
-    setq             setq            :rhs-sbinds     
-    set              set             :rhs-sbinds     
-    psetq            psetq           :rhs-sbinds     
-    setf             setf            :rhs-ebinds     
-    psetf            psetf           :rhs-ebinds     
-    mapc             mapc            
-    @.               mapcar          :rhs-args       
-    @n               mapcan          :rhs-args       
-    @..              maplist         :rhs-args       
-    @.n              mapcon          :rhs-args       
-    :->              function        :lhs-lambda     
-    ->               lambda          :lhs-lambda     
-    @@               apply           :rhs-args       
-    @                funcall         :rhs-args       :left-assoc     :also-postfix   
-    .x.              values          :unreduce       :also-prefix    
-    =..              multiple-value-bind             :syms=decl    
-    ..=              destructuring-bind              :lambda/expr    
-    :|.|             cons            
-    ||               or              :unreduce       
-    or               or              :unreduce       :also-prefix    
-    &&               and             :unreduce       
-    and              and             :unreduce       :also-prefix    
-    <                <               :unreduce       :also-prefix    
-    >                >               :unreduce       :also-prefix    
-    <=               <=              :unreduce       :also-prefix    
-    >=               >=              :unreduce       :also-prefix    
-    ===              equalp          
-    equalp           equalp          
-    equal            equal           
-    ==               eql             :also-prefix    
-    eql              eql             :also-prefix    
-    =s=              string=         
-    =c=              char=           :unreduce       
-    =                =               :unreduce       :also-prefix    
-    /=               /=              :unreduce       :also-prefix    
-    eq               eq              
-    subtypep         subtypep        
-    in               member          
-    coerce           coerce          
-    cons             cons            :also-prefix    
-    elt              elt             
-    svref            svref           
-    !!               aref            
-    logior           logior          :unreduce       
-    logand           logand          :unreduce       
-    <<               ash             
-    mod              mod             
-    min              min             :also-prefix    :unreduce       
-    max              max             :also-prefix    :unreduce       
-    +                +               :also-prefix    :unreduce       
-    -                -               :also-unary     :unreduce       
-    floor            floor           
-    ceiling          ceiling         
-    truncate         truncate        
-    /                /               :also-unary     
-    *                *               :also-prefix    :unreduce       
-    **               expt            
-    !                aref            :rhs-args       
-    ------------------------------------------------------------
+    block            block           :prefix
+    tagbody          tagbody         :prefix
+    catch            catch           :prefix
+    prog2            prog2           :prefix
+    progn            progn           :prefix
+    cond             cond            :prefix
+    case             case            :prefix
+    ccase            ccase           :prefix
+    ecase            ecase           :prefix
+    typecase         typecase        :prefix
+    etypecase        etypecase       :prefix
+    ctypecase        ctypecase       :prefix
+    if               if              :prefix
+    loop             #<FUNCTION identity>
+    ?                nil             :split
+    $                nil             :split
+    .=               setf
+    +=               incf
+    -=               decf
+    =.               setq
+    .=.              set
+    setq             setq            :rhs-sbinds
+    set              set             :rhs-sbinds
+    psetq            psetq           :rhs-sbinds
+    setf             setf            :rhs-ebinds
+    psetf            psetf           :rhs-ebinds
+    mapc             mapc
+    @.               mapcar          :rhs-args
+    @n               mapcan          :rhs-args
+    @..              maplist         :rhs-args
+    @.n              mapcon          :rhs-args
+    :->              function        :lhs-lambda
+    ->               lambda          :lhs-lambda
+    @@               apply           :rhs-args
+    @                funcall         :rhs-args       :left-assoc     :also-postfix
+    .x.              values          :unreduce       :also-prefix
+    =..              multiple-value-bind             :syms=expr
+    ..=              destructuring-bind              :lambda/expr
+    :|.|             cons
+    ||               or              :unreduce
+    or               or              :unreduce       :also-prefix
+    &&               and             :unreduce
+    and              and             :unreduce       :also-prefix
+    <                <               :unreduce       :also-prefix
+    >                >               :unreduce       :also-prefix
+    <=               <=              :unreduce       :also-prefix
+    >=               >=              :unreduce       :also-prefix
+    ===              equalp
+    equalp           equalp
+    equal            equal
+    ==               eql             :also-prefix
+    eql              eql             :also-prefix
+    =s=              string=
+    =c=              char=           :unreduce
+    =                =               :unreduce       :also-prefix
+    /=               /=              :unreduce       :also-prefix
+    eq               eq
+    subtypep         subtypep
+    in               member
+    coerce           coerce
+    cons             cons            :also-prefix
+    elt              elt
+    svref            svref
+    !!               aref
+    logior           logior          :unreduce
+    logand           logand          :unreduce
+    <<               ash
+    mod              mod
+    min              min             :also-prefix    :unreduce
+    max              max             :also-prefix    :unreduce
+    +                +               :also-prefix    :unreduce
+    -                -               :also-unary     :unreduce
+    floor            floor
+    ceiling          ceiling
+    truncate         truncate
+    /                /               :also-unary
+    *                *               :also-prefix    :unreduce
+    **               expt
+    !                aref            :rhs-args
+------------------------------------------------------------
 
 => `nil`
 

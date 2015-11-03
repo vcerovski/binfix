@@ -125,18 +125,52 @@
                        binds s {car e :. current}
                        decls});
 
+ fbinds e &optional binds name llist body :=
+   symbol-macrolet
+     finish =
+       {decl* r =.. (decls (if name {name :. revappend llist (nreverse body)}
+                                            {revappend llist (nreverse body)}))
+         {`(,(nreverse binds) ,@decl*) .x. r}}
+   {labels
+     bind n ll d b =
+       {ll ldecl* =.. (lambda-list (nreverse ll))
+         {decl* body =.. (decls (nreverse b) ldecl*)
+           {`(,n ,ll ,@decl* ,@d ,(singleton (binfix body))) :. binds}}}
+   (cond {null e
+            $ if body
+                {decl* r =.. (decls (nreverse body))
+                  {`(,(nreverse (bind name llist decl* `(,(pop r))))) .x. r}}
+                finish}
+         {car e == ':=
+            $ if body
+                {decl* r =.. (decls (nreverse body))
+                  (fbinds (cddr e)
+                          (bind name llist decl* `(,(pop r)))
+                          (pop r)
+                          (nreverse r)
+                         `(,(cadr e)))}
+                (fbinds (cddr e) binds name llist `(,(cadr e)))}
+         {car e == ';
+            $ if body
+                (fbinds (cdr e) (bind name llist () body))
+                finish}
+         {body  $ fbinds (cdr e) binds name llist {car e :. body}}
+         {llist $ fbinds (cdr e) binds name {car e :. llist} body}
+         {name  $ fbinds (cdr e) binds name `(,(car e))}
+         {t     $ fbinds (cdr e) binds (car e)})};
+
 
  *binfix* =.
-   `(( &               progn      :unreduce)
-     ( let             let        :rhs-lbinds);;------------LET constructs
-     ( let*            let*       :rhs-lbinds)
-     ( flet            ,#'=flet)
-     ( labels          ,#'=flet)
-     ( macrolet        ,#'=flet)
+   `(( &               progn           :unreduce)
+     ( let             let             :rhs-lbinds);;-------LET constructs
+     ( let*            let*            :rhs-lbinds)
+     ( flet            flet            :rhs-fbinds)
+     ( labels          labels          :rhs-fbinds)
+     ( macrolet        macrolet        :rhs-fbinds)
      ( symbol-macrolet symbol-macrolet :rhs-lbinds)
-     ( :==  defmacro   :def)
-     ( :=   defun      :def)
-     ( :-   defmethod  :defm)
+     ( :==             defmacro        :def)
+     ( :=              defun           :def)
+     ( :-              defmethod       :defm)
      ( block    block     :prefix);;------------------------PREFIX FORMS
      ( tagbody  tagbody   :prefix)
      ( catch    catch     :prefix)
@@ -292,6 +326,9 @@
                 {:rhs-ebinds in op-prop $
                    binds r =.. (e-binds rhs)
                      (singleton (binfix `(,@lhs (,op-lisp ,@binds) ,@r) ops))}
+                {:rhs-fbinds in op-prop $
+                   binds-decls* expr =.. (fbinds rhs)
+                     (singleton (binfix `(,@lhs (,op-lisp ,@binds-decls* ,@(binfix+ expr))) ops))}
                 {functionp op-lisp $
                    if (zerop i)
                       {op :. funcall op-lisp rhs}
