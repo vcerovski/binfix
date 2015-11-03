@@ -861,7 +861,7 @@ atoms/S-expr or a single `;` separated B-expr.
 
 `:lambda/expr` -- OP takes lambda-list at LHS and an expression at RHS, followed by body.
 
-`:syms=expr` -- OP takes a list of symbols as LHS (each with an optional
+`:syms/expr` -- OP takes a list of symbols as LHS (each with an optional
 [keyword-type](#type annotations) annotation), an expression as RHS followed
 by optional declarations and a BINFIX-expression.
 
@@ -927,7 +927,7 @@ to the strongest-binding OP:
     @@               apply           :rhs-args
     @                funcall         :rhs-args       :left-assoc     :also-postfix
     .x.              values          :unreduce       :also-prefix
-    =..              multiple-value-bind             :syms=expr
+    =..              multiple-value-bind             :syms/expr
     ..=              destructuring-bind              :lambda/expr
     :|.|             cons
     ||               or              :unreduce
@@ -970,7 +970,7 @@ to the strongest-binding OP:
     *                *               :also-prefix    :unreduce
     **               expt
     !                aref            :rhs-args
-------------------------------------------------------------
+    ------------------------------------------------------------
 
 => `nil`
 

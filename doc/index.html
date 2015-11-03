@@ -982,7 +982,7 @@ atoms/S-expr or a single <code>;</code> separated B-expr.</p>
 
 <p><code>:lambda/expr</code> -- OP takes lambda-list at LHS and an expression at RHS, followed by body.</p>
 
-<p><code>:syms=expr</code> -- OP takes a list of symbols as LHS (each with an optional
+<p><code>:syms/expr</code> -- OP takes a list of symbols as LHS (each with an optional
 <a href="#type annotations">keyword-type</a> annotation), an expression as RHS followed
 by optional declarations and a BINFIX-expression.</p>
 
@@ -1050,7 +1050,7 @@ mapc             mapc
 @@               apply           :rhs-args
 @                funcall         :rhs-args       :left-assoc     :also-postfix
 .x.              values          :unreduce       :also-prefix
-=..              multiple-value-bind             :syms=expr
+=..              multiple-value-bind             :syms/expr
 ..=              destructuring-bind              :lambda/expr
 :|.|             cons
 ||               or              :unreduce

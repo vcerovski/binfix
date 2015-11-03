@@ -12,8 +12,8 @@
    '(member :first :last :earlier :later :before :after :replace) &
 
  deftype property ()
-   '(member :lhs-lambda :def :defm :split :unreduce :allows-decl :lambda/expr
-            :rhs-lbinds :rhs-sbinds :rhs-ebinds
+   '(member :lhs-lambda :def :defm :split :unreduce  :syms/expr :lambda/expr
+            :rhs-lbinds :rhs-sbinds :rhs-ebinds :rhs-fbinds :prefix
             :also-prefix :also-unary :also-postfix :left-assoc :rhs-args) &
 
  rmbinfix op :symbol := *binfix* =. delete op *binfix* :key #'car &

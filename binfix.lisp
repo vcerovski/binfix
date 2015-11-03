@@ -192,7 +192,7 @@
      ( @@   apply      :rhs-args)
      ( @    funcall    :rhs-args :left-assoc :also-postfix)
      ( .x.  values     :unreduce :also-prefix)
-     ( =..  multiple-value-bind  :syms=expr);;--------------DESTRUCTURING
+     ( =..  multiple-value-bind  :syms/expr);;--------------DESTRUCTURING
      ( ..=  destructuring-bind   :lambda/expr)
      ( :.   cons);;-----------------------------------------CONSING
      ( ||       or     :unreduce);;-------------------------LOGICAL OPS
@@ -301,7 +301,7 @@
                 {:rhs-lbinds in op-prop $
                    binds-decls* expr =.. (lbinds rhs)
                      (singleton (binfix `(,@lhs (,op-lisp ,@binds-decls* ,@(binfix+ expr))) ops))}
-                {:syms=expr  in op-prop $
+                {:syms/expr  in op-prop $
                    vars decls =.. (vbinds lhs)
                       `(,op-lisp ,vars ,(car rhs)
                                  ,@{decls && `((declare ,@decls))}
