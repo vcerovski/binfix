@@ -60,21 +60,6 @@
              {listp s $ method-lambda-list l {s :. args}}
              {t $ error "BINFIX method-lambda-list expects symbol or list, not ~S" s});
 
- =flet e &optional binds name lambdal decl :=
-   cond {null e      $ `(,(reverse binds),@(car decl),@{name :. reverse lambdal})}
-        {null name   $ =flet (cdr e) binds (car e) lambdal ()}
-        {car e ==':= $ =flet (cdr e) binds name lambdal '(())}
-        {decl && listp (car e) && caar e == 'declare
-                     $ =flet (cdr e) binds name lambdal `((,(car e),@(car decl)))}
-        {car e == 'declare
-                     $ =flet (cddr e) binds name lambdal `(((declare,(cadr e)),@(car decl)))}
-        {decl        $ =flet (cdr e) `((,name
-                                         ,@(lambda-list (reverse lambdal))
-                                          ,@(car decl)
-                                           ,(car e))
-                                       ,@binds) () () ()}
-        {t           $ =flet (cdr e) binds name {car e :. lambdal} ()};
-
  decls e &optional decls doc :=
   let s = (car e)
     (cond {               s == 'declare $ decls (cddr e) {cadr e :. decls} doc}
