@@ -39,7 +39,7 @@ reference 1.0 version.</p>
 <li><a href="#Local functions">Local functions</a></li>
 <li><a href="#defmethod">defmethod</a></li>
 <li><a href="#defmacro">defmacro</a></li>
-<li><a href="#type annotations">Type annotations and declarations</a></li>
+<li><a href="#types">Type annotations, declarations and definitions</a></li>
 </ul></li>
 <li><a href="#LETs">LETs</a></li>
 <li><a href="#SETs">SETs</a></li>
@@ -377,9 +377,9 @@ that can be either a keyword or an atom surrounded by parens (i.e <code>:around<
 <p>Macros are defined via <code>:==</code> operation, similar to the previous examples.
 See Sec. <a href="#Support for macros">Support for macros</a>.</p>
 
-<p><a name="type annotations"></a></p>
+<p><a name="types"></a></p>
 
-<h4>Type annotations and declarations</h4>
+<h4>Type annotations, declarations and definitions</h4>
 
 <p>The examples shown so far demonstrate the possibility to type-annotate
 symbols in binds and lambda-lists by an (optional) keyword representing
@@ -425,12 +425,22 @@ SBCL 1.1.17 function <code>sin</code> has declared type that can be written as</
   &amp;optional))
 </code></pre>
 
+<p>Type definitions are given using <code>:type=</code> OP, as in</p>
+
+<pre><code>`{mod n :type= `(integer 0 (,n))}
+</code></pre>
+
+<p>=></p>
+
+<pre><code>(deftype mod (n) `(integer 0 (,n)))
+</code></pre>
+
 <p><a name="LETs"></a></p>
 
 <h3>LETs</h3>
 
-<p>LET-binding forms (<code>let</code>, <code>let*</code> and <code>symbol-macrolet</code>) in BINFIX use <code>=</code>  with
-an optional type-annotation:</p>
+<p>LET symbol-binding forms (<code>let</code>, <code>let*</code> and <code>symbol-macrolet</code>) in BINFIX use
+<code>=</code>  with an optional type-annotation:</p>
 
 <pre><code>'{let x :bit = 1
       y = {2 ** 3}
@@ -478,19 +488,6 @@ as in</p>
   (declare (type bit x))
   (print "Let binds")
   (+ x (* y z)))
-</code></pre>
-
-<p><code>flet</code>/<code>labels</code> forms require name and lambda-list before <code>:=</code> symbol:</p>
-
-<pre><code>'{flet f x := {sqrt x * sin x}
-    (f 0.5)}
-</code></pre>
-
-<p>=></p>
-
-<pre><code>(flet ((f (x)
-         (* (sqrt x) (sin x))))
-  (f 0.5))
 </code></pre>
 
 <p><a name="SETs"></a></p>
@@ -568,7 +565,7 @@ is following that of the <a href="#LET ; progn example">LET example above</a>.</
              (format t "done.~%")}
 </code></pre>
 
-<p>or as in</p>
+<p>or</p>
 
 <pre><code>'{x -&gt; prog2
          format t "Calculating... ";
@@ -580,6 +577,11 @@ is following that of the <a href="#LET ; progn example">LET example above</a>.</
 
 <pre><code>(lambda (x)
   (prog2 (format t "Calculating... ") (f (* x x)) (format t "done.~%")))
+</code></pre>
+
+<p>Since BINFIX is a free-form notation, the following one-liner also works:</p>
+
+<pre><code>'{x -&gt; prog2 format t "Calculating... "; f{x * x}; format t "done.~%"}
 </code></pre>
 
 <p><a name="<code>$</code>plitter"></a></p>
@@ -642,7 +644,7 @@ example, as well as described in the next section.</p>
 <p>Multiple values (<code>values</code>) are represented by <code>.x.</code>, 
 <code>multiple-value-bind</code> by <code>=..</code> , and <code>destructuring-bind</code> by <code>..=</code></p>
 
-<pre><code>'{a (b) c ..= (f x) {a + 1 .x. b + 2 .x. c + 3}}
+<pre><code>'{a (b) c ..= (f x) a + 1 .x. b + 2 .x. c + 3}
 </code></pre>
 
 <p>=></p>
@@ -650,12 +652,20 @@ example, as well as described in the next section.</p>
 <pre><code>(destructuring-bind (a (b) c) (f x) (values (+ a 1) (+ b 2) (+ c 3)))
 </code></pre>
 
-<p>Another example:</p>
+<p><code>multiple-value-call</code> is represented by <code>.@.</code></p>
 
-<pre><code>{{.x. 5 1 5 1} == {a b =.. (truncate 11 2) {.x. a b a b}}}
+<pre><code>'{#'list .@. 1 '(b 2) 3}
 </code></pre>
 
-<p>=> <code>t</code></p>
+<p>=></p>
+
+<pre><code>(multiple-value-call #'list 1 '(b 2) 3)
+</code></pre>
+
+<p>=></p>
+
+<pre><code>(1 (b 2) 3)
+</code></pre>
 
 <p><a name="Support for macros"></a></p>
 
@@ -685,7 +695,7 @@ straightforward manner:</p>
        b = (gensym)
      binfix `(let ,a :double-float = ,x
                   ,b :double-float = ,y
-                {{,a - ,b} / {,a + ,b}})}
+                {,a - ,b} / {,a + ,b})}
 </code></pre>
 
 <p>Now macro <code>m</code> works as expected:</p>
@@ -715,8 +725,8 @@ t
 <p>Converting an integer into ordinal string in English can be defined as</p>
 
 <pre><code>{ordinal i :integer :=
-   let* a = {i mod 10}
-        b = {i mod 100}
+   let* a = i mod 10
+        b = i mod 100
       suf = {cond
                a = b = 1 || a = 1 &amp;&amp; 21 &lt;= b &lt;= 91 ? "st";
                a = b = 2 || a = 2 &amp;&amp; 22 &lt;= b &lt;= 92 ? "nd";
@@ -728,8 +738,8 @@ t
 <p>It can be also written in a more "lispy" way without parens as</p>
 
 <pre><code>{ordinal1 i :integer :=
-   let* a = {i mod 10}
-        b = {i mod 100}
+   let* a = i mod 10
+        b = i mod 100
       suf = {cond
                = a b 1 or = a 1 and &lt;= b 21 91 ? "st";
                = a b 2 or = a 2 and &lt;= b 22 92 ? "nd";
@@ -785,9 +795,9 @@ an ignored value can be defined as</p>
 
 <pre><code>{values-bind v e &amp;rest r :==
   let*  _ = ()
-     vars = {a -&gt; if {a == '_} {car $ push (gensym) _} a @. v}
+     vars = a -&gt; {if a == '_; car (push (gensym) _); a} @. v;
     `(multiple-value-bind ,vars ,e
-        ,@(if _ `({declare $ ignore ,@_}))
+        ,@{_ &amp;&amp; `({declare $ ignore ,@_})}
         ,@r)}
 </code></pre>
 
@@ -816,7 +826,8 @@ following example of a procedural for-loop macro</p>
 
 <p>Now</p>
 
-<pre><code>(macroexpand-1 '(for (i 0 n) {a ! i .= 1+ i}))
+<pre><code>(macroexpand-1 '(for (i 0 n)
+                  {a ! i .= 1+ i}))
 </code></pre>
 
 <p>=></p>
@@ -948,8 +959,8 @@ Examples of succesful combinations of backquoting and BINFIX are given
 <p><code>:def</code> -- Operation (OP) is a definition requiring LHS to has a name and lambda
 list.</p>
 
-<p><code>:defm</code> -- OP is a definition requiring LHS to has a name, and method lambda
-list.</p>
+<p><code>:defm</code> -- OP is a definition requiring LHS to have a name followed by
+unparenthesized method lambda list.</p>
 
 <p><code>:lhs-lambda</code> -- OP has lambda list as its LHS.</p>
 
@@ -983,7 +994,7 @@ atoms/S-expr or a single <code>;</code> separated B-expr.</p>
 <p><code>:lambda/expr</code> -- OP takes lambda-list at LHS and an expression at RHS, followed by body.</p>
 
 <p><code>:syms/expr</code> -- OP takes a list of symbols as LHS (each with an optional
-<a href="#type annotations">keyword-type</a> annotation), an expression as RHS followed
+<a href="#types">keyword-type</a> annotation,) an expression as RHS followed
 by optional declarations and a BINFIX-expression.</p>
 
 <p><code>#'my-fun</code> -- function <code>my-fun</code> will be applied to the untransformed RHS.</p>
@@ -1014,86 +1025,89 @@ symbol-macrolet  symbol-macrolet :rhs-lbinds
 :==              defmacro        :def            
 :=               defun           :def            
 :-               defmethod       :defm           
-block            block           :prefix
-tagbody          tagbody         :prefix
-catch            catch           :prefix
-prog2            prog2           :prefix
-progn            progn           :prefix
-cond             cond            :prefix
-case             case            :prefix
-ccase            ccase           :prefix
-ecase            ecase           :prefix
-typecase         typecase        :prefix
-etypecase        etypecase       :prefix
-ctypecase        ctypecase       :prefix
-if               if              :prefix
-loop             #&lt;FUNCTION identity&gt;
-?                nil             :split
-$                nil             :split
-.=               setf
-+=               incf
--=               decf
-=.               setq
-.=.              set
-setq             setq            :rhs-sbinds
-set              set             :rhs-sbinds
-psetq            psetq           :rhs-sbinds
-setf             setf            :rhs-ebinds
-psetf            psetf           :rhs-ebinds
-mapc             mapc
-@.               mapcar          :rhs-args
-@n               mapcan          :rhs-args
-@..              maplist         :rhs-args
-@.n              mapcon          :rhs-args
-:-&gt;              function        :lhs-lambda
--&gt;               lambda          :lhs-lambda
-@@               apply           :rhs-args
-@                funcall         :rhs-args       :left-assoc     :also-postfix
-.x.              values          :unreduce       :also-prefix
-=..              multiple-value-bind             :syms/expr
-..=              destructuring-bind              :lambda/expr
-:|.|             cons
-||               or              :unreduce
-or               or              :unreduce       :also-prefix
-&amp;&amp;               and             :unreduce
-and              and             :unreduce       :also-prefix
-&lt;                &lt;               :unreduce       :also-prefix
-&gt;                &gt;               :unreduce       :also-prefix
-&lt;=               &lt;=              :unreduce       :also-prefix
-&gt;=               &gt;=              :unreduce       :also-prefix
-===              equalp
-equalp           equalp
-equal            equal
-==               eql             :also-prefix
-eql              eql             :also-prefix
-=s=              string=
-=c=              char=           :unreduce
-=                =               :unreduce       :also-prefix
-/=               /=              :unreduce       :also-prefix
-eq               eq
-subtypep         subtypep
-in               member
-coerce           coerce
-cons             cons            :also-prefix
-elt              elt
-svref            svref
-!!               aref
-logior           logior          :unreduce
-logand           logand          :unreduce
-&lt;&lt;               ash
-mod              mod
-min              min             :also-prefix    :unreduce
-max              max             :also-prefix    :unreduce
-+                +               :also-prefix    :unreduce
--                -               :also-unary     :unreduce
-floor            floor
-ceiling          ceiling
-truncate         truncate
-/                /               :also-unary
-*                *               :also-prefix    :unreduce
-**               expt
+block            block           :prefix         
+:type=           deftype         :def            
+tagbody          tagbody         :prefix         
+catch            catch           :prefix         
+prog2            prog2           :prefix         
+progn            progn           :prefix         
+cond             cond            :prefix         
+case             case            :prefix         
+ccase            ccase           :prefix         
+ecase            ecase           :prefix         
+typecase         typecase        :prefix         
+etypecase        etypecase       :prefix         
+ctypecase        ctypecase       :prefix         
+if               if              :prefix         
+loop             #&lt;FUNCTION identity&gt;            
+?                nil             :split          
+$                nil             :split          
+.=               setf            
++=               incf            
+-=               decf            
+=.               setq            
+.=.              set             
+setq             setq            :rhs-sbinds     
+set              set             :rhs-sbinds     
+psetq            psetq           :rhs-sbinds     
+setf             setf            :rhs-ebinds     
+psetf            psetf           :rhs-ebinds     
+mapc             mapc            
+@.               mapcar          :rhs-args       
+@n               mapcan          :rhs-args       
+@..              maplist         :rhs-args       
+@.n              mapcon          :rhs-args       
+:-&gt;              function        :lhs-lambda     
+-&gt;               lambda          :lhs-lambda     
+@@               apply           :rhs-args       
+@                funcall         :rhs-args       :left-assoc     :also-postfix   
+.@.              multiple-value-call             :rhs-args       
+=..              multiple-value-bind             :syms/expr      
+..=              destructuring-bind              :lambda/expr    
+.x.              values          :unreduce       :also-prefix    
+:|.|             cons            
+||               or              :unreduce       
+or               or              :unreduce       :also-prefix    
+&amp;&amp;               and             :unreduce       
+and              and             :unreduce       :also-prefix    
+&lt;                &lt;               :unreduce       :also-prefix    
+&gt;                &gt;               :unreduce       :also-prefix    
+&lt;=               &lt;=              :unreduce       :also-prefix    
+&gt;=               &gt;=              :unreduce       :also-prefix    
+===              equalp          
+equalp           equalp          
+equal            equal           
+==               eql             
+eql              eql             :also-prefix    
+=s=              string=         
+=c=              char=           :unreduce       
+=                =               :unreduce       :also-prefix    
+/=               /=              :unreduce       :also-prefix    
+eq               eq              
+subtypep         subtypep        
+in               member          
+coerce           coerce          
+cons             cons            :also-prefix    
+elt              elt             
+svref            svref           
+!!               aref            
+logior           logior          :unreduce       
+logand           logand          :unreduce       
+&lt;&lt;               ash             
+mod              mod             
+min              min             :also-prefix    :unreduce       
+max              max             :also-prefix    :unreduce       
++                +               :also-prefix    :unreduce       
+-                -               :also-unary     :unreduce       
+floor            floor           
+ceiling          ceiling         
+truncate         truncate        
+/                /               :also-prefix    
+*                *               :also-prefix    :unreduce       
+**               expt            
+!                aref            :rhs-args       
+|;|              |;|             
+------------------------------------------------------------
 </code></pre>
-
-<h2>    !                aref            :rhs-args</h2>
 
 <p>=> <code>nil</code></p>

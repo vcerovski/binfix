@@ -34,7 +34,7 @@ reference 1.0 version.
         * [Local functions](#Local functions)
         * [defmethod](#defmethod)
         * [defmacro](#defmacro)
-        * [Type annotations and declarations](#type annotations)
+        * [Type annotations, declarations and definitions](#types)
     * [LETs](#LETs)
     * [SETs](#SETs)
     * [Implicit `progn`](#Implicit progn)
@@ -318,8 +318,8 @@ that can be either a keyword or an atom surrounded by parens (i.e `:around`,
 Macros are defined via `:==` operation, similar to the previous examples.
 See Sec. [Support for macros](#Support for macros).
 
-<a name="type annotations"></a>
-#### Type annotations and declarations
+<a name="types"></a>
+#### Type annotations, declarations and definitions
 
 The examples shown so far demonstrate the possibility to type-annotate
 symbols in binds and lambda-lists by an (optional) keyword representing
@@ -361,11 +361,19 @@ SBCL 1.1.17 function `sin` has declared type that can be written as
           (complex double-float))
       &optional))
 
+Type definitions are given using `:type=` OP, as in
+
+    `{mod n :type= `(integer 0 (,n))}
+
+=>
+
+    (deftype mod (n) `(integer 0 (,n)))
+
 <a name="LETs"></a>
 ### LETs
 
-LET-binding forms (`let`, `let*` and `symbol-macrolet`) in BINFIX use `=`  with
-an optional type-annotation:
+LET symbol-binding forms (`let`, `let*` and `symbol-macrolet`) in BINFIX use
+`=`  with an optional type-annotation:
 
     '{let x :bit = 1
           y = {2 ** 3}
@@ -408,19 +416,6 @@ as in
       (declare (type bit x))
       (print "Let binds")
       (+ x (* y z)))
-
-
-
-`flet`/`labels` forms require name and lambda-list before `:=` symbol:
-
-    '{flet f x := {sqrt x * sin x}
-        (f 0.5)}
-
-=>
-
-    (flet ((f (x)
-             (* (sqrt x) (sin x))))
-      (f 0.5))
 
 <a name="SETs"></a>
 ### SETs
@@ -486,7 +481,7 @@ As expected, other `prog`s have to be explicitly given,
                  {f $ x * x}
                  (format t "done.~%")}
 
-or as in
+or
 
     '{x -> prog2
              format t "Calculating... ";
@@ -498,6 +493,9 @@ both producing the following form
     (lambda (x)
       (prog2 (format t "Calculating... ") (f (* x x)) (format t "done.~%")))
 
+Since BINFIX is a free-form notation, the following one-liner also works:
+
+    '{x -> prog2 format t "Calculating... "; f{x * x}; format t "done.~%"}
 
 <a name="`$`plitter"></a>
 ### `$`plitter
@@ -552,17 +550,23 @@ See also [`ordinal` example below](#ordinal).
 Multiple values (`values`) are represented by `.x.`, 
 `multiple-value-bind` by `=..` , and `destructuring-bind` by `..=`
 
-    '{a (b) c ..= (f x) {a + 1 .x. b + 2 .x. c + 3}}
+    '{a (b) c ..= (f x) a + 1 .x. b + 2 .x. c + 3}
 
 =>
 
     (destructuring-bind (a (b) c) (f x) (values (+ a 1) (+ b 2) (+ c 3)))
 
-Another example:
+`multiple-value-call` is represented by `.@.`
 
-    {{.x. 5 1 5 1} == {a b =.. (truncate 11 2) {.x. a b a b}}}
+    '{#'list .@. 1 '(b 2) 3}
 
-=> `t`
+=>
+
+    (multiple-value-call #'list 1 '(b 2) 3)
+
+=>
+
+    (1 (b 2) 3)
 
 <a name="Support for macros"></a>
 ### Support for macros
@@ -589,7 +593,7 @@ straightforward manner:
            b = (gensym)
          binfix `(let ,a :double-float = ,x
                       ,b :double-float = ,y
-                    {{,a - ,b} / {,a + ,b}})}
+                    {,a - ,b} / {,a + ,b})}
 
 Now macro `m` works as expected:
 
@@ -614,8 +618,8 @@ See more in [implementation details](#binfix macros)
 Converting an integer into ordinal string in English can be defined as
 
     {ordinal i :integer :=
-       let* a = {i mod 10}
-            b = {i mod 100}
+       let* a = i mod 10
+            b = i mod 100
           suf = {cond
                    a = b = 1 || a = 1 && 21 <= b <= 91 ? "st";
                    a = b = 2 || a = 2 && 22 <= b <= 92 ? "nd";
@@ -626,8 +630,8 @@ Converting an integer into ordinal string in English can be defined as
 It can be also written in a more "lispy" way without parens as
 
     {ordinal1 i :integer :=
-       let* a = {i mod 10}
-            b = {i mod 100}
+       let* a = i mod 10
+            b = i mod 100
           suf = {cond
                    = a b 1 or = a 1 and <= b 21 91 ? "st";
                    = a b 2 or = a 2 and <= b 22 92 ? "nd";
@@ -677,9 +681,9 @@ an ignored value can be defined as
 
     {values-bind v e &rest r :==
       let*  _ = ()
-         vars = {a -> if {a == '_} {car $ push (gensym) _} a @. v}
+         vars = a -> {if a == '_; car (push (gensym) _); a} @. v;
         `(multiple-value-bind ,vars ,e
-            ,@(if _ `({declare $ ignore ,@_}))
+            ,@{_ && `({declare $ ignore ,@_})}
             ,@r)}
 
 So, for instance,
@@ -703,7 +707,8 @@ following example of a procedural for-loop macro
 
 Now
 
-    (macroexpand-1 '(for (i 0 n) {a ! i .= 1+ i}))
+    (macroexpand-1 '(for (i 0 n)
+                      {a ! i .= 1+ i}))
 
 =>
 
@@ -827,8 +832,8 @@ Examples of succesful combinations of backquoting and BINFIX are given
 `:def` -- Operation (OP) is a definition requiring LHS to has a name and lambda
 list.
 
-`:defm` -- OP is a definition requiring LHS to has a name, and method lambda
-list.
+`:defm` -- OP is a definition requiring LHS to have a name followed by
+unparenthesized method lambda list.
 
 `:lhs-lambda` -- OP has lambda list as its LHS.
 
@@ -862,7 +867,7 @@ atoms/S-expr or a single `;` separated B-expr.
 `:lambda/expr` -- OP takes lambda-list at LHS and an expression at RHS, followed by body.
 
 `:syms/expr` -- OP takes a list of symbols as LHS (each with an optional
-[keyword-type](#type annotations) annotation), an expression as RHS followed
+[keyword-type](#types) annotation,) an expression as RHS followed
 by optional declarations and a BINFIX-expression.
 
 `#'my-fun` -- function `my-fun` will be applied to the untransformed RHS.
@@ -891,85 +896,88 @@ to the strongest-binding OP:
     :==              defmacro        :def            
     :=               defun           :def            
     :-               defmethod       :defm           
-    block            block           :prefix
-    tagbody          tagbody         :prefix
-    catch            catch           :prefix
-    prog2            prog2           :prefix
-    progn            progn           :prefix
-    cond             cond            :prefix
-    case             case            :prefix
-    ccase            ccase           :prefix
-    ecase            ecase           :prefix
-    typecase         typecase        :prefix
-    etypecase        etypecase       :prefix
-    ctypecase        ctypecase       :prefix
-    if               if              :prefix
-    loop             #<FUNCTION identity>
-    ?                nil             :split
-    $                nil             :split
-    .=               setf
-    +=               incf
-    -=               decf
-    =.               setq
-    .=.              set
-    setq             setq            :rhs-sbinds
-    set              set             :rhs-sbinds
-    psetq            psetq           :rhs-sbinds
-    setf             setf            :rhs-ebinds
-    psetf            psetf           :rhs-ebinds
-    mapc             mapc
-    @.               mapcar          :rhs-args
-    @n               mapcan          :rhs-args
-    @..              maplist         :rhs-args
-    @.n              mapcon          :rhs-args
-    :->              function        :lhs-lambda
-    ->               lambda          :lhs-lambda
-    @@               apply           :rhs-args
-    @                funcall         :rhs-args       :left-assoc     :also-postfix
-    .x.              values          :unreduce       :also-prefix
-    =..              multiple-value-bind             :syms/expr
-    ..=              destructuring-bind              :lambda/expr
-    :|.|             cons
-    ||               or              :unreduce
-    or               or              :unreduce       :also-prefix
-    &&               and             :unreduce
-    and              and             :unreduce       :also-prefix
-    <                <               :unreduce       :also-prefix
-    >                >               :unreduce       :also-prefix
-    <=               <=              :unreduce       :also-prefix
-    >=               >=              :unreduce       :also-prefix
-    ===              equalp
-    equalp           equalp
-    equal            equal
-    ==               eql             :also-prefix
-    eql              eql             :also-prefix
-    =s=              string=
-    =c=              char=           :unreduce
-    =                =               :unreduce       :also-prefix
-    /=               /=              :unreduce       :also-prefix
-    eq               eq
-    subtypep         subtypep
-    in               member
-    coerce           coerce
-    cons             cons            :also-prefix
-    elt              elt
-    svref            svref
-    !!               aref
-    logior           logior          :unreduce
-    logand           logand          :unreduce
-    <<               ash
-    mod              mod
-    min              min             :also-prefix    :unreduce
-    max              max             :also-prefix    :unreduce
-    +                +               :also-prefix    :unreduce
-    -                -               :also-unary     :unreduce
-    floor            floor
-    ceiling          ceiling
-    truncate         truncate
-    /                /               :also-unary
-    *                *               :also-prefix    :unreduce
-    **               expt
-    !                aref            :rhs-args
+    block            block           :prefix         
+    :type=           deftype         :def            
+    tagbody          tagbody         :prefix         
+    catch            catch           :prefix         
+    prog2            prog2           :prefix         
+    progn            progn           :prefix         
+    cond             cond            :prefix         
+    case             case            :prefix         
+    ccase            ccase           :prefix         
+    ecase            ecase           :prefix         
+    typecase         typecase        :prefix         
+    etypecase        etypecase       :prefix         
+    ctypecase        ctypecase       :prefix         
+    if               if              :prefix         
+    loop             #<FUNCTION identity>            
+    ?                nil             :split          
+    $                nil             :split          
+    .=               setf            
+    +=               incf            
+    -=               decf            
+    =.               setq            
+    .=.              set             
+    setq             setq            :rhs-sbinds     
+    set              set             :rhs-sbinds     
+    psetq            psetq           :rhs-sbinds     
+    setf             setf            :rhs-ebinds     
+    psetf            psetf           :rhs-ebinds     
+    mapc             mapc            
+    @.               mapcar          :rhs-args       
+    @n               mapcan          :rhs-args       
+    @..              maplist         :rhs-args       
+    @.n              mapcon          :rhs-args       
+    :->              function        :lhs-lambda     
+    ->               lambda          :lhs-lambda     
+    @@               apply           :rhs-args       
+    @                funcall         :rhs-args       :left-assoc     :also-postfix   
+    .@.              multiple-value-call             :rhs-args       
+    =..              multiple-value-bind             :syms/expr      
+    ..=              destructuring-bind              :lambda/expr    
+    .x.              values          :unreduce       :also-prefix    
+    :|.|             cons            
+    ||               or              :unreduce       
+    or               or              :unreduce       :also-prefix    
+    &&               and             :unreduce       
+    and              and             :unreduce       :also-prefix    
+    <                <               :unreduce       :also-prefix    
+    >                >               :unreduce       :also-prefix    
+    <=               <=              :unreduce       :also-prefix    
+    >=               >=              :unreduce       :also-prefix    
+    ===              equalp          
+    equalp           equalp          
+    equal            equal           
+    ==               eql             
+    eql              eql             :also-prefix    
+    =s=              string=         
+    =c=              char=           :unreduce       
+    =                =               :unreduce       :also-prefix    
+    /=               /=              :unreduce       :also-prefix    
+    eq               eq              
+    subtypep         subtypep        
+    in               member          
+    coerce           coerce          
+    cons             cons            :also-prefix    
+    elt              elt             
+    svref            svref           
+    !!               aref            
+    logior           logior          :unreduce       
+    logand           logand          :unreduce       
+    <<               ash             
+    mod              mod             
+    min              min             :also-prefix    :unreduce       
+    max              max             :also-prefix    :unreduce       
+    +                +               :also-prefix    :unreduce       
+    -                -               :also-unary     :unreduce       
+    floor            floor           
+    ceiling          ceiling         
+    truncate         truncate        
+    /                /               :also-prefix    
+    *                *               :also-prefix    :unreduce       
+    **               expt            
+    !                aref            :rhs-args       
+    |;|              |;|             
     ------------------------------------------------------------
 
 => `nil`

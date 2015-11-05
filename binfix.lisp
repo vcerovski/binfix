@@ -157,6 +157,7 @@
      ( :=              defun           :def)
      ( :-              defmethod       :defm)
      ( block    block     :prefix);;------------------------PREFIX FORMS
+     ( :type=   deftype   :def)
      ( tagbody  tagbody   :prefix)
      ( catch    catch     :prefix)
      ( prog2    prog2     :prefix)
@@ -190,23 +191,24 @@
      ( :->  function   :lhs-lambda);;-----------------------LAMBDA/FUNCALL
      ( ->   lambda     :lhs-lambda)
      ( @@   apply      :rhs-args)
-     ( @    funcall    :rhs-args :left-assoc :also-postfix)
-     ( .x.  values     :unreduce :also-prefix)
+     ( .@.  multiple-value-call  :rhs-args)
+     (  @   funcall    :rhs-args :left-assoc :also-postfix)
      ( =..  multiple-value-bind  :syms/expr);;--------------DESTRUCTURING
      ( ..=  destructuring-bind   :lambda/expr)
+     ( .x.  values     :unreduce :also-prefix)
      ( :.   cons);;-----------------------------------------CONSING
      ( ||       or     :unreduce);;-------------------------LOGICAL OPS
      ( or       or     :unreduce :also-prefix)
      ( &&       and    :unreduce)
      ( and      and    :unreduce :also-prefix)
-     ( <        <      :unreduce :also-prefix);;------------COMPARISONS/PREDICATES
+     ( <        <      :unreduce :also-prefix);;------------COMPARISONS
      ( >        >      :unreduce :also-prefix)
      ( <=       <=     :unreduce :also-prefix)
      ( >=       >=     :unreduce :also-prefix)
      ( ===      equalp)
      ( equalp   equalp)
      ( equal    equal)
-     ( ==       eql    :also-prefix)          ;; :also-prefix depreciated.
+     ( ==       eql)
      ( eql      eql    :also-prefix)
      ( =s=      string=)
      ( =c=      char=  :unreduce)
@@ -214,11 +216,11 @@
      ( /=       /=     :unreduce :also-prefix)
      ( eq       eq)
      ( subtypep subtypep)
-     ( in       member);;-----------------------------------END OF COMPARISONS/PREDICATES
+     ( in       member);;-----------------------------------END OF COMPARISONS
      ;;================ :lower  binding user defined ops go here =================
      ;;================ :higher binding user defined ops go here =================
      ( coerce   coerce)
-     ( cons     cons    :also-prefix)
+     ( cons     cons    :also-prefix)  ;; DEPRECIATED
      ( elt      elt)
      ( svref    svref)
      ( !!       aref)
@@ -233,10 +235,11 @@
      ( floor    floor)
      ( ceiling  ceiling)
      ( truncate truncate)
-     (  /        /      :also-unary)
+     (  /        /      :also-prefix)
      (  *        *      :also-prefix :unreduce)
      ( **       expt)
-     (  !       aref    :rhs-args));
+     (  !       aref    :rhs-args)
+     (  ;        ;));
 
 
  binfix e &optional (ops *binfix*) :=
@@ -293,7 +296,8 @@
              op = (caar ops)
              op-lisp = (cadar ops)
              op-prop = (cddar ops)
-          (cond {null rhs $
+          (cond {op == '; $ error "BINFIX bare ; in:~% ~{ ~A~}" e}
+                {null rhs $
                    if {:also-postfix in op-prop}
                       `(,op-lisp,@(binfix lhs ops))
                        (error "BINFIX: missing r.h.s. of ~S (~S)~@
@@ -355,10 +359,13 @@
                             (if (cdr e) e (car e))})}
                 {:prefix in op-prop $ binfix `(,@lhs ,(binfix `(,op,@rhs) ops))}
                 (t `(,op-lisp
-                     ,(if (= i 1) (car e) (binfix lhs (cdr ops)))
+                     ,@(binfix+ lhs)
                      ,@(cond {null (cdr rhs) $ rhs}
-                             {:rhs-args in op-prop $ if {op in rhs} `(,(binfix rhs ops)) rhs}
-                             {t `(,(binfix rhs ops))}))))}}}
+                             {:rhs-args in op-prop $
+                                cond {op in rhs $ `(,(binfix rhs ops))}
+                                     {'; in rhs $ mapcar #'singleton (unreduce rhs ';)}
+                                     {t         $ rhs}}
+                             {t $ binfix+ rhs}))))}}}
 
 ;===== BINFIX defined =====
 #|

@@ -6,7 +6,8 @@
   (:export #:binfix  #:defbinfix #:rmbinfix #:lsbinfix
            #:-> #:== #:=== #:=c= #:=s= #:&  #:&&  #:||  #:in  #:!!
            #:.= #:=. #:.=. #:..= #:=.. #:+= #:-=  #:<<  #:!   #:?
-           #:$  #:** #:@   #:@@  #:@n  #:@. #:@.. #:@.n #:.x. #:|;|))
+           #:$  #:** #:@   #:@@  #:@n  #:@. #:@.. #:@.n #:.x. #:|;|
+           #:.@.))
 
 #+clisp (shadowing-import '! :binfix)
   #+ecl (shadowing-import '@ :binfix)
