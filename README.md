@@ -904,7 +904,7 @@ by optional declarations and a BINFIX-expression.
 
 prints the table of all BINFIX OPs and their properties from the weakest-
 to the strongest-binding OP:
-
+    
     BINFIX           LISP            Properties
     ============================================================
     &                progn           :unreduce       
@@ -952,11 +952,12 @@ to the strongest-binding OP:
     :->              function        :lhs-lambda     
     ->               lambda          :lhs-lambda     
     @@               apply           :rhs-args       
-    @                funcall         :rhs-args       :left-assoc     :also-postfix   
     .@.              multiple-value-call             :rhs-args       
+    @                funcall         :rhs-args       :left-assoc     :also-postfix   
     =..              multiple-value-bind             :syms/expr      
     ..=              destructuring-bind              :lambda/expr    
     .x.              values          :unreduce       :also-prefix    
+    values           values          :prefix         
     :|.|             cons            
     ||               or              :unreduce       
     or               or              :unreduce       :also-prefix    
@@ -984,12 +985,13 @@ to the strongest-binding OP:
     svref            svref           
     !!               aref            
     logior           logior          :unreduce       
+    logxor           logxor          :unreduce       
     logand           logand          :unreduce       
     <<               ash             
     mod              mod             
     min              min             :also-prefix    :unreduce       
     max              max             :also-prefix    :unreduce       
-    +                +               :also-prefix    :unreduce       
+    +                +               :also-unary     :unreduce       
     -                -               :also-unary     :unreduce       
     floor            floor           
     ceiling          ceiling         

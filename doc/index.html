@@ -1084,11 +1084,12 @@ mapc             mapc
 :-&gt;              function        :lhs-lambda     
 -&gt;               lambda          :lhs-lambda     
 @@               apply           :rhs-args       
-@                funcall         :rhs-args       :left-assoc     :also-postfix   
 .@.              multiple-value-call             :rhs-args       
+@                funcall         :rhs-args       :left-assoc     :also-postfix   
 =..              multiple-value-bind             :syms/expr      
 ..=              destructuring-bind              :lambda/expr    
 .x.              values          :unreduce       :also-prefix    
+values           values          :prefix         
 :|.|             cons            
 ||               or              :unreduce       
 or               or              :unreduce       :also-prefix    
@@ -1116,12 +1117,13 @@ elt              elt
 svref            svref           
 !!               aref            
 logior           logior          :unreduce       
+logxor           logxor          :unreduce       
 logand           logand          :unreduce       
 &lt;&lt;               ash             
 mod              mod             
 min              min             :also-prefix    :unreduce       
 max              max             :also-prefix    :unreduce       
-+                +               :also-prefix    :unreduce       
++                +               :also-unary     :unreduce       
 -                -               :also-unary     :unreduce       
 floor            floor           
 ceiling          ceiling         
