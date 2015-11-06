@@ -226,6 +226,22 @@ Factorial fun:
           1
           (* n (f (1- n)))))
 
+Function documentation, local declarations, local bindings 
+and comments have a straightforward syntax:
+
+    '{g x := "Auxilary fn."
+       declare (inline)
+       let x*x = x * x; ;; Note binds termination via ;
+         x*x / 1+ x*x}
+
+=>
+
+    (defun g (x)
+      "Auxilary fn."
+      (declare (inline))
+      (let ((x*x (* x x)))
+        (/ x*x (1+ x*x))))
+
 <a name="&optional"></a>
 #### `&optional` is optional
 
@@ -555,6 +571,11 @@ Multiple values (`values`) are represented by `.x.`,
 =>
 
     (destructuring-bind (a (b) c) (f x) (values (+ a 1) (+ b 2) (+ c 3)))
+
+Another way to write the same expr:
+
+    '{a (b) c ..= (f x)
+       {values a + 1; b + 2; c + 3}}
 
 `multiple-value-call` is represented by `.@.`
 

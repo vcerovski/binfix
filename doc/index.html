@@ -272,6 +272,24 @@ argument, </p>
       (* n (f (1- n)))))
 </code></pre>
 
+<p>Function documentation, local declarations, local bindings 
+and comments have a straightforward syntax:</p>
+
+<pre><code>'{g x := "Auxilary fn."
+   declare (inline)
+   let x*x = x * x; ;; Note binds termination via ;
+     x*x / 1+ x*x}
+</code></pre>
+
+<p>=></p>
+
+<pre><code>(defun g (x)
+  "Auxilary fn."
+  (declare (inline))
+  (let ((x*x (* x x)))
+    (/ x*x (1+ x*x))))
+</code></pre>
+
 <p><a name="&amp;optional"></a></p>
 
 <h4><code>&amp;optional</code> is optional</h4>
@@ -650,6 +668,12 @@ example, as well as described in the next section.</p>
 <p>=></p>
 
 <pre><code>(destructuring-bind (a (b) c) (f x) (values (+ a 1) (+ b 2) (+ c 3)))
+</code></pre>
+
+<p>Another way to write the same expr:</p>
+
+<pre><code>'{a (b) c ..= (f x)
+   {values a + 1; b + 2; c + 3}}
 </code></pre>
 
 <p><code>multiple-value-call</code> is represented by <code>.@.</code></p>

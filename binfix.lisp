@@ -196,7 +196,8 @@
      ( =..  multiple-value-bind  :syms/expr);;--------------DESTRUCTURING
      ( ..=  destructuring-bind   :lambda/expr)
      ( .x.  values     :unreduce :also-prefix)
-     ( :.   cons);;-----------------------------------------CONSING
+     (values values    :prefix)
+     ( :.   cons);;-----------------------------------------S-EXPR
      ( ||       or     :unreduce);;-------------------------LOGICAL OPS
      ( or       or     :unreduce :also-prefix)
      ( &&       and    :unreduce)
@@ -225,12 +226,13 @@
      ( svref    svref)
      ( !!       aref)
      ( logior   logior  :unreduce);;------------------------BIT ARITHMETICS
+     ( logxor   logxor  :unreduce)
      ( logand   logand  :unreduce)
      ( <<       ash)
      ( mod      mod);;--------------------------------------ARITHMETICS
      ( min      min     :also-prefix :unreduce)
      ( max      max     :also-prefix :unreduce)
-     (  +        +      :also-prefix :unreduce)
+     (  +        +      :also-unary  :unreduce)
      (  -        -      :also-unary  :unreduce)
      ( floor    floor)
      ( ceiling  ceiling)
@@ -359,13 +361,13 @@
                             (if (cdr e) e (car e))})}
                 {:prefix in op-prop $ binfix `(,@lhs ,(binfix `(,op,@rhs) ops))}
                 (t `(,op-lisp
-                     ,@(binfix+ lhs)
+                     ,(singleton (binfix lhs))
                      ,@(cond {null (cdr rhs) $ rhs}
                              {:rhs-args in op-prop $
                                 cond {op in rhs $ `(,(binfix rhs ops))}
                                      {'; in rhs $ mapcar #'singleton (unreduce rhs ';)}
                                      {t         $ rhs}}
-                             {t $ binfix+ rhs}))))}}}
+                             {t $ `(,(binfix rhs))}))))}}}
 
 ;===== BINFIX defined =====
 #|
