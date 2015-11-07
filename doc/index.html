@@ -73,8 +73,8 @@ reference 1.0 version.</p>
 
 <h2>Instalation</h2>
 
-<p><a href="https://www.quicklisp.org/">Quicklisp</a> makes the downloading/installation/loading
-trivial:</p>
+<p><a href="https://www.quicklisp.org/">Quicklisp</a> makes the
+downloading/installation/loading trivial:</p>
 
 <pre><code>(ql:quickload :binfix)
 </code></pre>
@@ -143,6 +143,11 @@ single white space.</p>
 </code></pre>
 
 <p>=> <code>(or (and (&lt; 0 x 1) (&gt;= y 1)) (&gt;= y 2))</code></p>
+
+<pre><code>'{- f x - g x - h x}
+</code></pre>
+
+<p>=> <code>(- (- (f x)) (g x) (h x))</code></p>
 
 <p>Expressions like <code>{(f x y) * (g a b)}</code> and <code>{{f x y} * {g a b}}</code> generally
 produce the same result. The inner brackets, however, can be removed:</p>

@@ -328,7 +328,12 @@
                    ll decls =.. (lambda-list lhs)
                       `(,op-lisp ,ll ,@(decl*-binfix+ rhs ops decls))}
                 {:unreduce in op-prop && position op rhs $ ;;position necessary...
-                    mapcar #'singleton (unreduce rhs op `(,(binfix lhs (cdr ops)),op-lisp))}
+                  let u = (mapcar #'singleton (unreduce rhs op `(,(binfix lhs (cdr ops)),op-lisp)))
+                    (cond {plusp i $ u}
+                          {:also-unary  in op-prop $ `(,op-lisp (,op-lisp ,(caddr u)) ,@(cdddr u))}
+                          {:also-prefix in op-prop $ `(,op-lisp (,op-lisp,@(caddr u)) ,@(cdddr u))}
+                          {t $ error "BINFIX: missing l.h.s. of ~S (~S)~@
+                                      with r.h.s:~%~S" op op-lisp rhs})}
                 {zerop i $ cond {:also-unary  in op-prop $ `(,op-lisp ,(singleton (binfix rhs ops)))}
                                 {:also-prefix in op-prop || :prefix in op-prop
                                                          $ `(,op-lisp ,@(if {'; in rhs}

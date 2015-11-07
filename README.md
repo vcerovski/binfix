@@ -57,8 +57,8 @@ reference 1.0 version.
 <a name="Instalation"></a>
 ## Instalation
 
-[Quicklisp](https://www.quicklisp.org/) makes the downloading/installation/loading
-trivial:
+[Quicklisp](https://www.quicklisp.org/) makes the
+downloading/installation/loading trivial:
 
     (ql:quickload :binfix)
 
@@ -117,6 +117,10 @@ Classic math stuff:
     '{0 < x < 1 && y >= 1 || y >= 2}
 
 => `(or (and (< 0 x 1) (>= y 1)) (>= y 2))`
+
+    '{- f x - g x - h x}
+
+=> `(- (- (f x)) (g x) (h x))`
 
 Expressions like `{(f x y) * (g a b)}` and `{{f x y} * {g a b}}` generally
 produce the same result. The inner brackets, however, can be removed:
