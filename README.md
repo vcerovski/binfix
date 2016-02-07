@@ -2,7 +2,7 @@
 
 # BINFIX
 
-Viktor Cerovski, Nov 2015.
+Viktor Cerovski, Feb 2016.
 
 <a name="Introduction"></a>
 ## Introduction
@@ -16,6 +16,8 @@ One of them, available from v0.16, is use of a single `;` symbol as a
 form-separating symbol in [implicit-progn](#LET ; progn example), [expression
 terminator](#SETF expr-termination) for SETFs, or as end of [LET binds
 symbol](#LET ; examples) or [local functions definition](#Local functions).
+
+The most recent is `def`, for [defining things](#def).
 
 Once the rest of them have been implemented, BINFIX will go to RC and then a
 reference 1.0 version.
@@ -34,6 +36,7 @@ reference 1.0 version.
         * [Local functions](#Local functions)
         * [defmethod](#defmethod)
         * [defmacro](#defmacro)
+        * [def](#def)
         * [Type annotations, declarations and definitions](#types)
     * [LETs](#LETs)
     * [SETs](#SETs)
@@ -73,7 +76,8 @@ and [Clozure CL](https://en.wikipedia.org/wiki/Clozure_CL),
 while with [ECL](https://en.wikipedia.org/wiki/Embeddable_Common_Lisp) BINFIX
 passes tests when hand-loaded but does not go through the package system yet.
 
-BINFIX shadows `!` in CLISP (`ext:!`) and `@` in Clozure CL and ECL.
+BINFIX shadows `!` in CLISP (`ext:!`), `@` in Clozure CL and ECL, as well as
+`var` (`sb-debug:var`) in SBCL.
 
 The latest version is available at [gihub](https://github.com/vcerovski/binfix),
 and can be obtained by
@@ -389,6 +393,62 @@ Type definitions are given using `:type=` OP, as in
 
     (deftype mod (n) `(integer 0 (,n)))
 
+<a name="def"></a>
+#### `def`
+
+Program typically consists of a number of definitions of functions,
+constants, parameters, types, etc. The operation `def` is introduced
+to facilitate their easy writing:
+
+    '{def parameter *x* = 1 *y* = 2
+      def struct point x y z
+      def f x := sqrt x * sin x}
+
+=>
+
+    (progn
+     nil
+     (defparameter *x* 1)
+     (defparameter *y* 2)
+     (defstruct point x y z)
+     (defun f (x) (* (sqrt x) (sin x))))
+
+As it is clear from the example, the definitions are wrapped up in `progn`.
+
+More detailed definitions are also straightforward to specify:
+
+    '{def parameter
+        *x* :fixnum = 1
+        *y* :fixnum = 2
+
+      struct point
+        "Point"
+        x :single-float = 0f0
+        y :single-float = 0f0
+        z :single-float = 0f0
+
+      def f x :single-float :=
+        declare(inline)
+        sqrt x * sin x}
+
+=>
+
+    (progn
+     nil
+     (declaim (type fixnum *x*)
+              (type fixnum *y*))
+     (defparameter *x* 1)
+     (defparameter *y* 2)
+     (defstruct point
+       "Point"
+       (x 0.0 :type single-float)
+       (y 0.0 :type single-float)
+       (z 0.0 :type single-float))
+     (defun f (x)
+       (declare (type single-float x)
+                (inline))
+       (* (sqrt x) (sin x))))
+
 <a name="LETs"></a>
 ### LETs
 
@@ -516,6 +576,15 @@ both producing the following form
 Since BINFIX is a free-form notation, the following one-liner also works:
 
     '{x -> prog2 format t "Calculating... "; f{x * x}; format t "done.~%"}
+
+Binfix `<&` stands for `prog1`,
+
+    '{x -> {f {x * x} <&
+            format t "Calculation done.~%"}}
+
+=>
+
+    (lambda (x) (prog1 (f (* x x)) (format t "Calculation done.~%")))
 
 <a name="`$`plitter"></a>
 ### `$`plitter
@@ -831,6 +900,8 @@ followed by `;` char, while two or more consequtive `;` are interpreted
 as starting a comment.  This behavior is limited to BINFIX
 expressions only, while outside of them the standard LISP rules apply.
 
+Since v0.19, proto-BINFIX introduces `unreduc` property.
+
 The rest is written using this syntax, and consists of handling of lambda lists
 and `let`s, a longer list of OPs with properties, redefined `binfix` to
 its full capability, and, finally, several interface functions for
@@ -901,6 +972,8 @@ by optional declarations and a BINFIX-expression.
 
 `:rhs-args` -- OP takes LHS as 1st and RHS as remaining arguments.
 
+`:macro` -- OP is a macro.
+
 <a name="List of all operations"></a>
 ### List of all operations
 
@@ -908,21 +981,25 @@ by optional declarations and a BINFIX-expression.
 
 prints the table of all BINFIX OPs and their properties from the weakest-
 to the strongest-binding OP:
-    
+
     BINFIX           LISP            Properties
     ============================================================
+    <&               prog1           
     &                progn           :unreduce       
+    def              binfix::defs    :macro          
     let              let             :rhs-lbinds     
     let*             let*            :rhs-lbinds     
+    symbol-macrolet  symbol-macrolet :rhs-lbinds     
+    prog*            prog*           :rhs-lbinds     
+    prog             prog            :rhs-lbinds     
+    macrolet         macrolet        :rhs-fbinds     
     flet             flet            :rhs-fbinds     
     labels           labels          :rhs-fbinds     
-    macrolet         macrolet        :rhs-fbinds     
-    symbol-macrolet  symbol-macrolet :rhs-lbinds     
     :==              defmacro        :def            
     :=               defun           :def            
     :-               defmethod       :defm           
-    block            block           :prefix         
     :type=           deftype         :def            
+    block            block           :prefix         
     tagbody          tagbody         :prefix         
     catch            catch           :prefix         
     prog2            prog2           :prefix         
@@ -935,7 +1012,7 @@ to the strongest-binding OP:
     etypecase        etypecase       :prefix         
     ctypecase        ctypecase       :prefix         
     if               if              :prefix         
-    loop             #<FUNCTION identity>            
+    loop             #<FUNCTION identity>            :prefix         
     ?                nil             :split          
     $                nil             :split          
     .=               setf            
@@ -988,9 +1065,9 @@ to the strongest-binding OP:
     elt              elt             
     svref            svref           
     !!               aref            
-    logior           logior          :unreduce       
-    logxor           logxor          :unreduce       
-    logand           logand          :unreduce       
+    binfix::+.       logior          :unreduce       
+    binfix::-.       logxor          :unreduce       
+    binfix::*.       logand          :unreduce       
     <<               ash             
     mod              mod             
     min              min             :also-prefix    :unreduce       
@@ -1000,7 +1077,7 @@ to the strongest-binding OP:
     floor            floor           
     ceiling          ceiling         
     truncate         truncate        
-    /                /               :also-prefix    
+    /                /               :also-unary     
     *                *               :also-prefix    :unreduce       
     **               expt            
     !                aref            :rhs-args       

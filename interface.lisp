@@ -14,7 +14,8 @@
  deftype property ()
    '(member :lhs-lambda :def :defm :split :unreduce  :syms/expr :lambda/expr
             :rhs-lbinds :rhs-sbinds :rhs-ebinds :rhs-fbinds :prefix
-            :also-prefix :also-unary :also-postfix :left-assoc :rhs-args) &
+            :also-prefix :also-unary :also-postfix :left-assoc :rhs-args
+            :macro) &
 
  rmbinfix op :symbol := *binfix* =. delete op *binfix* :key #'car &
 
@@ -29,7 +30,7 @@
               :later   ? position 'coerce *binfix* :key #'car;
               :before  ? position (pop prop) *binfix* :key #'car;
               :after   ? position (pop prop) *binfix* :key #'car + 1;
-              :replace ? let i = (position op *binfix* :key #'car)
+              :replace ? let i = position op *binfix* :key #'car;
                           if i {prop =. cddr (elt *binfix* i) & i}
                                (error "DEFBINFIX: undefined ~S" op)};
      every {p -> etypecase p (property p)} prop;

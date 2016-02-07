@@ -60,6 +60,99 @@
              {listp s $ method-lambda-list l {s :. args}}
              {t $ error "BINFIX method-lambda-list expects symbol or list, not ~S" s});
 
+ def-sym x &optional defs types :=
+   (cond {null x || car x == ';
+            $ defs .x. types .x. cdr x}
+         {cadr x == '=
+            $ if (stringp (cadddr x))
+                (def-sym (cddddr x) `((,(car x),(caddr x),(cadddr x)),@defs) types)
+                (def-sym (cdddr x)  `((,(car x),(caddr x))           ,@defs) types)}
+         {keywordp (cadr x) && caddr x == '=
+            $ if (stringp (fifth x))
+                (def-sym (nthcdr 5 x)
+                        `((,(car x),(fourth x),(fifth x)),@defs)
+                        `((type,(keyword-type-spec (cadr x)),(car x)),@types))
+                (def-sym (nthcdr 4 x)
+                        `((,(car x),(fourth x)),@defs)
+                        `((type,(keyword-type-spec (cadr x)),(car x)),@types))}
+         {t $ defs .x. types .x. x});
+
+ struct x &optional defs types name opts slots doc :=
+   (cond {null x || car x == '; 
+            $ `(defstruct ,(if opts `(,name,@(nreverse opts)) name)
+                                  ,@{doc && `(,doc)} ,@(nreverse slots)) :. defs
+               .x. types .x. cdr x}
+         {null name
+            $ struct (cdr x) defs types (car x)}
+         {stringp (car x)
+            $ if doc
+                (error "BINFIX def struct ~A has two doc-strings,~%~S~%and~%~S" name doc (car x))
+                (struct (cdr x) defs types name opts slots (car x))}
+         {keywordp (car x)
+            $ if {car x == :named}
+                (struct (cdr x) defs types name
+                        {car x :. opts} slots doc)
+                (struct (cddr x) defs types name
+                        {`(,(car x),(cadr x)) :. opts} slots doc)}
+         {cadr x == '=
+            $ if {fourth x in '(:type :read-only)}
+                (struct (nthcdr 5 x) defs types name opts
+                        {`(,(car x),(caddr x),(fourth x),(fifth x)) :. slots} doc)
+                (struct (nthcdr 3 x) defs types name opts
+                        {`(,(car x),(caddr x)) :. slots} doc)}
+         {keywordp (cadr x) && caddr x == '=
+            $ if {fifth x == :read-only}
+                (struct (nthcdr 6 x) defs types name opts
+                        {`(,(car x),(cadddr x):type,(keyword-type-spec(cadr x)),@(subseq x 4 6)) :. slots} doc) 
+                (struct (nthcdr 4 x) defs types name opts
+                        {`(,(car x),(cadddr x):type,(keyword-type-spec(cadr x))) :. slots} doc)}
+         {t $ if {cadr x == :read-only}
+                (struct (cdddr x) defs types name opts
+                        {subseq x 0 3 :. slots} doc)
+                (struct (cdr x) defs types name opts
+                        {car x :. slots} doc)});
+
+ defparameter *def-symbol*
+   '((var       . defvar)
+     (parameter . defparameter)
+     (constant  . defconstant));
+
+ defparameter *def-macro*
+   '((type           . deftype)
+     (compiler-macro . define-compiler-macro));
+
+ defparameter *def-function* ();
+
+ defparameter *def-method* ();
+
+ defs x &optional defs types :=
+   labels check-def x assgn *x* descr =
+     {let def = (binfix (cdr x))
+        (if {assgn in cdr x}
+           (defs () `((,(cdr (assoc (car x) *x*)) ,@(cdr def)) ,@defs) types)
+           (error "BINFIX def ~A instead of ~A definition has~%~S" (car x) descr (cdr x)))} 
+   (cond {null x
+            $ `(,@{types && `((declaim ,@(nreverse types)))}
+                ,@(nreverse defs))}
+         {assoc (car x) *def-symbol*
+            $ assgn ts r =.. (def-sym (cdr x))
+                (defs r (append {let def = (cdr (assoc (car x) *def-symbol*))
+                                  (mapcar {a -> def :. a} assgn)}
+                                defs)
+                        (if ts (append ts types) types))}
+         {assoc (car x) *def-macro*    $ check-def x ':== *def-macro* "macro"}
+         {assoc (car x) *def-function* $ check-def x ':=  *def-function* "function"}
+         {assoc (car x) *def-method*   $ check-def x ':-  *def-method* "method"}
+         {car x == '#-sbcl{struct}
+                    #+sbcl{sb-alien:struct}
+            $ assgn types r =.. (struct (cdr x) defs types)
+                (defs r assgn types)}
+         {find-if {e -> e in '(:= :== :- :type=)} x
+            $ `(,(binfix x))}
+         {car x == 'binfix
+            $ `((defbinfix ,@(cdr x)))}
+         {t $ error "BINFIX def has a trailing:~%~S" x});
+
  decls e &optional decls doc :=
   let s = (car e)
     (cond {               s == 'declare $ decls (cddr e) {cadr e :. decls} doc}
@@ -146,18 +239,23 @@
 
 
  *binfix* =.
-   `(( &               progn           :unreduce)
+   `(( <&              prog1)
+     ( &               progn           :unreduce)
+     
+     ( def             defs            :macro);;------------DEFINITIONS
      ( let             let             :rhs-lbinds);;-------LET constructs
      ( let*            let*            :rhs-lbinds)
+     ( symbol-macrolet symbol-macrolet :rhs-lbinds)
+     ( prog*           prog*           :rhs-lbinds)
+     ( prog            prog            :rhs-lbinds)
+     ( macrolet        macrolet        :rhs-fbinds)
      ( flet            flet            :rhs-fbinds)
      ( labels          labels          :rhs-fbinds)
-     ( macrolet        macrolet        :rhs-fbinds)
-     ( symbol-macrolet symbol-macrolet :rhs-lbinds)
      ( :==             defmacro        :def)
      ( :=              defun           :def)
      ( :-              defmethod       :defm)
-     ( block    block     :prefix);;------------------------PREFIX FORMS
      ( :type=   deftype   :def)
+     ( block    block     :prefix);;------------------------PREFIX FORMS
      ( tagbody  tagbody   :prefix)
      ( catch    catch     :prefix)
      ( prog2    prog2     :prefix)
@@ -170,20 +268,20 @@
      (etypecase etypecase :prefix)
      (ctypecase ctypecase :prefix)
      ( if       if        :prefix)
-     ( loop ,#'identity);;----------------------------------OPS W/UNCHANGED RHS
+     ( loop ,#'identity   :prefix);;------------------------W/UNCHANGED RHS
      (  ?   ()         :split);;----------------------------$pliters
      (  $   ()         :split)
      ( .=   setf) ;;----------------------------------------ASSIGNMENT
      ( +=   incf)
      ( -=   decf)
      (  =.  setq)
-     ( .=.  set)
+     ( .=.  set) ;; DEPRECIATED
      ( setq setq  :rhs-sbinds)
      ( set  set   :rhs-sbinds)
      (psetq psetq :rhs-sbinds)
      ( setf setf  :rhs-ebinds)
      (psetf psetf :rhs-ebinds)
-     ( mapc mapc) ;;----------------------------------------MAPPING
+     ( mapc mapc) ;;DEPRACIATED-----------------------------MAPPING
      ( @.   mapcar     :rhs-args)
      ( @n   mapcan     :rhs-args)
      ( @..  maplist    :rhs-args)
@@ -225,9 +323,9 @@
      ( elt      elt)
      ( svref    svref)
      ( !!       aref)
-     ( logior   logior  :unreduce);;------------------------BIT ARITHMETICS
-     ( logxor   logxor  :unreduce)
-     ( logand   logand  :unreduce)
+     ( +.       logior  :unreduce);;------------------------BIT ARITHMETICS
+     ( -.       logxor  :unreduce)
+     ( *.       logand  :unreduce)
      ( <<       ash)
      ( mod      mod);;--------------------------------------ARITHMETICS
      ( min      min     :also-prefix :unreduce)
@@ -237,12 +335,16 @@
      ( floor    floor)
      ( ceiling  ceiling)
      ( truncate truncate)
-     (  /        /      :also-prefix)
+     (  /        /      :also-unary)
      (  *        *      :also-prefix :unreduce)
      ( **       expt)
      (  !       aref    :rhs-args)
      (  ;        ;));
 
+ split e op &optional args arg :=
+   (cond {null e      $ nreverse $ nreverse arg :. args}
+         {car e == op $ split (cdr e) op {nreverse arg :. args}}
+         {t           $ split (cdr e) op args {car e :. arg}});
 
  binfix e &optional (ops *binfix*) :=
    labels
@@ -327,6 +429,8 @@
                 {:lhs-lambda in op-prop $
                    ll decls =.. (lambda-list lhs)
                       `(,op-lisp ,ll ,@(decl*-binfix+ rhs ops decls))}
+                {:macro in op-prop $
+                  `(progn ,(binfix lhs) ,@(reduce #'append (mapcar op-lisp (split rhs op))))}
                 {:unreduce in op-prop && position op rhs $ ;;position necessary...
                   let u = (mapcar #'singleton (unreduce rhs op `(,(binfix lhs (cdr ops)),op-lisp)))
                     (cond {plusp i $ u}

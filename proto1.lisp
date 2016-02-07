@@ -23,7 +23,16 @@
        finally (return (let ((flet `(,flet ,(reverse funs) ,@body)))
                          (if lhs `(,@lhs ,flet) flet)));
 
+ unreduc op op-lisp lhs rhs :==
+   labels
+     unreduce e &optional args arg =
+       (cond {null e      $ nreverse {binfix (nreverse arg) :. args}}
+             {car e == op $ unreduce (cdr e) {binfix (nreverse arg) :. args}}
+             {t           $ unreduce (cdr e) args {car e :. arg}})
+   `(,op-lisp ,@(unreduce rhs `(,lhs)));
+
  var-bind op lhs rhs :== `(,op,lhs,@rhs)}
 
 ;BOOTSTRAP PHASE 2 DONE. (DEFs and LETs in proto BINFIX defined)
+;PROTO BINFIX DEFINED.
 

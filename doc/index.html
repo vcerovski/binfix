@@ -2,7 +2,7 @@
 
 <h1>BINFIX</h1>
 
-<p>Viktor Cerovski, Nov 2015.</p>
+<p>Viktor Cerovski, Feb 2016.</p>
 
 <p><a name="Introduction"></a></p>
 
@@ -17,6 +17,8 @@ One of them, available from v0.16, is use of a single <code>;</code> symbol as a
 form-separating symbol in <a href="#LET ; progn example">implicit-progn</a>, <a href="#SETF expr-termination">expression
 terminator</a> for SETFs, or as end of <a href="#LET ; examples">LET binds
 symbol</a> or <a href="#Local functions">local functions definition</a>.</p>
+
+<p>The most recent is <code>def</code>, for <a href="#def">defining things</a>.</p>
 
 <p>Once the rest of them have been implemented, BINFIX will go to RC and then a
 reference 1.0 version.</p>
@@ -39,6 +41,7 @@ reference 1.0 version.</p>
 <li><a href="#Local functions">Local functions</a></li>
 <li><a href="#defmethod">defmethod</a></li>
 <li><a href="#defmacro">defmacro</a></li>
+<li><a href="#def">def</a></li>
 <li><a href="#types">Type annotations, declarations and definitions</a></li>
 </ul></li>
 <li><a href="#LETs">LETs</a></li>
@@ -91,7 +94,8 @@ and <a href="https://en.wikipedia.org/wiki/Clozure_CL">Clozure CL</a>,
 while with <a href="https://en.wikipedia.org/wiki/Embeddable_Common_Lisp">ECL</a> BINFIX
 passes tests when hand-loaded but does not go through the package system yet.</p>
 
-<p>BINFIX shadows <code>!</code> in CLISP (<code>ext:!</code>) and <code>@</code> in Clozure CL and ECL.</p>
+<p>BINFIX shadows <code>!</code> in CLISP (<code>ext:!</code>), <code>@</code> in Clozure CL and ECL, as well as
+<code>var</code> (<code>sb-debug:var</code>) in SBCL.</p>
 
 <p>The latest version is available at <a href="https://github.com/vcerovski/binfix">gihub</a>,
 and can be obtained by</p>
@@ -458,6 +462,67 @@ SBCL 1.1.17 function <code>sin</code> has declared type that can be written as</
 <pre><code>(deftype mod (n) `(integer 0 (,n)))
 </code></pre>
 
+<p><a name="def"></a></p>
+
+<h4><code>def</code></h4>
+
+<p>Program typically consists of a number of definitions of functions,
+constants, parameters, types, etc. The operation <code>def</code> is introduced
+to facilitate their easy writing:</p>
+
+<pre><code>'{def parameter *x* = 1 *y* = 2
+  def struct point x y z
+  def f x := sqrt x * sin x}
+</code></pre>
+
+<p>=></p>
+
+<pre><code>(progn
+ nil
+ (defparameter *x* 1)
+ (defparameter *y* 2)
+ (defstruct point x y z)
+ (defun f (x) (* (sqrt x) (sin x))))
+</code></pre>
+
+<p>As it is clear from the example, the definitions are wrapped up in <code>progn</code>.</p>
+
+<p>More detailed definitions are also straightforward to specify:</p>
+
+<pre><code>'{def parameter
+    *x* :fixnum = 1
+    *y* :fixnum = 2
+
+  struct point
+    "Point"
+    x :single-float = 0f0
+    y :single-float = 0f0
+    z :single-float = 0f0
+
+  def f x :single-float :=
+    declare(inline)
+    sqrt x * sin x}
+</code></pre>
+
+<p>=></p>
+
+<pre><code>(progn
+ nil
+ (declaim (type fixnum *x*)
+          (type fixnum *y*))
+ (defparameter *x* 1)
+ (defparameter *y* 2)
+ (defstruct point
+   "Point"
+   (x 0.0 :type single-float)
+   (y 0.0 :type single-float)
+   (z 0.0 :type single-float))
+ (defun f (x)
+   (declare (type single-float x)
+            (inline))
+   (* (sqrt x) (sin x))))
+</code></pre>
+
 <p><a name="LETs"></a></p>
 
 <h3>LETs</h3>
@@ -605,6 +670,17 @@ is following that of the <a href="#LET ; progn example">LET example above</a>.</
 <p>Since BINFIX is a free-form notation, the following one-liner also works:</p>
 
 <pre><code>'{x -&gt; prog2 format t "Calculating... "; f{x * x}; format t "done.~%"}
+</code></pre>
+
+<p>Binfix <code>&lt;&amp;</code> stands for <code>prog1</code>,</p>
+
+<pre><code>'{x -&gt; {f {x * x} &lt;&amp;
+        format t "Calculation done.~%"}}
+</code></pre>
+
+<p>=></p>
+
+<pre><code>(lambda (x) (prog1 (f (* x x)) (format t "Calculation done.~%")))
 </code></pre>
 
 <p><a name="<code>$</code>plitter"></a></p>
@@ -960,6 +1036,8 @@ followed by <code>;</code> char, while two or more consequtive <code>;</code> ar
 as starting a comment.  This behavior is limited to BINFIX
 expressions only, while outside of them the standard LISP rules apply.</p>
 
+<p>Since v0.19, proto-BINFIX introduces <code>unreduc</code> property.</p>
+
 <p>The rest is written using this syntax, and consists of handling of lambda lists
 and <code>let</code>s, a longer list of OPs with properties, redefined <code>binfix</code> to
 its full capability, and, finally, several interface functions for
@@ -1032,6 +1110,8 @@ by optional declarations and a BINFIX-expression.</p>
 
 <p><code>:rhs-args</code> -- OP takes LHS as 1st and RHS as remaining arguments.</p>
 
+<p><code>:macro</code> -- OP is a macro.</p>
+
 <p><a name="List of all operations"></a></p>
 
 <h3>List of all operations</h3>
@@ -1044,18 +1124,22 @@ to the strongest-binding OP:</p>
 
 <pre><code>BINFIX           LISP            Properties
 ============================================================
+&lt;&amp;               prog1           
 &amp;                progn           :unreduce       
+def              binfix::defs    :macro          
 let              let             :rhs-lbinds     
 let*             let*            :rhs-lbinds     
+symbol-macrolet  symbol-macrolet :rhs-lbinds     
+prog*            prog*           :rhs-lbinds     
+prog             prog            :rhs-lbinds     
+macrolet         macrolet        :rhs-fbinds     
 flet             flet            :rhs-fbinds     
 labels           labels          :rhs-fbinds     
-macrolet         macrolet        :rhs-fbinds     
-symbol-macrolet  symbol-macrolet :rhs-lbinds     
 :==              defmacro        :def            
 :=               defun           :def            
 :-               defmethod       :defm           
-block            block           :prefix         
 :type=           deftype         :def            
+block            block           :prefix         
 tagbody          tagbody         :prefix         
 catch            catch           :prefix         
 prog2            prog2           :prefix         
@@ -1068,7 +1152,7 @@ typecase         typecase        :prefix
 etypecase        etypecase       :prefix         
 ctypecase        ctypecase       :prefix         
 if               if              :prefix         
-loop             #&lt;FUNCTION identity&gt;            
+loop             #&lt;FUNCTION identity&gt;            :prefix         
 ?                nil             :split          
 $                nil             :split          
 .=               setf            
@@ -1121,9 +1205,9 @@ cons             cons            :also-prefix
 elt              elt             
 svref            svref           
 !!               aref            
-logior           logior          :unreduce       
-logxor           logxor          :unreduce       
-logand           logand          :unreduce       
+binfix::+.       logior          :unreduce       
+binfix::-.       logxor          :unreduce       
+binfix::*.       logand          :unreduce       
 &lt;&lt;               ash             
 mod              mod             
 min              min             :also-prefix    :unreduce       
@@ -1133,7 +1217,7 @@ max              max             :also-prefix    :unreduce
 floor            floor           
 ceiling          ceiling         
 truncate         truncate        
-/                /               :also-prefix    
+/                /               :also-unary     
 *                *               :also-prefix    :unreduce       
 **               expt            
 !                aref            :rhs-args       

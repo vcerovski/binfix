@@ -16,7 +16,7 @@
     (let  let= let)
     (let* let= let*)
     (=..  var-bind multiple-value-bind)
-    (.x.  values)
+    (.x.  unreduc .x. values)
     (:.   cons)
     (||   or)
     (&&   and)
@@ -32,11 +32,14 @@
                   (i (position (pop op) e)))
              (if (null i)
                (binfix e (cdr ops))
-              `(,@op
-                ,(if (eql (car op) 'def)
-                    (subseq e 0 i)
-                    (binfix (subseq e 0 i) (cdr ops)))
-                ,(binfix (subseq e (1+ i)) ops)))))))
+               (let ((lhs (subseq e 0 i)))
+                 `(,@op
+                    ,(if (eql (car op) 'def)
+                       lhs
+                       (binfix lhs (cdr ops)))
+                    ,(if (eql (car op) 'unreduc)
+                       (subseq e (1+ i))
+                       (binfix (subseq e (1+ i)) ops)))))))))
 
 (defun semicolon (s ch)
   (declare (ignore ch))
