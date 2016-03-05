@@ -376,7 +376,7 @@
      e-binds e &optional binds lhs rhs =
        {labels b-eval-rev e = (singleton
                                 (if {consp e && > (length e) 1}
-                                   {binfix $ singleton $ nreverse e}
+                                   (binfix {singleton $ nreverse e} ops)
                                    e))
                bind lhs rhs = {b-eval-rev rhs :. b-eval-rev lhs :. binds}
          (cond {null e     $ if {lhs && rhs}
@@ -408,7 +408,7 @@
                                with l.h.s:~%~S" op op-lisp lhs)}
                 {:rhs-lbinds in op-prop $
                    binds-decls* expr =.. (lbinds rhs)
-                     (singleton (binfix `(,@lhs (,op-lisp ,@binds-decls* ,@(binfix+ expr))) ops))}
+                     (singleton (binfix `(,@lhs (,op-lisp ,@binds-decls* ,@(binfix+ expr ops))) ops))}
                 {:syms/expr  in op-prop $
                    vars decls =.. (vbinds lhs)
                       `(,op-lisp ,vars ,(car rhs)
@@ -421,16 +421,16 @@
                      (singleton (binfix `(,@lhs (,op-lisp ,@binds) ,@r) ops))}
                 {:rhs-fbinds in op-prop $
                    binds-decls* expr =.. (fbinds rhs)
-                     (singleton (binfix `(,@lhs (,op-lisp ,@binds-decls* ,@(binfix+ expr))) ops))}
+                     (singleton (binfix `(,@lhs (,op-lisp ,@binds-decls* ,@(binfix+ expr ops))) ops))}
                 {functionp op-lisp $
                    if (zerop i)
-                      {op :. funcall op-lisp rhs}
-                      (binfix `(,@lhs,{op :. funcall op-lisp rhs}))}
+                      {op :. funcall op-lisp {binfix rhs `(,(car ops))}}
+                      (binfix `(,@lhs,{op :. funcall op-lisp {binfix rhs `(,(car ops))}}) ops)}
                 {:lhs-lambda in op-prop $
                    ll decls =.. (lambda-list lhs)
                       `(,op-lisp ,ll ,@(decl*-binfix+ rhs ops decls))}
                 {:macro in op-prop $
-                  `(progn ,(binfix lhs) ,@(reduce #'append (mapcar op-lisp (split rhs op))))}
+                  `(progn ,(binfix lhs ops) ,@(reduce #'append (mapcar op-lisp (split rhs op))))}
                 {:unreduce in op-prop && position op rhs $ ;;position necessary...
                   let u = (mapcar #'singleton (unreduce rhs op `(,(binfix lhs (cdr ops)),op-lisp)))
                     (cond {plusp i $ u}
@@ -441,8 +441,8 @@
                 {zerop i $ cond {:also-unary  in op-prop $ `(,op-lisp ,(singleton (binfix rhs ops)))}
                                 {:also-prefix in op-prop || :prefix in op-prop
                                                          $ `(,op-lisp ,@(if {'; in rhs}
-                                                                          (binfix+ rhs)
-                                                                          (binfix rhs)))}
+                                                                          (binfix+ rhs ops)
+                                                                          (binfix rhs ops)))}
                                 {t $ error "BINFIX: missing l.h.s. of ~S (~S)~@
                                             with r.h.s:~%~S" op op-lisp rhs}}
                 {:def in op-prop $ ll decls =.. (lambda-list (cdr lhs))
@@ -468,15 +468,15 @@
                      ,{when rhs
                          let e = (binfix rhs ops)
                             (if (cdr e) e (car e))})}
-                {:prefix in op-prop $ binfix `(,@lhs ,(binfix `(,op,@rhs) ops))}
+                {:prefix in op-prop $ binfix `(,@lhs ,(binfix `(,op,@rhs) ops)) ops}
                 (t `(,op-lisp
-                     ,(singleton (binfix lhs))
+                     ,(singleton (binfix lhs ops))
                      ,@(cond {null (cdr rhs) $ rhs}
                              {:rhs-args in op-prop $
                                 cond {op in rhs $ `(,(binfix rhs ops))}
                                      {'; in rhs $ mapcar #'singleton (unreduce rhs ';)}
                                      {t         $ rhs}}
-                             {t $ `(,(binfix rhs))}))))}}}
+                             {t $ `(,(binfix rhs ops))}))))}}}
 
 ;===== BINFIX defined =====
 #|

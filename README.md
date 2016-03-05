@@ -44,6 +44,7 @@ reference 1.0 version.
     * [`$`plitter](#`$`plitter)
     * [Multiple-choice forms](#Multiple-choice forms)
     * [Destructuring, multiple values](#Destructuring, multiple values)
+    * [Loops](#Loops)
 * [Support for macros](#Support for macros)
 * [More involved examples](#More involved examples)
     * [ordinal](#ordinal)
@@ -421,14 +422,17 @@ More detailed definitions are also straightforward to specify:
         *x* :fixnum = 1
         *y* :fixnum = 2
 
-      struct point
-        "Point"
+      struct point "Point"
+        :print-function {p s d ->
+                           declare (ignore d)
+                           with-slots (x y z) p
+                             (format s "#< ~$ ~$ ~$>" x y z)}
         x :single-float = 0f0
         y :single-float = 0f0
         z :single-float = 0f0
 
       def f x :single-float :=
-        declare(inline)
+        declare (inline)
         sqrt x * sin x}
 
 =>
@@ -439,7 +443,14 @@ More detailed definitions are also straightforward to specify:
               (type fixnum *y*))
      (defparameter *x* 1)
      (defparameter *y* 2)
-     (defstruct point
+     (defstruct
+         (point
+          (:print-function
+           (lambda (s p d)
+             (declare (ignore d))
+             (with-slots (x y z)
+                 p
+               (format s "#< ~$ ~$ ~$>" x y z)))))
        "Point"
        (x 0.0 :type single-float)
        (y 0.0 :type single-float)
@@ -661,6 +672,21 @@ Another way to write the same expr:
 =>
 
     (1 (b 2) 3)
+
+<a name="Loops"></a>
+#### Loops
+
+Loops can be also nested without writing parens:
+
+    '{loop for i = 1 to 3
+           collect loop for j = 2 to 4
+                        collect {i :. j}}
+
+=>
+
+    (loop for i = 1 to 3
+          collect (loop for j = 2 to 4
+                        collect (cons i j))) 
 
 <a name="Support for macros"></a>
 ### Support for macros

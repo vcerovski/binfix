@@ -50,6 +50,7 @@ reference 1.0 version.</p>
 <li><a href="#<code>$</code>plitter"><code>$</code>plitter</a></li>
 <li><a href="#Multiple-choice forms">Multiple-choice forms</a></li>
 <li><a href="#Destructuring, multiple values">Destructuring, multiple values</a></li>
+<li><a href="#Loops">Loops</a></li>
 </ul></li>
 <li><a href="#Support for macros">Support for macros</a></li>
 <li><a href="#More involved examples">More involved examples</a>
@@ -493,14 +494,17 @@ to facilitate their easy writing:</p>
     *x* :fixnum = 1
     *y* :fixnum = 2
 
-  struct point
-    "Point"
+  struct point "Point"
+    :print-function {p s d -&gt;
+                       declare (ignore d)
+                       with-slots (x y z) p
+                         (format s "#&lt; ~$ ~$ ~$&gt;" x y z)}
     x :single-float = 0f0
     y :single-float = 0f0
     z :single-float = 0f0
 
   def f x :single-float :=
-    declare(inline)
+    declare (inline)
     sqrt x * sin x}
 </code></pre>
 
@@ -512,7 +516,14 @@ to facilitate their easy writing:</p>
           (type fixnum *y*))
  (defparameter *x* 1)
  (defparameter *y* 2)
- (defstruct point
+ (defstruct
+     (point
+      (:print-function
+       (lambda (s p d)
+         (declare (ignore d))
+         (with-slots (x y z)
+             p
+           (format s "#&lt; ~$ ~$ ~$&gt;" x y z)))))
    "Point"
    (x 0.0 :type single-float)
    (y 0.0 :type single-float)
@@ -770,6 +781,24 @@ example, as well as described in the next section.</p>
 <p>=></p>
 
 <pre><code>(1 (b 2) 3)
+</code></pre>
+
+<p><a name="Loops"></a></p>
+
+<h4>Loops</h4>
+
+<p>Loops can be also nested without writing parens:</p>
+
+<pre><code>'{loop for i = 1 to 3
+       collect loop for j = 2 to 4
+                    collect {i :. j}}
+</code></pre>
+
+<p>=></p>
+
+<pre><code>(loop for i = 1 to 3
+      collect (loop for j = 2 to 4
+                    collect (cons i j)))
 </code></pre>
 
 <p><a name="Support for macros"></a></p>
