@@ -267,8 +267,8 @@
      ( typecase typecase  :prefix)
      (etypecase etypecase :prefix)
      (ctypecase ctypecase :prefix)
-     ( if       if        :prefix)
      ( loop ,#'identity   :prefix);;------------------------W/UNCHANGED RHS
+     ( if       if        :prefix)
      (  ?   ()         :split);;----------------------------$pliters
      (  $   ()         :split)
      ( .=   setf) ;;----------------------------------------ASSIGNMENT
