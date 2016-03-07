@@ -407,7 +407,7 @@
                        (error "BINFIX: missing r.h.s. of ~S (~S)~@
                                with l.h.s:~%~S" op op-lisp lhs)}
                 {:rhs-lbinds in op-prop $
-                   binds-decls* expr =.. (lbinds rhs)
+                   binds-decls* expr =.. (lbinds {binfix rhs `(,(car ops))})
                      (singleton (binfix `(,@lhs (,op-lisp ,@binds-decls* ,@(binfix+ expr ops))) ops))}
                 {:syms/expr  in op-prop $
                    vars decls =.. (vbinds lhs)

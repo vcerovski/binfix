@@ -508,6 +508,23 @@ as in
       (print "Let binds")
       (+ x (* y z)))
 
+<a name="LET associativity"></a>
+Nesting of `let`s without parens follows the right-associativity
+
+    '{let a = f x;
+        if a
+          (g x)
+          let b = h x;
+            f b}
+
+=>
+
+    (let ((a (f x)))
+      (if a
+          (g x)
+          (let ((b (h x)))
+            (f b))))
+
 <a name="SETs"></a>
 ### SETs
 

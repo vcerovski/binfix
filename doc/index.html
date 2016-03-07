@@ -589,6 +589,25 @@ as in</p>
   (+ x (* y z)))
 </code></pre>
 
+<p><a name="LET associativity"></a>
+Nesting of <code>let</code>s without parens follows the right-associativity</p>
+
+<pre><code>'{let a = f x;
+    if a
+      (g x)
+      let b = h x;
+        f b}
+</code></pre>
+
+<p>=></p>
+
+<pre><code>(let ((a (f x)))
+  (if a
+      (g x)
+      (let ((b (h x)))
+        (f b))))
+</code></pre>
+
 <p><a name="SETs"></a></p>
 
 <h3>SETs</h3>
