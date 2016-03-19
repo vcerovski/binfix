@@ -1,4 +1,4 @@
-; BINFIX by V.Cerovski 2015
+; BINFIX by V.Cerovski 2015,6
 
 (in-package :binfix)
 
@@ -157,7 +157,7 @@
   let s = (car e)
     (cond {               s == 'declare $ decls (cddr e) {cadr e :. decls} doc}
           {listp s && car s == 'declare $ decls (cdr e) (revappend (cdr s) decls) doc}
-          {t $ `(,@doc ,@{decls && `((declare ,@(reverse decls)))}) .x. e});
+          {t $ `(,@doc ,@{decls && `((declare ,@(nreverse decls)))}) .x. e});
 
  doc-decls e &optional decls :=
    if {stringp (car e) && cdr e}
@@ -178,19 +178,17 @@
                    ~S" (car e) (reverse vars)};
 
  lbinds e &optional binds s current decls :=
-   labels make-bind s e = `(,s ,(singleton (binfix (reverse e))))
+   labels make-bind s e = `(,s ,(singleton (binfix (nreverse e))))
      (cond {car e == 'declare || consp (car e) && caar e == 'declare
               $ decls e =.. (decls e decls)
-                 {cdr (reverse {make-bind s current :. binds}) :. decls .x. e}}
+                 {cdr (nreverse {make-bind s current :. binds}) :. decls .x. e}}
            {null e
-              $ let current = (reverse current)
+              $ let current = (nreverse current)
                   {decls e =.. (decls (cdr current) decls)
-                    {cdr (reverse {{s :. car current :.()} :. binds}) :. decls .x. e}}}
+                    {cdr (nreverse {{s :. car current :.()} :. binds}) :. decls .x. e}}}
            {car e == ';
-              $ if {cadr e == 'declare || consp (cadr e) && caadr e == 'declare}
-                  (lbinds (cdr e) binds s current decls)
-                  {decls e =.. (decls (cdr e) decls)
-                    {cdr (reverse {make-bind s current :. binds}) :. decls .x. e}}}
+              $ decls e =.. (decls (cdr e) decls)
+                  {cdr (nreverse {make-bind s current :. binds}) :. decls .x. e}}
            {cadr e == '=
               $ lbinds (cddr e)
                        {make-bind s current :. binds} (car e) ()
@@ -268,7 +266,7 @@
      (etypecase etypecase :prefix)
      (ctypecase ctypecase :prefix)
      ( loop ,#'identity   :prefix);;------------------------W/UNCHANGED RHS
-     ( if       if        :prefix)
+  ;; ( if       if        :prefix);; REMOVED!
      (  ?   ()         :split);;----------------------------$pliters
      (  $   ()         :split)
      ( .=   setf) ;;----------------------------------------ASSIGNMENT
@@ -281,20 +279,22 @@
      (psetq psetq :rhs-sbinds)
      ( setf setf  :rhs-ebinds)
      (psetf psetf :rhs-ebinds)
-     ( mapc mapc) ;;DEPRACIATED-----------------------------MAPPING
+     (.@    mapc       :rhs-args);;-------------------------MAPPING
+     (..@   mapl       :rhs-args)
+     ( @/   reduce     :rhs-args)
      ( @.   mapcar     :rhs-args)
-     ( @n   mapcan     :rhs-args)
      ( @..  maplist    :rhs-args)
+     ( @n   mapcan     :rhs-args)
      ( @.n  mapcon     :rhs-args)
-     ( :->  function   :lhs-lambda);;-----------------------LAMBDA/FUNCALL
-     ( ->   lambda     :lhs-lambda)
      ( @@   apply      :rhs-args)
+     ( @    funcall    :rhs-args :left-assoc :also-postfix)
+     ( :->  function   :lhs-lambda)
+     ( ->   lambda     :lhs-lambda)
+     (values values    :prefix)
+     ( =..  multiple-value-bind  :syms/expr);;--------------MULTIPLE VALUES/DESTRUCTURING
      ( .@.  multiple-value-call  :rhs-args)
-     (  @   funcall    :rhs-args :left-assoc :also-postfix)
-     ( =..  multiple-value-bind  :syms/expr);;--------------DESTRUCTURING
      ( ..=  destructuring-bind   :lambda/expr)
      ( .x.  values     :unreduce :also-prefix)
-     (values values    :prefix)
      ( :.   cons);;-----------------------------------------S-EXPR
      ( ||       or     :unreduce);;-------------------------LOGICAL OPS
      ( or       or     :unreduce :also-prefix)
@@ -319,7 +319,6 @@
      ;;================ :lower  binding user defined ops go here =================
      ;;================ :higher binding user defined ops go here =================
      ( coerce   coerce)
-     ( cons     cons    :also-prefix)  ;; DEPRECIATED
      ( elt      elt)
      ( svref    svref)
      ( !!       aref)

@@ -2,7 +2,7 @@
 
 <h1>BINFIX</h1>
 
-<p>Viktor Cerovski, Feb 2016.</p>
+<p>Viktor Cerovski, Mar 2016.</p>
 
 <p><a name="Introduction"></a></p>
 
@@ -234,14 +234,14 @@ produce the same result. The inner brackets, however, can be removed:</p>
 
 <p>Fancy way of writing <code>{2 * 3 + 4}</code></p>
 
-<pre><code>{{x -&gt; y -&gt; z -&gt; x * y + z} @ 2 @ 3 @ 4}
+<pre><code>{x -&gt; y -&gt; z -&gt; x * y + z @ 2 @ 3 @ 4}
 </code></pre>
 
 <p>=> <code>10</code></p>
 
 <p>Quoting reveals the expanded S-expr</p>
 
-<pre><code>'{{x -&gt; y -&gt; z -&gt; x * y + z} @ 2 @ 3 @ 4}
+<pre><code>'{x -&gt; y -&gt; z -&gt; x * y + z @ 2 @ 3 @ 4}
 </code></pre>
 
 <p>=></p>
@@ -350,13 +350,14 @@ and comments have a straightforward syntax:</p>
    f n 1}
 </code></pre>
 
-<p>There is also yet another way to write the definition of <code>fac</code>, as</p>
+<!--
+There is also yet another way to write the definition of `fac`, as
 
-<pre><code>{fac n :integer :=
-  labels
-    f n m := {if n = 0; m; f (1- n) {n * m}}
-   f n 1}
-</code></pre>
+    {fac n :integer :=
+      labels
+        f n m := {if n = 0; m; f (1- n) {n * m}}
+       f n 1}
+-->
 
 <p>All three above definitions of <code>fac</code> are transformed by <code>binfix</code> to</p>
 
@@ -380,9 +381,12 @@ and comments have a straightforward syntax:</p>
 
 <pre><code>'{f n :integer :- if {n &lt;= 0} 1 {n * f {1- n}}}
 '{f (n integer):- if {n &lt;= 0} 1 {n * f {1- n}}}
-'{f n :integer :- {if n &lt;= 0; 1;
-                      n * f(1- n)}}
 </code></pre>
+
+<!--
+    '{f n :integer :- {if n <= 0; 1;
+                          n * f(1- n)}}
+-->
 
 <p>all produce</p>
 
@@ -783,8 +787,7 @@ example, as well as described in the next section.</p>
 
 <p>Another way to write the same expr:</p>
 
-<pre><code>'{a (b) c ..= (f x)
-   {values a + 1; b + 2; c + 3}}
+<pre><code>'{a (b) c ..= (f x) values a + 1; b + 2; c + 3}
 </code></pre>
 
 <p><code>multiple-value-call</code> is represented by <code>.@.</code></p>
@@ -948,7 +951,7 @@ an ignored value can be defined as</p>
 
 <pre><code>{values-bind v e &amp;rest r :==
   let*  _ = ()
-     vars = a -&gt; {if a == '_; car (push (gensym) _); a} @. v;
+     vars = a -&gt; if {a == '_} {car $ push (gensym) _} a @. v;
     `(multiple-value-bind ,vars ,e
         ,@{_ &amp;&amp; `({declare $ ignore ,@_})}
         ,@r)}
@@ -1199,7 +1202,6 @@ ecase            ecase           :prefix
 typecase         typecase        :prefix         
 etypecase        etypecase       :prefix         
 ctypecase        ctypecase       :prefix         
-if               if              :prefix         
 loop             #&lt;FUNCTION identity&gt;            :prefix         
 ?                nil             :split          
 $                nil             :split          
@@ -1213,20 +1215,22 @@ set              set             :rhs-sbinds
 psetq            psetq           :rhs-sbinds     
 setf             setf            :rhs-ebinds     
 psetf            psetf           :rhs-ebinds     
-mapc             mapc            
+.@               mapc            :rhs-args       
+..@              mapl            :rhs-args       
+@/               reduce          :rhs-args       
 @.               mapcar          :rhs-args       
-@n               mapcan          :rhs-args       
 @..              maplist         :rhs-args       
+@n               mapcan          :rhs-args       
 @.n              mapcon          :rhs-args       
+@@               apply           :rhs-args       
+@                funcall         :rhs-args       :left-assoc     :also-postfix   
 :-&gt;              function        :lhs-lambda     
 -&gt;               lambda          :lhs-lambda     
-@@               apply           :rhs-args       
-.@.              multiple-value-call             :rhs-args       
-@                funcall         :rhs-args       :left-assoc     :also-postfix   
+values           values          :prefix         
 =..              multiple-value-bind             :syms/expr      
+.@.              multiple-value-call             :rhs-args       
 ..=              destructuring-bind              :lambda/expr    
 .x.              values          :unreduce       :also-prefix    
-values           values          :prefix         
 :|.|             cons            
 ||               or              :unreduce       
 or               or              :unreduce       :also-prefix    
@@ -1249,7 +1253,6 @@ eq               eq
 subtypep         subtypep        
 in               member          
 coerce           coerce          
-cons             cons            :also-prefix    
 elt              elt             
 svref            svref           
 !!               aref            

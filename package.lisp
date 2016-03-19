@@ -1,4 +1,4 @@
-; BINFIX by V.Cerovski 2015
+; BINFIX by V.Cerovski 2015,6
 
 (defpackage #:binfix
   #-gcl(:use #:cl)
@@ -7,7 +7,7 @@
            #:-> #:== #:=== #:=c= #:=s= #:&  #:&&  #:||  #:in  #:!!
            #:.= #:=. #:.=. #:..= #:=.. #:+= #:-=  #:<<  #:!   #:?
            #:$  #:** #:@   #:@@  #:@n  #:@. #:@.. #:@.n #:.x. #:|;|
-           #:<& #:.@.
+           #:<& #:@/ #:.@. #:.@  #:..@
            #:def #:parameter #:var #:constant #:generic #-sbcl #:struct))
 
 #+clisp (shadowing-import '! :binfix)

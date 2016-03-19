@@ -2,7 +2,7 @@
 
 # BINFIX
 
-Viktor Cerovski, Feb 2016.
+Viktor Cerovski, Mar 2016.
 
 <a name="Introduction"></a>
 ## Introduction
@@ -194,13 +194,13 @@ produces the same form.
 
 Fancy way of writing `{2 * 3 + 4}`
 
-    {{x -> y -> z -> x * y + z} @ 2 @ 3 @ 4}
+    {x -> y -> z -> x * y + z @ 2 @ 3 @ 4}
 
 => `10`
 
 Quoting reveals the expanded S-expr
 
-    '{{x -> y -> z -> x * y + z} @ 2 @ 3 @ 4}
+    '{x -> y -> z -> x * y + z @ 2 @ 3 @ 4}
 
 =>
 
@@ -294,12 +294,14 @@ Another syntax to specify a local function is to use a single `;` as in
                     {f (1- n) {n * m}};
        f n 1}
 
+<!--
 There is also yet another way to write the definition of `fac`, as
 
     {fac n :integer :=
       labels
         f n m := {if n = 0; m; f (1- n) {n * m}}
        f n 1}
+-->
 
 All three above definitions of `fac` are transformed by `binfix` to
 
@@ -321,8 +323,10 @@ The following generic versions of `f`
 
     '{f n :integer :- if {n <= 0} 1 {n * f {1- n}}}
     '{f (n integer):- if {n <= 0} 1 {n * f {1- n}}}
+<!--
     '{f n :integer :- {if n <= 0; 1;
                           n * f(1- n)}}
+-->
 
 all produce
 
@@ -675,8 +679,7 @@ Multiple values (`values`) are represented by `.x.`,
 
 Another way to write the same expr:
 
-    '{a (b) c ..= (f x)
-       {values a + 1; b + 2; c + 3}}
+    '{a (b) c ..= (f x) values a + 1; b + 2; c + 3}
 
 `multiple-value-call` is represented by `.@.`
 
@@ -818,7 +821,7 @@ an ignored value can be defined as
 
     {values-bind v e &rest r :==
       let*  _ = ()
-         vars = a -> {if a == '_; car (push (gensym) _); a} @. v;
+         vars = a -> if {a == '_} {car $ push (gensym) _} a @. v;
         `(multiple-value-bind ,vars ,e
             ,@{_ && `({declare $ ignore ,@_})}
             ,@r)}
@@ -1025,6 +1028,7 @@ by optional declarations and a BINFIX-expression.
 prints the table of all BINFIX OPs and their properties from the weakest-
 to the strongest-binding OP:
 
+
     BINFIX           LISP            Properties
     ============================================================
     <&               prog1           
@@ -1054,7 +1058,6 @@ to the strongest-binding OP:
     typecase         typecase        :prefix         
     etypecase        etypecase       :prefix         
     ctypecase        ctypecase       :prefix         
-    if               if              :prefix         
     loop             #<FUNCTION identity>            :prefix         
     ?                nil             :split          
     $                nil             :split          
@@ -1068,20 +1071,22 @@ to the strongest-binding OP:
     psetq            psetq           :rhs-sbinds     
     setf             setf            :rhs-ebinds     
     psetf            psetf           :rhs-ebinds     
-    mapc             mapc            
+    .@               mapc            :rhs-args       
+    ..@              mapl            :rhs-args       
+    @/               reduce          :rhs-args       
     @.               mapcar          :rhs-args       
-    @n               mapcan          :rhs-args       
     @..              maplist         :rhs-args       
+    @n               mapcan          :rhs-args       
     @.n              mapcon          :rhs-args       
+    @@               apply           :rhs-args       
+    @                funcall         :rhs-args       :left-assoc     :also-postfix   
     :->              function        :lhs-lambda     
     ->               lambda          :lhs-lambda     
-    @@               apply           :rhs-args       
-    .@.              multiple-value-call             :rhs-args       
-    @                funcall         :rhs-args       :left-assoc     :also-postfix   
+    values           values          :prefix         
     =..              multiple-value-bind             :syms/expr      
+    .@.              multiple-value-call             :rhs-args       
     ..=              destructuring-bind              :lambda/expr    
     .x.              values          :unreduce       :also-prefix    
-    values           values          :prefix         
     :|.|             cons            
     ||               or              :unreduce       
     or               or              :unreduce       :also-prefix    
@@ -1104,7 +1109,6 @@ to the strongest-binding OP:
     subtypep         subtypep        
     in               member          
     coerce           coerce          
-    cons             cons            :also-prefix    
     elt              elt             
     svref            svref           
     !!               aref            
