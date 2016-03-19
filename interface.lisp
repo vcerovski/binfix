@@ -1,4 +1,4 @@
-; BINFIX by V.Cerovski 2015
+; BINFIX by V.Cerovski 2015,6
 
 (in-package :binfix)
 
