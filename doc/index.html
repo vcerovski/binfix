@@ -20,7 +20,7 @@ symbol</a> or <a href="#Local functions">local functions definition</a>.</p>
 
 <p>The most recent is <code>def</code>, for <a href="#def">defining things</a>.</p>
 
-<p>Once the rest of them have been implemented, BINFIX will go to RC and then a
+<p>Once the rest of them have been implemented, BINFIX will go to RC and then to
 reference 1.0 version.</p>
 
 <hr />
@@ -92,8 +92,10 @@ downloading/installation/loading trivial:</p>
 <a href="https://en.wikipedia.org/wiki/Steel_Bank_Common_Lisp">SBCL</a>, and checked to
 work fine with <a href="https://en.wikipedia.org/wiki/CLISP">CLISP</a>,
 and <a href="https://en.wikipedia.org/wiki/Clozure_CL">Clozure CL</a>,
-while with <a href="https://en.wikipedia.org/wiki/Embeddable_Common_Lisp">ECL</a> BINFIX
-passes tests when hand-loaded but does not go through the package system yet.</p>
+while with <a href="https://en.wikipedia.org/wiki/Embeddable_Common_Lisp">ECL</a> there
+have been some problems with loading and testing recently, so for the
+time being BINFIX is not running on ECL.
+<!-- passes tests when hand-loaded but does not go through the package system yet. --></p>
 
 <p>BINFIX shadows <code>!</code> in CLISP (<code>ext:!</code>), <code>@</code> in Clozure CL and ECL, as well as
 <code>var</code> (<code>sb-debug:var</code>) in SBCL.</p>
@@ -253,7 +255,7 @@ produce the same result. The inner brackets, however, can be removed:</p>
 
 <p>Indeed, <code>@</code> is left-associative, standing for <code>funcall</code>.</p>
 
-<p>More complicated types can be also explicitely given after the
+<p>More complicated types can be also explicitely given after an
 argument, </p>
 
 <pre><code>'{x :|or symbol number| -&gt; x :. x}
@@ -261,7 +263,7 @@ argument, </p>
 
 <p>=></p>
 
-<pre><code>(lambda (x) (declare (type (or symbol keyword) x)) (cons x x))
+<pre><code>(lambda (x) (declare (type (or symbol number) x)) (cons x x))
 </code></pre>
 
 <p>Mapping is also supported:</p>
@@ -274,7 +276,7 @@ argument, </p>
 <pre><code>(mapcar (lambda (x) (* (sin x) (sqrt x))) (f x))
 </code></pre>
 
-<p>Alternatively, it is possible to use the form-termination symbol <code>;</code>,</p>
+<p>Alternatively, it is possible to use the expression-termination symbol <code>;</code>,</p>
 
 <pre><code>{x -&gt; sin x * sqrt x @. f x;}
 </code></pre>
@@ -513,7 +515,7 @@ to facilitate their easy writing:</p>
 
 <pre><code>'{def parameter
     *x* :fixnum = 1
-    *y* :fixnum = 2
+    *y* :fixnum = 2;
 
   struct point "Point"
     :print-function {p s d -&gt;
@@ -554,6 +556,9 @@ to facilitate their easy writing:</p>
             (inline))
    (* (sqrt x) (sin x))))
 </code></pre>
+
+<p><code>def</code>ining of symbols follows the same syntax as <code>let</code> binding, which
+is covered next.</p>
 
 <p><a name="LETs"></a></p>
 
@@ -628,6 +633,8 @@ Nesting of <code>let</code>s without parens follows the right-associativity</p>
       (let ((b (h x)))
         (f b))))
 </code></pre>
+
+<p>Note the three levels of parens gone.</p>
 
 <p><a name="SETs"></a></p>
 

@@ -13,8 +13,11 @@
 
  &lambdap s :== `{,s in lambda-list-keywords};
 
+ declare* decl* &optional (decl 'declare) :==
+   `{,decl* && list {',decl :. nreverse ,decl*}};
+
  collect-&parts l &optional arg types :=
-   if (null l) {nreverse arg .x. types}
+   if (null l) {nreverse arg .x. declare* types}
      let s = (pop l)
        (cond {listp s || &lambdap s $ collect-&parts l {s :. arg} types}
              {symbolp s $
@@ -29,7 +32,7 @@
              {t $ error "BINFIX lambda-list cannot collect-&parts of ~S" l});
 
  lambda-list l &optional arg types :=
-   if (null l) {nreverse arg .x. types}
+   if (null l) {nreverse arg .x. declare* types}
      let s = (pop l)
        (cond {symbolp s $
                cond {keywordp (car l) $
@@ -42,7 +45,7 @@
                     {          t $ lambda-list l `(,s,@arg) types}}
              {listp s $
                ll decls =.. (lambda-list s)
-                 (lambda-list l {ll :. arg} (append decls types))}
+                 (lambda-list l {ll :. arg} (append (cdar decls) types))}
              {t $ error "BINFIX lambda-list expects symbol or list, not ~S" s});
 
  method-lambda-list l &optional args :=
@@ -59,23 +62,6 @@
                     {         t  $ method-lambda-list l {s :. args}}}
              {listp s $ method-lambda-list l {s :. args}}
              {t $ error "BINFIX method-lambda-list expects symbol or list, not ~S" s});
-
- def-sym x &optional defs types :=
-   (cond {null x || car x == ';
-            $ defs .x. types .x. cdr x}
-         {cadr x == '=
-            $ if (stringp (cadddr x))
-                (def-sym (cddddr x) `((,(car x),(caddr x),(cadddr x)),@defs) types)
-                (def-sym (cdddr x)  `((,(car x),(caddr x))           ,@defs) types)}
-         {keywordp (cadr x) && caddr x == '=
-            $ if (stringp (fifth x))
-                (def-sym (nthcdr 5 x)
-                        `((,(car x),(fourth x),(fifth x)),@defs)
-                        `((type,(keyword-type-spec (cadr x)),(car x)),@types))
-                (def-sym (nthcdr 4 x)
-                        `((,(car x),(fourth x)),@defs)
-                        `((type,(keyword-type-spec (cadr x)),(car x)),@types))}
-         {t $ defs .x. types .x. x});
 
  struct x &optional defs types name opts slots doc :=
    (cond {null x || car x == '; 
@@ -132,17 +118,18 @@
            (defs () `((,(cdr (assoc (car x) *x*)) ,@(cdr def)) ,@defs) types)
            (error "BINFIX def ~A instead of ~A definition has~%~S" (car x) descr (cdr x)))} 
    (cond {null x
-            $ `(,@{types && `((declaim ,@(nreverse types)))}
+            $ `(,@{types && nreverse types}
                 ,@(nreverse defs))}
          {assoc (car x) *def-symbol*
-            $ assgn ts r =.. (def-sym (cdr x))
-                (defs r (append {let def = (cdr (assoc (car x) *def-symbol*))
-                                  (mapcar {a -> def :. a} assgn)}
-                                defs)
-                        (if ts (append ts types) types))}
-         {assoc (car x) *def-macro*    $ check-def x ':== *def-macro* "macro"}
+            $ binds decl* r =.. (sbind* (cdr x))
+                {decl* r =.. (decls r (declare* decl* declaim))
+                   (defs r (revappend {let def = (cdr (assoc (car x) *def-symbol*))
+                                         (mapcar {a -> def :. a} binds)}
+                                      defs)
+                        (if decl* {append decl* types} types))}}
+         {assoc (car x) *def-macro*    $ check-def x ':== *def-macro*    "macro"}
          {assoc (car x) *def-function* $ check-def x ':=  *def-function* "function"}
-         {assoc (car x) *def-method*   $ check-def x ':-  *def-method* "method"}
+         {assoc (car x) *def-method*   $ check-def x ':-  *def-method*   "method"}
          {car x == '#-sbcl{struct}
                     #+sbcl{sb-alien:struct}
             $ assgn types r =.. (struct (cdr x) defs types)
@@ -153,11 +140,13 @@
             $ `((defbinfix ,@(cdr x)))}
          {t $ error "BINFIX def has a trailing:~%~S" x});
 
+ defparameter *decls* '(declare declaim);
+
  decls e &optional decls doc :=
   let s = (car e)
-    (cond {               s == 'declare $ decls (cddr e) {cadr e :. decls} doc}
-          {listp s && car s == 'declare $ decls (cdr e) (revappend (cdr s) decls) doc}
-          {t $ `(,@doc ,@{decls && `((declare ,@(nreverse decls)))}) .x. e});
+    (cond {               s in *decls* $ decls (cddr e) {`(,s,(cadr e)):. decls} doc}
+          {listp s && car s in *decls* $ decls (cdr e)  { s            :. decls} doc}
+          {t $ `(,@doc ,@decls) .x. e});
 
  doc-decls e &optional decls :=
    if {stringp (car e) && cdr e}
@@ -177,36 +166,40 @@
         {t $ error "BINFIX: symbol expected, not ~S in~@
                    ~S" (car e) (reverse vars)};
 
- lbinds e &optional binds s current decls :=
+ sbind* e &optional binds s current decls :=
    labels make-bind s e = `(,s ,(singleton (binfix (nreverse e))))
-     (cond {car e == 'declare || consp (car e) && caar e == 'declare
-              $ decls e =.. (decls e decls)
-                 {cdr (nreverse {make-bind s current :. binds}) :. decls .x. e}}
-           {null e
-              $ let current = (nreverse current)
-                  {decls e =.. (decls (cdr current) decls)
-                    {cdr (nreverse {{s :. car current :.()} :. binds}) :. decls .x. e}}}
+     (cond {null e
+              $ let* current = (nreverse current)
+                     e = (pop current)
+                  {cdr {nreverse $ `(,s ,e) :. binds} .x. decls .x. current}}
+           {car e in *decls* || listp (car e) && caar e in *decls*
+              $ cdr (nreverse {make-bind s current :. binds}) .x. decls .x. e}
            {car e == ';
-              $ decls e =.. (decls (cdr e) decls)
-                  {cdr (nreverse {make-bind s current :. binds}) :. decls .x. e}}
+              $ cdr (nreverse {make-bind s current :. binds}) .x. decls .x. cdr e}
            {cadr e == '=
-              $ lbinds (cddr e)
+              $ sbind* (cddr e)
                        {make-bind s current :. binds} (car e) ()
                        decls}
            {keywordp (cadr e) && caddr e == '=
-              $ lbinds (cdddr e)
+              $ sbind* (cdddr e)
                        {make-bind s current :. binds} (car e) ()
                       `((type,(keyword-type-spec (cadr e)),(car e)),@decls)}
-           {t $ lbinds (cdr e)
+           {t $ sbind* (cdr e)
                        binds s {car e :. current}
                        decls});
+
+ lbinds e :=
+   let *decls* = '(declare)
+     {binds decls r =.. (sbind* e)
+       {decls e =.. (decls r (declare* decls))
+          {`(,binds ,@(nreverse decls)) .x. e}}};
 
  fbinds e &optional binds name llist body :=
    symbol-macrolet
      finish =
        {decl* r =.. (decls (if name {name :. revappend llist (nreverse body)}
                                             {revappend llist (nreverse body)}))
-         {`(,(nreverse binds) ,@decl*) .x. r}}
+         {`(,(nreverse binds) ,@(declare* decl*)) .x. r}}
    {labels
      bind n ll d b =
        {ll ldecl* =.. (lambda-list (nreverse ll))

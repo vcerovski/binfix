@@ -19,7 +19,7 @@ symbol](#LET ; examples) or [local functions definition](#Local functions).
 
 The most recent is `def`, for [defining things](#def).
 
-Once the rest of them have been implemented, BINFIX will go to RC and then a
+Once the rest of them have been implemented, BINFIX will go to RC and then to
 reference 1.0 version.
 
 -----------------------
@@ -74,8 +74,10 @@ BINFIX is developed using
 [SBCL](https://en.wikipedia.org/wiki/Steel_Bank_Common_Lisp), and checked to
 work fine with [CLISP](https://en.wikipedia.org/wiki/CLISP),
 and [Clozure CL](https://en.wikipedia.org/wiki/Clozure_CL),
-while with [ECL](https://en.wikipedia.org/wiki/Embeddable_Common_Lisp) BINFIX
-passes tests when hand-loaded but does not go through the package system yet.
+while with [ECL](https://en.wikipedia.org/wiki/Embeddable_Common_Lisp) there
+have been some problems with loading and testing recently, so for the
+time being BINFIX is not running on ECL.
+<!-- passes tests when hand-loaded but does not go through the package system yet. -->
 
 BINFIX shadows `!` in CLISP (`ext:!`), `@` in Clozure CL and ECL, as well as
 `var` (`sb-debug:var`) in SBCL.
@@ -210,14 +212,14 @@ Quoting reveals the expanded S-expr
 
 Indeed, `@` is left-associative, standing for `funcall`.
 
-More complicated types can be also explicitely given after the
+More complicated types can be also explicitely given after an
 argument, 
 
     '{x :|or symbol number| -> x :. x}
 
 =>
 
-    (lambda (x) (declare (type (or symbol keyword) x)) (cons x x))
+    (lambda (x) (declare (type (or symbol number) x)) (cons x x))
 
 Mapping is also supported:
 
@@ -227,7 +229,7 @@ Mapping is also supported:
 
     (mapcar (lambda (x) (* (sin x) (sqrt x))) (f x))
 
-Alternatively, it is possible to use the form-termination symbol `;`,
+Alternatively, it is possible to use the expression-termination symbol `;`,
 
     {x -> sin x * sqrt x @. f x;}
 
@@ -437,7 +439,7 @@ More detailed definitions are also straightforward to specify:
 
     '{def parameter
         *x* :fixnum = 1
-        *y* :fixnum = 2
+        *y* :fixnum = 2;
 
       struct point "Point"
         :print-function {p s d ->
@@ -476,6 +478,9 @@ More detailed definitions are also straightforward to specify:
        (declare (type single-float x)
                 (inline))
        (* (sqrt x) (sin x))))
+
+`def`ining of symbols follows the same syntax as `let` binding, which
+is covered next.
 
 <a name="LETs"></a>
 ### LETs
@@ -541,6 +546,8 @@ Nesting of `let`s without parens follows the right-associativity
           (g x)
           (let ((b (h x)))
             (f b))))
+
+Note the three levels of parens gone.
 
 <a name="SETs"></a>
 ### SETs
