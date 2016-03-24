@@ -354,7 +354,9 @@
 
      binfix+ e &optional (ops ops) =
        (if {'; in e}
-          (singleton (mapcar #'singleton (unreduce e ';)))
+          (if {'; == car (last e)}
+             (binfix+ (butlast e))
+             (mapcar #'singleton (unreduce e ';)))
          `(,(singleton (binfix e ops))))
 
      decl*-binfix+ rhs &optional (ops ops) decls =
@@ -473,7 +475,7 @@
                      ,@(cond {null (cdr rhs) $ rhs}
                              {:rhs-args in op-prop $
                                 cond {op in rhs $ `(,(binfix rhs ops))}
-                                     {'; in rhs $ mapcar #'singleton (unreduce rhs ';)}
+                                     {'; in rhs $ binfix+ rhs ops}
                                      {t         $ rhs}}
                              {t $ `(,(binfix rhs ops))}))))}}}
 

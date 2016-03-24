@@ -264,6 +264,23 @@ argument, </p>
 <pre><code>(lambda (x) (declare (type (or symbol keyword) x)) (cons x x))
 </code></pre>
 
+<p>Mapping is also supported:</p>
+
+<pre><code>'{x -&gt; sin x * sqrt x @. (f x)}
+</code></pre>
+
+<p>=></p>
+
+<pre><code>(mapcar (lambda (x) (* (sin x) (sqrt x))) (f x))
+</code></pre>
+
+<p>Alternatively, it is possible to use the form-termination symbol <code>;</code>,</p>
+
+<pre><code>{x -&gt; sin x * sqrt x @. f x;}
+</code></pre>
+
+<p>to the same effect.</p>
+
 <p><a name="defun"></a></p>
 
 <h4><code>defun</code></h4>
@@ -502,7 +519,7 @@ to facilitate their easy writing:</p>
     :print-function {p s d -&gt;
                        declare (ignore d)
                        with-slots (x y z) p
-                         (format s "#&lt; ~$ ~$ ~$&gt;" x y z)}
+                         (format s "#&lt;~$ ~$ ~$&gt;" x y z)}
     x :single-float = 0f0
     y :single-float = 0f0
     z :single-float = 0f0
@@ -527,7 +544,7 @@ to facilitate their easy writing:</p>
          (declare (ignore d))
          (with-slots (x y z)
              p
-           (format s "#&lt; ~$ ~$ ~$&gt;" x y z)))))
+           (format s "#&lt;~$ ~$ ~$&gt;" x y z)))))
    "Point"
    (x 0.0 :type single-float)
    (y 0.0 :type single-float)
