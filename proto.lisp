@@ -29,17 +29,17 @@
   (cond ((atom e) e)
         ((null ops) (if (cdr e) e (car e)))
         (t (let* ((op (car ops))
-                  (i (position (pop op) e)))
-             (if (null i)
+                  (op.rhs (member (pop op) e)))
+             (if (null op.rhs)
                (binfix e (cdr ops))
-               (let ((lhs (subseq e 0 i)))
+               (let ((lhs (ldiff e op.rhs)))
                  `(,@op
                     ,(if (eql (car op) 'def)
                        lhs
                        (binfix lhs (cdr ops)))
                     ,(if (eql (car op) 'unreduc)
-                       (subseq e (1+ i))
-                       (binfix (subseq e (1+ i)) ops)))))))))
+                       (cdr op.rhs)
+                       (binfix (cdr op.rhs) ops)))))))))
 
 (defun semicolon (s ch)
   (declare (ignore ch))
