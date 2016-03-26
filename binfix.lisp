@@ -315,6 +315,9 @@
      ;;================ :higher binding user defined ops go here =================
      ( coerce   coerce)
      ( elt      elt)
+     ( th       nth)
+     ( th-cdr   nthcdr)
+     ( th-value nth-value)
      ( svref    svref)
      ( !!       aref)
      ( +.       logior  :unreduce);;------------------------BIT ARITHMETICS
