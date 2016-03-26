@@ -8,7 +8,8 @@
            #:.= #:=. #:.=. #:..= #:=.. #:+= #:-=  #:<<  #:!   #:?
            #:$  #:** #:@   #:@@  #:@n  #:@. #:@.. #:@.n #:.x. #:|;|
            #:<& #:@/ #:.@. #:.@  #:..@
-           #:def #:parameter #:var #:constant #:generic #-sbcl #:struct))
+           #:def #:parameter #:var #:constant #:generic #:symbol-macro
+           #-sbcl #:struct))
 
 #+clisp (shadowing-import '! :binfix)
   #+ecl (shadowing-import '@ :binfix)

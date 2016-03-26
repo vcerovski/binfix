@@ -99,9 +99,10 @@
                         {car x :. slots} doc)});
 
  defparameter *def-symbol*
-   '((var       . defvar)
-     (parameter . defparameter)
-     (constant  . defconstant));
+   '((var          . defvar)
+     (parameter    . defparameter)
+     (constant     . defconstant)
+     (symbol-macro . define-symbol-macro));
 
  defparameter *def-macro*
    '((type           . deftype)
@@ -239,6 +240,7 @@
      ( symbol-macrolet symbol-macrolet :rhs-lbinds)
      ( prog*           prog*           :rhs-lbinds)
      ( prog            prog            :rhs-lbinds)
+     ( progv           progv           :prefix)
      ( macrolet        macrolet        :rhs-fbinds)
      ( flet            flet            :rhs-fbinds)
      ( labels          labels          :rhs-fbinds)
