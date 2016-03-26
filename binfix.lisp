@@ -416,7 +416,7 @@
                    binds r =.. (e-binds rhs)
                      (singleton (binfix `(,@lhs (,op-lisp ,@binds) ,@r) ops))}
                 {:rhs-fbinds in op-prop $
-                   binds-decls* expr =.. (fbinds rhs)
+                   binds-decls* expr =.. (fbinds (binfix rhs `(,(car ops))))
                      (singleton (binfix `(,@lhs (,op-lisp ,@binds-decls* ,@(binfix+ expr ops))) ops))}
                 {functionp op-lisp $
                    if (zerop i)
