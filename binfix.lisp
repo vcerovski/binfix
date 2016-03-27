@@ -478,19 +478,3 @@
                              {t $ `(,(binfix rhs ops))}))))}}}
 
 ;===== BINFIX defined =====
-#|
-(when t ;--------TIMING ONLY CODE
-  (defparameter +timing+ 0)
-  (declaim (type integer +timing+))
-
-  #+sbcl {get-time-usec := sec usec =.. (sb-ext:get-time-of-day) sec * 1000000 + usec}
-  #-sbcl {get-time-usec := 0}
-
-  (set-macro-character #\{
-     {s ch -> (declare (ignore ch))
-              let start = (get-time-usec)
-                 prog1 {binfix $ read-delimited-list #\} s t}
-                       {+timing+ += (get-time-usec) - start}})
-) ;--------TIMING ONLY CODE
-|#
-

@@ -49,13 +49,17 @@
     #+(or sbcl ccl)          (intern ";")
     #+(or clisp ecl) (values (intern ";"))))
 
+(defvar *timing* 0)
+
 (set-macro-character #\{
   (lambda (s ch) (declare (ignore ch))
-    (let ((semicolon (get-macro-character #\;)))
+    (let ((time (get-internal-real-time))
+          (semicolon (get-macro-character #\;)))
       (unwind-protect
         (progn (set-macro-character #\; #'semicolon)
                (binfix (read-delimited-list #\} s t)))
-        (set-macro-character #\; semicolon)))))
+        (set-macro-character #\; semicolon)
+        (incf *timing* (- (get-internal-real-time) time))))))
 
 (set-macro-character #\} (get-macro-character #\) ))
 
