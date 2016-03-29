@@ -240,6 +240,7 @@
      ( symbol-macrolet symbol-macrolet :rhs-lbinds)
      ( prog*           prog*           :rhs-lbinds)
      ( prog            prog            :rhs-lbinds)
+     ( prog1           progv           :prefix)
      ( progv           progv           :prefix)
      ( macrolet        macrolet        :rhs-fbinds)
      ( flet            flet            :rhs-fbinds)
@@ -251,6 +252,7 @@
      ( block    block     :prefix);;------------------------PREFIX FORMS
      ( tagbody  tagbody   :prefix)
      ( catch    catch     :prefix)
+     ( prog1    prog1     :prefix)
      ( prog2    prog2     :prefix)
      ( progn    progn     :prefix)
      ( cond     cond      :prefix);;------------------------COND/CASE FORMS
@@ -289,6 +291,8 @@
      ( =..  multiple-value-bind  :syms/expr);;--------------MULTIPLE VALUES/DESTRUCTURING
      ( .@.  multiple-value-call  :rhs-args)
      ( ..=  destructuring-bind   :lambda/expr)
+     ( !..       nth-value)
+     ( th-value  nth-value)
      ( .x.  values     :unreduce :also-prefix)
      ( :.   cons);;-----------------------------------------S-EXPR
      ( ||       or     :unreduce);;-------------------------LOGICAL OPS
@@ -314,12 +318,13 @@
      ;;================ :lower  binding user defined ops go here =================
      ;;================ :higher binding user defined ops go here =================
      ( coerce   coerce)
-     ( elt      elt)
+     ( elt      elt)    ;;DEPRECIATED
+     ( .!       elt)
      ( th       nth)
      ( th-cdr   nthcdr)
-     ( th-value nth-value)
-     ( svref    svref)
-     ( !!       aref)
+     ( svref    svref)  ;;DEPRECIATED
+     ( !.       svref)
+     ( !!       aref    :rhs-args)
      ( +.       logior  :unreduce);;------------------------BIT ARITHMETICS
      ( -.       logxor  :unreduce)
      ( *.       logand  :unreduce)
@@ -335,6 +340,7 @@
      (  /        /      :also-unary)
      (  *        *      :also-prefix :unreduce)
      ( **       expt)
+     ( .!.      bit     :rhs-args);;-----------------------17.ARRAY INDEXING
      (  !       aref    :rhs-args)
      (  ;        ;));
 
@@ -406,7 +412,7 @@
                        (error "BINFIX: missing r.h.s. of ~S (~S)~@
                                with l.h.s:~%~S" op op-lisp lhs)}
                 {:rhs-lbinds in op-prop $
-                   binds-decls* expr =.. (lbinds {binfix rhs `(,(car ops))})
+                   binds-decls* expr =.. (lbinds (binfix rhs `(,(car ops))))
                      (singleton (binfix `(,@lhs (,op-lisp ,@binds-decls* ,@(binfix+ expr ops))) ops))}
                 {:syms/expr  in op-prop $
                    vars decls =.. (vbinds lhs)

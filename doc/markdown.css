@@ -98,8 +98,9 @@ dd { margin: 0 0 0 2em; }
 
 img { border: 0; -ms-interpolation-mode: bicubic; vertical-align: middle; }
 
-table { border-collapse: collapse; border-spacing: 0; }
-td { vertical-align: top; }
+table { border-collapse: separate; border-spacing: 7pt 2pt; }
+td { vertical-align: top; text-align: center;}
+th { border-bottom: solid 1px; text-align: center;}
 
 @media only screen and (min-width: 480px) {
 body{font-size:14px;}
