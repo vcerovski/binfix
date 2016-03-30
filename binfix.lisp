@@ -240,7 +240,7 @@
      ( symbol-macrolet symbol-macrolet :rhs-lbinds)
      ( prog*           prog*           :rhs-lbinds)
      ( prog            prog            :rhs-lbinds)
-     ( prog1           progv           :prefix)
+     ( prog1           prog1           :prefix)
      ( progv           progv           :prefix)
      ( macrolet        macrolet        :rhs-fbinds)
      ( flet            flet            :rhs-fbinds)
