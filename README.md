@@ -2,7 +2,7 @@
 
 # BINFIX
 
-Viktor Cerovski, Mar 2016.
+Viktor Cerovski, Apr 2016.
 
 <a name="Introduction"></a>
 ## Introduction
@@ -46,6 +46,7 @@ reference 1.0 version.
     * [Destructuring, multiple values](#Destructuring, multiple values)
     * [Loops](#Loops)
 * [Indexing](#Indexing)
+* [Working with bits](#Bits)
 * [Support for macros](#Support for macros)
 * [More involved examples](#More involved examples)
     * [ordinal](#ordinal)
@@ -80,8 +81,8 @@ have been some problems with loading and testing recently, so for the
 time being BINFIX is not running on ECL.
 <!-- passes tests when hand-loaded but does not go through the package system yet. -->
 
-BINFIX shadows `!` in CLISP (`ext:!`), `@` in Clozure CL and ECL, as well as
-`var` (`sb-debug:var`) in SBCL.
+BINFIX shadows `!` and `symbol-macrol` in CLISP , `@` in Clozure CL and ECL, as
+well as `var` (`sb-debug:var`) in SBCL.
 
 The latest version is available at [gihub](https://github.com/vcerovski/binfix),
 and can be obtained by
@@ -748,8 +749,10 @@ the weakest to the strongest binding OP:
   <tr><td><code>th-value</code></td><td><code>nth-value</code></td></tr>
   <tr><td><code>.!</code></td>      <td><code>elt</code></td>      </tr>
   <tr><td><code>th</code></td>      <td><code>nth</code></td>      </tr>
+  <tr><td><code>th-bit</code></td>  <td><code>logbitp</code></td>  </tr>
   <tr><td><code>th-cdr</code></td>  <td><code>nthcdr</code></td>   </tr>
   <tr><td><code>!.</code></td>      <td><code>svref</code></td>    </tr>
+  <tr><td><code>.!!.</code></td>    <td><code>bit</code></td>      </tr>
   <tr><td><code>!!</code></td>      <td><code>aref</code></td>     </tr>
   <tr><td><code>.!.</code></td>     <td><code>bit</code></td>      </tr>
   <tr><td><code>!</code></td>       <td><code>aref</code></td>     </tr>
@@ -762,7 +765,15 @@ allowing easier writting of expr. with arithmetic operations with indices, like
 
 `{a !! i + j; 1- k;}`
 
-etc.
+etc.  In the same relation stand `.!.` and `.!!.`
+
+<a name="Bits"></a>
+### Working with bits
+
+Integer bit-logical BINFIX ops are given with a `.` after the name of OP,
+while bit-array version of the same OP with `.` before and after the name.
+For instance, `{a or. b}` transforms to `(logior a b)`, while
+`{a .or. b}` transforms to `(bit-ior a b)`.
 
 <a name="Support for macros"></a>
 ### Support for macros
@@ -1096,116 +1107,150 @@ by optional declarations and a BINFIX-expression.
 prints the table of all BINFIX OPs and their properties from the weakest-
 to the strongest-binding OP:
 
-    BINFIX           LISP            Properties
+    BINFIX             LISP            Properties
     ============================================================
-    <&               prog1
-    &                progn           :unreduce
-    def              binfix::defs    :macro
-    let              let             :rhs-lbinds
-    let*             let*            :rhs-lbinds
-    symbol-macrolet  symbol-macrolet :rhs-lbinds
-    prog*            prog*           :rhs-lbinds
-    prog             prog            :rhs-lbinds
-    prog1            progv           :prefix
-    progv            progv           :prefix
-    macrolet         macrolet        :rhs-fbinds
-    flet             flet            :rhs-fbinds
-    labels           labels          :rhs-fbinds
-    :==              defmacro        :def
-    :=               defun           :def
-    :-               defmethod       :defm
-    :type=           deftype         :def
-    block            block           :prefix
-    tagbody          tagbody         :prefix
-    catch            catch           :prefix
-    prog1            prog1           :prefix
-    prog2            prog2           :prefix
-    progn            progn           :prefix
-    cond             cond            :prefix
-    case             case            :prefix
-    ccase            ccase           :prefix
-    ecase            ecase           :prefix
-    typecase         typecase        :prefix
-    etypecase        etypecase       :prefix
-    ctypecase        ctypecase       :prefix
-    loop             #<FUNCTION identity>            :prefix
-    ?                nil             :split
-    $                nil             :split
-    .=               setf
-    +=               incf
-    -=               decf
-    =.               setq
-    .=.              set
-    setq             setq            :rhs-sbinds
-    set              set             :rhs-sbinds
-    psetq            psetq           :rhs-sbinds
-    setf             setf            :rhs-ebinds
-    psetf            psetf           :rhs-ebinds
-    .@               mapc            :rhs-args
-    ..@              mapl            :rhs-args
-    @/               reduce          :rhs-args
-    @.               mapcar          :rhs-args
-    @..              maplist         :rhs-args
-    @n               mapcan          :rhs-args
-    @.n              mapcon          :rhs-args
-    @@               apply           :rhs-args
-    @                funcall         :rhs-args       :left-assoc     :also-postfix
-    :->              function        :lhs-lambda
-    ->               lambda          :lhs-lambda
-    values           values          :prefix
-    =..              multiple-value-bind             :syms/expr
-    .@.              multiple-value-call             :rhs-args
-    ..=              destructuring-bind              :lambda/expr
-    !..              nth-value
-    th-value         nth-value
-    .x.              values          :unreduce       :also-prefix
-    :|.|             cons
-    ||               or              :unreduce
-    or               or              :unreduce       :also-prefix
-    &&               and             :unreduce
-    and              and             :unreduce       :also-prefix
-    <                <               :unreduce       :also-prefix
-    >                >               :unreduce       :also-prefix
-    <=               <=              :unreduce       :also-prefix
-    >=               >=              :unreduce       :also-prefix
-    ===              equalp
-    equalp           equalp
-    equal            equal
-    ==               eql
-    eql              eql             :also-prefix
-    =s=              string=
-    =c=              char=           :unreduce
-    =                =               :unreduce       :also-prefix
-    /=               /=              :unreduce       :also-prefix
-    eq               eq
-    subtypep         subtypep
-    in               member
-    coerce           coerce
-    elt              elt
-    .!               elt
-    th               nth
-    th-cdr           nthcdr
-    svref            svref
-    !.               svref
-    !!               aref            :rhs-args
-    binfix::+.       logior          :unreduce
-    binfix::-.       logxor          :unreduce
-    binfix::*.       logand          :unreduce
-    <<               ash
-    mod              mod
-    min              min             :also-prefix    :unreduce
-    max              max             :also-prefix    :unreduce
-    +                +               :also-unary     :unreduce
-    -                -               :also-unary     :unreduce
-    floor            floor
-    ceiling          ceiling
-    truncate         truncate
-    /                /               :also-unary
-    *                *               :also-prefix    :unreduce
-    **               expt
-    .!.              bit             :rhs-args
-    !                aref            :rhs-args
-    |;|              |;|
+    &>               binfix::&>-expand               
+    <&               prog1           
+    &                progn           :unreduce       
+    def              binfix::defs    :macro          
+    binfix::test     binfix::test    :prefix         :unreduce       
+    let              let             :rhs-lbinds     
+    let*             let*            :rhs-lbinds     
+    symbol-macrolet  symbol-macrolet :rhs-lbinds     
+    prog*            prog*           :rhs-lbinds     
+    prog             prog            :rhs-lbinds     
+    prog1            prog1           :prefix         
+    progv            progv           :prefix         
+    macrolet         macrolet        :rhs-fbinds     
+    flet             flet            :rhs-fbinds     
+    labels           labels          :rhs-fbinds     
+    :==              defmacro        :def            
+    :=               defun           :def            
+    :-               defmethod       :defm           
+    :type=           deftype         :def            
+    block            block           :prefix         
+    tagbody          tagbody         :prefix         
+    catch            catch           :prefix         
+    prog1            prog1           :prefix         
+    prog2            prog2           :prefix         
+    progn            progn           :prefix         
+    cond             cond            :prefix         
+    case             case            :prefix         
+    ccase            ccase           :prefix         
+    ecase            ecase           :prefix         
+    typecase         typecase        :prefix         
+    etypecase        etypecase       :prefix         
+    ctypecase        ctypecase       :prefix         
+    loop             #<system-function identity>     :prefix         
+    ?                nil             :split          
+    $                nil             :split          
+    .=               setf            
+    +=               incf            
+    -=               decf            
+    =.               setq            
+    .=.              set             
+    setq             setq            :rhs-sbinds     
+    set              set             :rhs-sbinds     
+    psetq            psetq           :rhs-sbinds     
+    setf             setf            :rhs-ebinds     
+    psetf            psetf           :rhs-ebinds     
+    .@               mapc            :rhs-args       
+    ..@              mapl            :rhs-args       
+    @/               reduce          :rhs-args       
+    @.               mapcar          :rhs-args       
+    @..              maplist         :rhs-args       
+    @n               mapcan          :rhs-args       
+    @.n              mapcon          :rhs-args       
+    @@               apply           :rhs-args       
+    @                funcall         :rhs-args       :left-assoc     :also-postfix   
+    :->              function        :lhs-lambda     
+    lambda           lambda          :rhs-lambda     
+    ->               lambda          :lhs-lambda     
+    values           values          :prefix         
+    =..              multiple-value-bind             :syms/expr      
+    .@.              multiple-value-call             :rhs-args       
+    ..=              destructuring-bind              :lambda/expr    
+    !..              nth-value       
+    th-value         nth-value       
+    .x.              values          :unreduce       :also-prefix    
+    :|.|             cons            
+    ||               or              :unreduce       
+    or               or              :unreduce       :also-prefix    
+    &&               and             :unreduce       
+    and              and             :unreduce       :also-prefix    
+    <                <               :unreduce       :also-prefix    
+    >                >               :unreduce       :also-prefix    
+    <=               <=              :unreduce       :also-prefix    
+    >=               >=              :unreduce       :also-prefix    
+    ===              equalp          
+    equalp           equalp          
+    equal            equal           
+    ==               eql             
+    eql              eql             :also-prefix    
+    =s=              string=         
+    =c=              char=           :unreduce       
+    =                =               :unreduce       :also-prefix    
+    /=               /=              :unreduce       :also-prefix    
+    eq               eq              
+    subtypep         subtypep        
+    in               member          
+    coerce           coerce          
+    .!!.             bit             :rhs-args       
+    th-cdr           nthcdr          
+    th               nth             
+    elt              elt             
+    .!               elt             
+    svref            svref           
+    !.               svref           
+    !!               aref            :rhs-args       
+    th-bit           logbitp         
+    dpb              dpb             :rhs-args       
+    ldb              ldb             
+    ldb-test         ldb-test        
+    deposit-field    deposit-field   :rhs-args       
+    mask-field       mask-field      
+    byte             byte            
+    eqv.             logeqv          :also-unary     :unreduce       
+    or.              logior          :also-unary     :unreduce       
+    xor.             logxor          :also-unary     :unreduce       
+    and.             logand          :also-unary     :unreduce       
+    nand.            lognand         
+    nor.             lognor          
+    test.            logtest         
+    orc1.            logorc1         
+    orc2.            logorc2         
+    andc1.           logandc1        
+    andc2.           logandc2        
+    .eqv.            bit-eqv         :rhs-args       
+    .or.             bit-ior         :rhs-args       
+    .xor.            bit-xor         :rhs-args       
+    .and.            bit-and         :rhs-args       
+    .nand.           bit-and         :rhs-args       
+    .nor.            bit-nor         :rhs-args       
+    .not.            bit-not         :also-unary     
+    .orc1.           bit-orc1        :rhs-args       
+    .orc2.           bit-orc2        :rhs-args       
+    .andc1.          bit-andc1       :rhs-args       
+    .andc2.          bit-andc2       :rhs-args       
+    .eqv.            bit-eqv         :rhs-args       
+    <<               ash             
+    lcm              lcm             :also-unary     :unreduce       
+    gcd              gcd             :also-unary     :unreduce       
+    mod              mod             
+    rem              rem             
+    min              min             :also-prefix    :unreduce       
+    max              max             :also-prefix    :unreduce       
+    +                +               :also-unary     :unreduce       
+    -                -               :also-unary     :unreduce       
+    floor            floor           
+    ceiling          ceiling         
+    truncate         truncate        
+    /                /               :also-unary     
+    *                *               :also-prefix    :unreduce       
+    **               expt            
+    .!.              bit             :rhs-args       
+    !                aref            :rhs-args       
+    |;|              |;|             
     ------------------------------------------------------------
 
 => `nil`

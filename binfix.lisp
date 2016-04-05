@@ -318,18 +318,52 @@
      ;;================ :lower  binding user defined ops go here =================
      ;;================ :higher binding user defined ops go here =================
      ( coerce   coerce)
+     (.!!.      bit       :rhs-args);;----------------------INDEXING
+     ( th-cdr   nthcdr)
+     ( th       nth)
      ( elt      elt)    ;;DEPRECIATED
      ( .!       elt)
-     ( th       nth)
-     ( th-cdr   nthcdr)
      ( svref    svref)  ;;DEPRECIATED
      ( !.       svref)
-     ( !!       aref    :rhs-args)
-     ( +.       logior  :unreduce);;------------------------BIT ARITHMETICS
-     ( -.       logxor  :unreduce)
-     ( *.       logand  :unreduce)
-     ( <<       ash)
-     ( mod      mod);;--------------------------------------ARITHMETICS
+     ( !!       aref      :rhs-args)
+     ( th-bit        logbitp);;-----------------------------BIT ARITHMETICS 
+     ( dpb           dpb           :rhs-args)
+     ( ldb           ldb)
+     ( ldb-test      ldb-test)
+     ( deposit-field deposit-field :rhs-args)
+     ( mask-field    mask-field)
+     ( byte          byte)
+   ;;( +.       logior    :also-unary :unreduce)
+   ;;( -.       logxor    :also-unary :unreduce)
+   ;;( *.       logand    :also-unary :unreduce)
+     ( eqv.     logeqv    :also-unary :unreduce)
+     ( or.      logior    :also-unary :unreduce)
+     ( xor.     logxor    :also-unary :unreduce)
+     ( and.     logand    :also-unary :unreduce)
+     ( nand.    lognand)
+     ( nor.     lognor)
+     ( test.    logtest)
+     ( orc1.    logorc1)
+     ( orc2.    logorc2)
+     ( andc1.   logandc1)
+     ( andc2.   logandc2)
+     (.eqv.     bit-eqv   :rhs-args)
+     (.or.      bit-ior   :rhs-args)
+     (.xor.     bit-xor   :rhs-args)
+     (.and.     bit-and   :rhs-args)
+     (.nand.    bit-and   :rhs-args)
+     (.nor.     bit-nor   :rhs-args)
+     (.not.     bit-not   :also-unary)
+     (.orc1.    bit-orc1  :rhs-args)
+     (.orc2.    bit-orc2  :rhs-args)
+     (.andc1.   bit-andc1 :rhs-args)
+     (.andc2.   bit-andc2 :rhs-args)
+     (.eqv.     bit-eqv   :rhs-args)
+     ( <<       ash);;--------------------------------------ARITHMETICS
+     ( lcm      lcm     :also-unary  :unreduce)
+     ( gcd      gcd     :also-unary  :unreduce)
+     ( mod      mod)
+     ( rem      rem)
      ( min      min     :also-prefix :unreduce)
      ( max      max     :also-prefix :unreduce)
      (  +        +      :also-unary  :unreduce)
@@ -340,7 +374,7 @@
      (  /        /      :also-unary)
      (  *        *      :also-prefix :unreduce)
      ( **       expt)
-     ( .!.      bit     :rhs-args);;-----------------------17.ARRAY INDEXING
+     ( .!.      bit     :rhs-args);;------------------------ARRAY INDEXING
      (  !       aref    :rhs-args)
      (  ;        ;));
 
@@ -405,7 +439,7 @@
              op = (caar ops)
              op-lisp = (cadar ops)
              op-prop = (cddar ops)
-          (cond {op == '; $ error "BINFIX bare ; in:~% ~{ ~A~}" e}
+          (cond {op == '; $ error "BINFIX: bare ; in:~% ~{ ~A~}" e}
                 {null rhs $
                    if {:also-postfix in op-prop}
                       `(,op-lisp,@(binfix lhs ops))
