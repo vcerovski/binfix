@@ -432,13 +432,12 @@
                {t          $ e-binds (cdr e) binds {car e :. lhs}          rhs})}
 
   {if {atom e || null ops} e
-    let* i = (position (caar ops) e)
-      {if (null i) (binfix e (cdr ops))
-         let lhs = (subseq e 0 i)
-             rhs = (subseq e (1+ i))
-             op = (caar ops)
-             op-lisp = (cadar ops)
-             op-prop = (cddar ops)
+    let rhs = {caar ops in e}
+      {if (null rhs) (binfix e (cdr ops))
+        let lhs = (ldiff e rhs)
+            op = (pop rhs)
+            op-lisp = (cadar ops)
+            op-prop = (cddar ops)
           (cond {op == '; $ error "BINFIX: bare ; in:~% ~{ ~A~}" e}
                 {null rhs $
                    if {:also-postfix in op-prop}
@@ -462,7 +461,7 @@
                    binds-decls* expr =.. (fbinds (binfix rhs `(,(car ops))))
                      (singleton (binfix `(,@lhs (,op-lisp ,@binds-decls* ,@(binfix+ expr ops))) ops))}
                 {functionp op-lisp $
-                   if (zerop i)
+                   if (null lhs)
                       {op :. funcall op-lisp {binfix rhs `(,(car ops))}}
                       (binfix `(,@lhs,{op :. funcall op-lisp {binfix rhs `(,(car ops))}}) ops)}
                 {:lhs-lambda in op-prop $
@@ -472,12 +471,12 @@
                   `(progn ,(binfix lhs ops) ,@(reduce #'append (mapcar op-lisp (split rhs op))))}
                 {:unreduce in op-prop && position op rhs $ ;;position necessary...
                   let u = (mapcar #'singleton (unreduce rhs op `(,(binfix lhs (cdr ops)),op-lisp)))
-                    (cond {plusp i $ u}
+                    (cond {lhs $ u}
                           {:also-unary  in op-prop $ `(,op-lisp (,op-lisp ,(caddr u)) ,@(cdddr u))}
                           {:also-prefix in op-prop $ `(,op-lisp (,op-lisp,@(caddr u)) ,@(cdddr u))}
                           {t $ error "BINFIX: missing l.h.s. of ~S (~S)~@
                                       with r.h.s:~%~S" op op-lisp rhs})}
-                {zerop i $ cond {:also-unary  in op-prop $ `(,op-lisp ,(singleton (binfix rhs ops)))}
+                {null lhs $ cond{:also-unary  in op-prop $ `(,op-lisp ,(singleton (binfix rhs ops)))}
                                 {:also-prefix in op-prop || :prefix in op-prop
                                                          $ `(,op-lisp ,@(if {'; in rhs}
                                                                           (binfix+ rhs ops)
@@ -503,7 +502,7 @@
                      `(,op-lisp ,llist ,(car rhs)
                                 ,@(decl*-binfix+ (cdr rhs) ops decls))}
                 {:split in op-prop $
-                   `(,(if (= i 1) (car e) (binfix lhs (cdr ops)))
+                   `(,(if {lhs && null (cdr lhs)} (car e) (binfix lhs (cdr ops)))
                      ,{when rhs
                          let e = (binfix rhs ops)
                             (if (cdr e) e (car e))})}
