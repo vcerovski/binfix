@@ -2,7 +2,7 @@
 
 # BINFIX
 
-Viktor Cerovski, Apr 2016.
+Viktor Cerovski, May 2016.
 
 <a name="Introduction"></a>
 ## Introduction
@@ -16,8 +16,9 @@ One of them, available from v0.16, is use of a single `;` symbol as a
 form-separating symbol in [implicit-progn](#LET ; progn example), [expression
 terminator](#SETF expr-termination) for SETFs, or as end of [LET binds
 symbol](#LET ; examples) or [local functions definition](#Local functions).
+There is also `def`, for [defining things](#def).
 
-The most recent is `def`, for [defining things](#def).
+The most recent one is the same priority OPs (since v0.20).
 
 Once the rest of them have been implemented, BINFIX will go to RC and then to
 reference 1.0 version.
@@ -758,8 +759,9 @@ the weakest to the strongest binding OP:
   <tr><td><code>!</code></td>       <td><code>aref</code></td>     </tr>
 </table>
 
-`!..` and `th-value` are mere synonyms, while `!!` is a weaker binding `!`,
-allowing easier writting of expr. with arithmetic operations with indices, like
+`!..` and `th-value` are mere synonyms and have the same priority, while `!!`
+is a weaker binding `!`, allowing easier writting of expr. with arithmetic
+operations with indices, like
 
 `{a !! i + j}`
 
@@ -1032,8 +1034,16 @@ and `let`s, a longer list of OPs with properties, redefined `binfix` to
 its full capability, and, finally, several interface functions for
 dealing with OPs (`lsbinfix`, `defbinfix` and `rmbinfix`).
 
-Priorities of operations are given only relatively, with no numerical values and
-thus with no two operations of the same priority.
+Priorities of operations in proto-BINIFIX are given only relatively, with no
+numerical values and thus with no two operations of the same priority.
+
+Since v0.20, symbol of a BINFIX operation has a list of properties stored into
+the symbol property `binfix::properties`, which includes a numerically given
+priority of the OP (which also considerably speeds up parsing.) The actual
+value of number representing priority is supposed to be immaterial since only
+relation to other OPs priority values is relevant.  Defining new same-priority
+OPs should be done via `defbinfix` with `:as` option, which may change priority
+values of many other OPs.
 
 <a name="binfix macros"></a>
 Since shallow transformation into standard syntax is done by function `binfix`
@@ -1102,156 +1112,153 @@ by optional declarations and a BINFIX-expression.
 <a name="List of all operations"></a>
 ### List of all operations
 
+Command
+
     (lsbinfix)
 
 prints the table of all BINFIX OPs and their properties from the weakest-
-to the strongest-binding OP:
+to the strongest-binding OP, with parens enclosing OP(s) of the same priority:
 
-    BINFIX             LISP            Properties
-    ============================================================
-    &>               binfix::&>-expand               
-    <&               prog1           
-    &                progn           :unreduce       
-    def              binfix::defs    :macro          
-    binfix::test     binfix::test    :prefix         :unreduce       
-    let              let             :rhs-lbinds     
-    let*             let*            :rhs-lbinds     
-    symbol-macrolet  symbol-macrolet :rhs-lbinds     
-    prog*            prog*           :rhs-lbinds     
-    prog             prog            :rhs-lbinds     
-    prog1            prog1           :prefix         
-    progv            progv           :prefix         
-    macrolet         macrolet        :rhs-fbinds     
-    flet             flet            :rhs-fbinds     
-    labels           labels          :rhs-fbinds     
-    :==              defmacro        :def            
-    :=               defun           :def            
-    :-               defmethod       :defm           
-    :type=           deftype         :def            
-    block            block           :prefix         
-    tagbody          tagbody         :prefix         
-    catch            catch           :prefix         
-    prog1            prog1           :prefix         
-    prog2            prog2           :prefix         
-    progn            progn           :prefix         
-    cond             cond            :prefix         
-    case             case            :prefix         
-    ccase            ccase           :prefix         
-    ecase            ecase           :prefix         
-    typecase         typecase        :prefix         
-    etypecase        etypecase       :prefix         
-    ctypecase        ctypecase       :prefix         
-    loop             #<system-function identity>     :prefix         
-    ?                nil             :split          
-    $                nil             :split          
-    .=               setf            
-    +=               incf            
-    -=               decf            
-    =.               setq            
-    .=.              set             
-    setq             setq            :rhs-sbinds     
-    set              set             :rhs-sbinds     
-    psetq            psetq           :rhs-sbinds     
-    setf             setf            :rhs-ebinds     
-    psetf            psetf           :rhs-ebinds     
-    .@               mapc            :rhs-args       
-    ..@              mapl            :rhs-args       
-    @/               reduce          :rhs-args       
-    @.               mapcar          :rhs-args       
-    @..              maplist         :rhs-args       
-    @n               mapcan          :rhs-args       
-    @.n              mapcon          :rhs-args       
-    @@               apply           :rhs-args       
-    @                funcall         :rhs-args       :left-assoc     :also-postfix   
-    :->              function        :lhs-lambda     
-    lambda           lambda          :rhs-lambda     
-    ->               lambda          :lhs-lambda     
-    values           values          :prefix         
-    =..              multiple-value-bind             :syms/expr      
-    .@.              multiple-value-call             :rhs-args       
-    ..=              destructuring-bind              :lambda/expr    
-    !..              nth-value       
-    th-value         nth-value       
-    .x.              values          :unreduce       :also-prefix    
-    :|.|             cons            
-    ||               or              :unreduce       
-    or               or              :unreduce       :also-prefix    
-    &&               and             :unreduce       
-    and              and             :unreduce       :also-prefix    
-    <                <               :unreduce       :also-prefix    
-    >                >               :unreduce       :also-prefix    
-    <=               <=              :unreduce       :also-prefix    
-    >=               >=              :unreduce       :also-prefix    
-    ===              equalp          
-    equalp           equalp          
-    equal            equal           
-    ==               eql             
-    eql              eql             :also-prefix    
-    =s=              string=         
-    =c=              char=           :unreduce       
-    =                =               :unreduce       :also-prefix    
-    /=               /=              :unreduce       :also-prefix    
-    eq               eq              
-    subtypep         subtypep        
-    in               member          
-    coerce           coerce          
-    .!!.             bit             :rhs-args       
-    th-cdr           nthcdr          
-    th               nth             
-    elt              elt             
-    .!               elt             
-    svref            svref           
-    !.               svref           
-    !!               aref            :rhs-args       
-    th-bit           logbitp         
-    dpb              dpb             :rhs-args       
-    ldb              ldb             
-    ldb-test         ldb-test        
-    deposit-field    deposit-field   :rhs-args       
-    mask-field       mask-field      
-    byte             byte            
-    eqv.             logeqv          :also-unary     :unreduce       
-    or.              logior          :also-unary     :unreduce       
-    xor.             logxor          :also-unary     :unreduce       
-    and.             logand          :also-unary     :unreduce       
-    nand.            lognand         
-    nor.             lognor          
-    test.            logtest         
-    orc1.            logorc1         
-    orc2.            logorc2         
-    andc1.           logandc1        
-    andc2.           logandc2        
-    .eqv.            bit-eqv         :rhs-args       
-    .or.             bit-ior         :rhs-args       
-    .xor.            bit-xor         :rhs-args       
-    .and.            bit-and         :rhs-args       
-    .nand.           bit-and         :rhs-args       
-    .nor.            bit-nor         :rhs-args       
-    .not.            bit-not         :also-unary     
-    .orc1.           bit-orc1        :rhs-args       
-    .orc2.           bit-orc2        :rhs-args       
-    .andc1.          bit-andc1       :rhs-args       
-    .andc2.          bit-andc2       :rhs-args       
-    .eqv.            bit-eqv         :rhs-args       
-    <<               ash             
-    lcm              lcm             :also-unary     :unreduce       
-    gcd              gcd             :also-unary     :unreduce       
-    mod              mod             
-    rem              rem             
-    min              min             :also-prefix    :unreduce       
-    max              max             :also-prefix    :unreduce       
-    +                +               :also-unary     :unreduce       
-    -                -               :also-unary     :unreduce       
-    floor            floor           
-    ceiling          ceiling         
-    truncate         truncate        
-    /                /               :also-unary     
-    *                *               :also-prefix    :unreduce       
-    **               expt            
-    .!.              bit             :rhs-args       
-    !                aref            :rhs-args       
-    |;|              |;|             
-    ------------------------------------------------------------
+      BINFIX         LISP            Properties
+    ==============================================================================
+    ( <&             prog1 )
+    ( &              progn           :unreduce )
+    ( def            binfix::defs    :macro )
+    ( let            let             :rhs-lbinds
+      let*           let*            :rhs-lbinds
+      symbol-macrolet                symbol-macrolet :rhs-lbinds
+      prog*          prog*           :rhs-lbinds
+      prog           prog            :rhs-lbinds )
+    ( macrolet       macrolet        :rhs-fbinds
+      flet           flet            :rhs-fbinds
+      labels         labels          :rhs-fbinds )
+    ( :==            defmacro        :def
+      :=             defun           :def
+      :-             defmethod       :defm
+      :type=         deftype         :def )
+    ( block          block           :prefix
+      tagbody        tagbody         :prefix
+      catch          catch           :prefix
+      prog1          prog1           :prefix
+      prog2          prog2           :prefix
+      progn          progn           :prefix
+      cond           cond            :prefix
+      case           case            :prefix
+      ccase          ccase           :prefix
+      ecase          ecase           :prefix
+      typecase       typecase        :prefix
+      etypecase      etypecase       :prefix
+      ctypecase      ctypecase       :prefix )
+    ( loop           #<FUNCTION identity>            :prefix )
+    ( ?              nil             :split )
+    ( $              nil             :split )
+    ( .=             setf
+      +=             incf
+      -=             decf
+      =.             setq
+      .=.            set )
+    ( setq           setq            :rhs-sbinds
+      set            set             :rhs-sbinds
+      psetq          psetq           :rhs-sbinds )
+    ( setf           setf            :rhs-ebinds
+      psetf          psetf           :rhs-ebinds )
+    ( .@             mapc            :rhs-args )
+    ( ..@            mapl            :rhs-args )
+    ( @/             reduce          :rhs-args )
+    ( @.             mapcar          :rhs-args )
+    ( @..            maplist         :rhs-args )
+    ( @n             mapcan          :rhs-args )
+    ( @.n            mapcon          :rhs-args )
+    ( @@             apply           :rhs-args )
+    ( @              funcall         :rhs-args       :left-assoc     :also-postfix )
+    ( :->            function        :lhs-lambda )
+    ( ->             lambda          :lhs-lambda )
+    ( values         values          :prefix )
+    ( =..            multiple-value-bind             :syms/expr )
+    ( .@.            multiple-value-call             :rhs-args )
+    ( ..=            destructuring-bind              :lambda/expr )
+    ( !..            nth-value )
+    ( th-value       nth-value )
+    ( .x.            values          :unreduce       :also-prefix )
+    ( :|.|           cons )
+    ( ||             or              :unreduce
+      or             or              :unreduce       :also-prefix )
+    ( &&             and             :unreduce
+      and            and             :unreduce       :also-prefix )
+    ( <              <               :unreduce       :also-prefix )
+    ( >              >               :unreduce       :also-prefix )
+    ( <=             <=              :unreduce       :also-prefix )
+    ( >=             >=              :unreduce       :also-prefix )
+    ( ===            equalp )
+    ( equalp         equalp )
+    ( equal          equal )
+    ( ==             eql )
+    ( eql            eql             :also-prefix )
+    ( =s=            string= )
+    ( =c=            char=           :unreduce )
+    ( =              =               :unreduce       :also-prefix )
+    ( /=             /=              :unreduce       :also-prefix )
+    ( eq             eq )
+    ( subtypep       subtypep )
+    ( in             member )
+    ( coerce         coerce )
+    ( .!!.           bit             :rhs-args )
+    ( th-cdr         nthcdr )
+    ( th             nth )
+    ( elt            elt )
+    ( .!             elt )
+    ( svref          svref )
+    ( !.             svref )
+    ( !!             aref            :rhs-args )
+    ( th-bit         logbitp )
+    ( dpb            dpb             :rhs-args )
+    ( ldb            ldb )
+    ( ldb-test       ldb-test )
+    ( deposit-field  deposit-field   :rhs-args )
+    ( mask-field     mask-field )
+    ( byte           byte )
+    ( eqv.           logeqv          :also-unary     :unreduce )
+    ( or.            logior          :also-unary     :unreduce )
+    ( xor.           logxor          :also-unary     :unreduce )
+    ( and.           logand          :also-unary     :unreduce )
+    ( nand.          lognand )
+    ( nor.           lognor )
+    ( test.          logtest )
+    ( orc1.          logorc1 )
+    ( orc2.          logorc2 )
+    ( andc1.         logandc1 )
+    ( andc2.         logandc2 )
+    ( .eqv.          bit-eqv         :rhs-args )
+    ( .or.           bit-ior         :rhs-args )
+    ( .xor.          bit-xor         :rhs-args )
+    ( .and.          bit-and         :rhs-args )
+    ( .nand.         bit-and         :rhs-args )
+    ( .nor.          bit-nor         :rhs-args )
+    ( .not.          bit-not         :also-unary )
+    ( .orc1.         bit-orc1        :rhs-args )
+    ( .orc2.         bit-orc2        :rhs-args )
+    ( .andc1.        bit-andc1       :rhs-args )
+    ( .andc2.        bit-andc2       :rhs-args )
+    ( <<             ash )
+    ( lcm            lcm             :also-unary     :unreduce )
+    ( gcd            gcd             :also-unary     :unreduce )
+    ( mod            mod )
+    ( rem            rem )
+    ( min            min             :also-prefix    :unreduce
+      max            max             :also-prefix    :unreduce )
+    ( +              +               :also-unary     :unreduce )
+    ( -              -               :also-unary     :unreduce )
+    ( floor          floor )
+    ( ceiling        ceiling )
+    ( truncate       truncate )
+    ( /              /               :also-unary )
+    ( *              *               :also-prefix    :unreduce )
+    ( **             expt )
+    ( .!.            bit             :rhs-args )
+    ( !              aref            :rhs-args )
+    ( |;|            |;| )
+    ------------------------------------------------------------------------------
+
 
 => `nil`
 

@@ -9,7 +9,7 @@
          finally (return `(declaim ,@decl)) &
 
  deftype priority ()
-   '(member :first :last :earlier :later :before :after :replace) &
+   '(member :first :last :earlier :later :before :after :as) &
 
  deftype property ()
    '(member :lhs-lambda :def :defm :split :unreduce  :syms/expr :lambda/expr
@@ -17,33 +17,43 @@
             :also-prefix :also-unary :also-postfix :left-assoc :rhs-args
             :macro) &
 
- rmbinfix op :symbol := *binfix* =. delete op *binfix* :key #'car &
+ rmbinfix op :symbol :=
+   *binfix* =. delete-if {o -> null (cdr o) && caar o == op} *binfix*;
+   *binfix* =. o -> delete op o :key #'car @. *binfix*;
+   remprop op 'properties;
+   () &
+
+ op-position op :symbol :=
+  "Returns index of *binfix* elem that contains op, or nil otherwise."
+   loop for i = 0 then (1+ i)
+        for o in *binfix* do
+      (when {car o == op || listp (car o) && member op o :key #'car}
+         (return i)) &
 
  declaim-fun defbinfix {symbol &optional {symbol || function} priority &rest t :-> boolean} &
 
  defbinfix op lisp-op = op p = :later &rest prop :=
   "DEFBINFIX op [lisp-op [priority op [property]*]]"
    let i = {ecase p;
-              :first   ? 0;
-              :last    ? length *binfix* - 1;
-              :earlier ? 1 + position 'in *binfix* :key #'car;
-              :later   ? position 'coerce *binfix* :key #'car;
-              :before  ? position (pop prop) *binfix* :key #'car;
-              :after   ? position (pop prop) *binfix* :key #'car + 1;
-              :replace ? let i = position op *binfix* :key #'car;
-                          if i {prop =. cddr (elt *binfix* i) & i}
-                               (error "DEFBINFIX: undefined ~S" op)};
+             :first      ? 0;
+             :last       ? op-position '; ;
+             :earlier    ? op-position 'in + 1;
+             :later      ? op-position 'coerce;
+             :before :as ? op-position (pop prop);
+             :after      ? op-position (pop prop) + 1};
      every {p -> etypecase p (property p)} prop;
      rmbinfix op;
+     unless i (error "DEFBINFIX ~S ~S cannot find binfix op." op p);
      *binfix* =. append (subseq *binfix* 0 i)
-                       `((,op ,lisp-op ,@prop))
-                        (subseq *binfix* i);
+                       `(((,op ,lisp-op ,@prop) ,@{p == :as && *binfix* .! i}))
+                        (subseq *binfix* (if {p == :as} (1+ i) i));
+     (assign-properties);
      t &
 
  lsbinfix s :stream = *standard-output* :=
-    format s "BINFIX~16t   LISP~16t~32t   Properties~@
-              ============================================================~@
-             ~{~&~{~s~,16t~}~}~@
-              ------------------------------------------------------------~@
+    format s "  BINFIX~16t   LISP~16t~32t   Properties~@
+              ==============================================================================~@
+              ~{~&(~{~2t~{~s~^~,16t~}~^~%~} )~}~@
+              ------------------------------------------------------------------------------~@
              " *binfix*
 }

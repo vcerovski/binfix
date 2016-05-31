@@ -64,7 +64,7 @@
              {t $ error "BINFIX method-lambda-list expects symbol or list, not ~S" s});
 
  struct x &optional defs types name opts slots doc :=
-   (cond {null x || car x == '; 
+   (cond {null x || car x == ';
             $ `(defstruct ,(if opts `(,name,@(nreverse opts)) name)
                                   ,@{doc && `(,doc)} ,@(nreverse slots)) :. defs
                .x. types .x. cdr x}
@@ -89,7 +89,7 @@
          {keywordp (cadr x) && caddr x == '=
             $ if {fifth x == :read-only}
                 (struct (nthcdr 6 x) defs types name opts
-                        {`(,(car x),(cadddr x):type,(keyword-type-spec(cadr x)),@(subseq x 4 6)) :. slots} doc) 
+                        {`(,(car x),(cadddr x):type,(keyword-type-spec(cadr x)),@(subseq x 4 6)) :. slots} doc)
                 (struct (nthcdr 4 x) defs types name opts
                         {`(,(car x),(cadddr x):type,(keyword-type-spec(cadr x))) :. slots} doc)}
          {t $ if {cadr x == :read-only}
@@ -117,7 +117,7 @@
      {let def = (binfix (cdr x))
         (if {assgn in cdr x}
            (defs () `((,(cdr (assoc (car x) *x*)) ,@(cdr def)) ,@defs) types)
-           (error "BINFIX def ~A instead of ~A definition has~%~S" (car x) descr (cdr x)))} 
+           (error "BINFIX def ~A instead of ~A definition has~%~S" (car x) descr (cdr x)))}
    (cond {null x
             $ `(,@{types && nreverse types}
                 ,@(nreverse defs))}
@@ -231,183 +231,200 @@
 
 
  *binfix* =.
-   `(( <&              prog1)
-     ( &               progn           :unreduce)
+   `((( <&              prog1))
+     (( &               progn           :unreduce))
      
-     ( def             defs            :macro);;------------DEFINITIONS
-     ( let             let             :rhs-lbinds);;-------LET constructs
-     ( let*            let*            :rhs-lbinds)
-     ( symbol-macrolet symbol-macrolet :rhs-lbinds)
-     ( prog*           prog*           :rhs-lbinds)
-     ( prog            prog            :rhs-lbinds)
-     ( prog1           prog1           :prefix)
-     ( progv           progv           :prefix)
-     ( macrolet        macrolet        :rhs-fbinds)
-     ( flet            flet            :rhs-fbinds)
-     ( labels          labels          :rhs-fbinds)
-     ( :==             defmacro        :def)
-     ( :=              defun           :def)
-     ( :-              defmethod       :defm)
-     ( :type=   deftype   :def)
-     ( block    block     :prefix);;------------------------PREFIX FORMS
-     ( tagbody  tagbody   :prefix)
-     ( catch    catch     :prefix)
-     ( prog1    prog1     :prefix)
-     ( prog2    prog2     :prefix)
-     ( progn    progn     :prefix)
-     ( cond     cond      :prefix);;------------------------COND/CASE FORMS
-     ( case     case      :prefix)
-     ( ccase    ccase     :prefix)
-     ( ecase    ecase     :prefix)
-     ( typecase typecase  :prefix)
-     (etypecase etypecase :prefix)
-     (ctypecase ctypecase :prefix)
-     ( loop ,#'identity   :prefix);;------------------------W/UNCHANGED RHS
-  ;; ( if       if        :prefix);; REMOVED!
-     (  ?   ()         :split);;----------------------------$pliters
-     (  $   ()         :split)
-     ( .=   setf) ;;----------------------------------------ASSIGNMENT
-     ( +=   incf)
-     ( -=   decf)
-     (  =.  setq)
-     ( .=.  set) ;; DEPRECIATED
-     ( setq setq  :rhs-sbinds)
-     ( set  set   :rhs-sbinds)
-     (psetq psetq :rhs-sbinds)
-     ( setf setf  :rhs-ebinds)
-     (psetf psetf :rhs-ebinds)
-     (.@    mapc       :rhs-args);;-------------------------MAPPING
-     (..@   mapl       :rhs-args)
-     ( @/   reduce     :rhs-args)
-     ( @.   mapcar     :rhs-args)
-     ( @..  maplist    :rhs-args)
-     ( @n   mapcan     :rhs-args)
-     ( @.n  mapcon     :rhs-args)
-     ( @@   apply      :rhs-args)
-     ( @    funcall    :rhs-args :left-assoc :also-postfix)
-     ( :->  function   :lhs-lambda)
-     ( ->   lambda     :lhs-lambda)
-     (values values    :prefix)
-     ( =..  multiple-value-bind  :syms/expr);;--------------MULTIPLE VALUES/DESTRUCTURING
-     ( .@.  multiple-value-call  :rhs-args)
-     ( ..=  destructuring-bind   :lambda/expr)
-     ( !..       nth-value)
-     ( th-value  nth-value)
-     ( .x.  values     :unreduce :also-prefix)
-     ( :.   cons);;-----------------------------------------S-EXPR
-     ( ||       or     :unreduce);;-------------------------LOGICAL OPS
-     ( or       or     :unreduce :also-prefix)
-     ( &&       and    :unreduce)
-     ( and      and    :unreduce :also-prefix)
-     ( <        <      :unreduce :also-prefix);;------------COMPARISONS
-     ( >        >      :unreduce :also-prefix)
-     ( <=       <=     :unreduce :also-prefix)
-     ( >=       >=     :unreduce :also-prefix)
-     ( ===      equalp)
-     ( equalp   equalp)
-     ( equal    equal)
-     ( ==       eql)
-     ( eql      eql    :also-prefix)
-     ( =s=      string=)
-     ( =c=      char=  :unreduce)
-     (  =        =     :unreduce :also-prefix)
-     ( /=       /=     :unreduce :also-prefix)
-     ( eq       eq)
-     ( subtypep subtypep)
-     ( in       member);;-----------------------------------END OF COMPARISONS
+     (( def             defs            :macro));;------------DEFINITIONS
+     (( let             let             :rhs-lbinds);;-------LET constructs
+      ( let*            let*            :rhs-lbinds)
+      ( symbol-macrolet symbol-macrolet :rhs-lbinds)
+      ( prog*           prog*           :rhs-lbinds)
+      ( prog            prog            :rhs-lbinds))
+     (( macrolet        macrolet        :rhs-fbinds)
+      ( flet            flet            :rhs-fbinds)
+      ( labels          labels          :rhs-fbinds))
+     (( :==             defmacro        :def)
+      ( :=              defun           :def)
+      ( :-              defmethod       :defm)
+      ( :type=   deftype   :def))
+     (( block    block     :prefix);;------------------------PREFIX FORMS
+      ( tagbody  tagbody   :prefix)
+      ( catch    catch     :prefix)
+      ( prog1    prog1     :prefix)
+      ( prog2    prog2     :prefix)
+      ( progn    progn     :prefix)
+      ( cond     cond      :prefix);;------------------------COND/CASE FORMS
+      ( case     case      :prefix)
+      ( ccase    ccase     :prefix)
+      ( ecase    ecase     :prefix)
+      ( typecase typecase  :prefix)
+      (etypecase etypecase :prefix)
+      (ctypecase ctypecase :prefix))
+     (( loop ,#'identity   :prefix));;------------------------W/UNCHANGED RHS
+     ((  ?   ()         :split));;----------------------------$pliters
+     ((  $   ()         :split))
+     (( .=   setf) ;;----------------------------------------ASSIGNMENT
+      ( +=   incf)
+      ( -=   decf)
+      (  =.  setq)
+      ( .=.  set));; DEPRECIATED
+     (( setq setq  :rhs-sbinds)
+      ( set  set   :rhs-sbinds)
+      (psetq psetq :rhs-sbinds))
+     ((setf setf  :rhs-ebinds)
+      (psetf psetf :rhs-ebinds))
+     ((.@    mapc       :rhs-args));;-------------------------MAPPING
+     ((..@   mapl       :rhs-args))
+     (( @/   reduce     :rhs-args))
+     (( @.   mapcar     :rhs-args))
+     (( @..  maplist    :rhs-args))
+     (( @n   mapcan     :rhs-args))
+     (( @.n  mapcon     :rhs-args))
+     (( @@   apply      :rhs-args))
+     (( @    funcall    :rhs-args :left-assoc :also-postfix))
+     (( :->  function   :lhs-lambda))
+     (( ->   lambda     :lhs-lambda))
+     ((values values    :prefix))
+     (( =..  multiple-value-bind  :syms/expr));;--------------MULTIPLE VALUES/DESTRUCTURING
+     (( .@.  multiple-value-call  :rhs-args))
+     (( ..=  destructuring-bind   :lambda/expr))
+     (( !..      nth-value) 
+      ( th-value nth-value))
+     (( .x.  values     :unreduce :also-prefix))
+     (( :.   cons));;-----------------------------------------S-EXPR
+     (( ||       or     :unreduce);;-------------------------LOGICAL OPS
+      ( or       or     :unreduce :also-prefix))
+     (( &&       and    :unreduce)
+      ( and      and    :unreduce :also-prefix))
+     (( <        <      :unreduce :also-prefix));;------------COMPARISONS
+     (( >        >      :unreduce :also-prefix))
+     (( <=       <=     :unreduce :also-prefix))
+     (( >=       >=     :unreduce :also-prefix))
+     (( ===      equalp))
+     (( equalp   equalp))
+     (( equal    equal))
+     (( ==       eql))
+     (( eql      eql    :also-prefix))
+     (( =s=      string=))
+     (( =c=      char=  :unreduce))
+     ((  =        =     :unreduce :also-prefix))
+     (( /=       /=     :unreduce :also-prefix))
+     (( eq       eq))
+     (( subtypep subtypep))
+     (( in       member));;-----------------------------------END OF COMPARISONS
      ;;================ :lower  binding user defined ops go here =================
      ;;================ :higher binding user defined ops go here =================
-     ( coerce   coerce)
-     (.!!.      bit       :rhs-args);;----------------------INDEXING
-     ( th-cdr   nthcdr)
-     ( th       nth)
-     ( elt      elt)    ;;DEPRECIATED
-     ( .!       elt)
-     ( svref    svref)  ;;DEPRECIATED
-     ( !.       svref)
-     ( !!       aref      :rhs-args)
-     ( th-bit        logbitp);;-----------------------------BIT ARITHMETICS 
-     ( dpb           dpb           :rhs-args)
-     ( ldb           ldb)
-     ( ldb-test      ldb-test)
-     ( deposit-field deposit-field :rhs-args)
-     ( mask-field    mask-field)
-     ( byte          byte)
-   ;;( +.       logior    :also-unary :unreduce)
-   ;;( -.       logxor    :also-unary :unreduce)
-   ;;( *.       logand    :also-unary :unreduce)
-     ( eqv.     logeqv    :also-unary :unreduce)
-     ( or.      logior    :also-unary :unreduce)
-     ( xor.     logxor    :also-unary :unreduce)
-     ( and.     logand    :also-unary :unreduce)
-     ( nand.    lognand)
-     ( nor.     lognor)
-     ( test.    logtest)
-     ( orc1.    logorc1)
-     ( orc2.    logorc2)
-     ( andc1.   logandc1)
-     ( andc2.   logandc2)
-     (.eqv.     bit-eqv   :rhs-args)
-     (.or.      bit-ior   :rhs-args)
-     (.xor.     bit-xor   :rhs-args)
-     (.and.     bit-and   :rhs-args)
-     (.nand.    bit-and   :rhs-args)
-     (.nor.     bit-nor   :rhs-args)
-     (.not.     bit-not   :also-unary)
-     (.orc1.    bit-orc1  :rhs-args)
-     (.orc2.    bit-orc2  :rhs-args)
-     (.andc1.   bit-andc1 :rhs-args)
-     (.andc2.   bit-andc2 :rhs-args)
-     (.eqv.     bit-eqv   :rhs-args)
-     ( <<       ash);;--------------------------------------ARITHMETICS
-     ( lcm      lcm     :also-unary  :unreduce)
-     ( gcd      gcd     :also-unary  :unreduce)
-     ( mod      mod)
-     ( rem      rem)
-     ( min      min     :also-prefix :unreduce)
-     ( max      max     :also-prefix :unreduce)
-     (  +        +      :also-unary  :unreduce)
-     (  -        -      :also-unary  :unreduce)
-     ( floor    floor)
-     ( ceiling  ceiling)
-     ( truncate truncate)
-     (  /        /      :also-unary)
-     (  *        *      :also-prefix :unreduce)
-     ( **       expt)
-     ( .!.      bit     :rhs-args);;------------------------ARRAY INDEXING
-     (  !       aref    :rhs-args)
-     (  ;        ;));
+     (( coerce   coerce))
+     ((.!!.      bit       :rhs-args));;----------------------INDEXING
+     (( th-cdr   nthcdr))
+     (( th       nth))
+     (( elt      elt))    ;;DEPRECIATED
+     (( .!       elt))
+     (( svref    svref))  ;;DEPRECIATED
+     (( !.       svref))
+     (( !!       aref      :rhs-args))
+     (( th-bit        logbitp));;-----------------------------BIT ARITHMETICS 
+     (( dpb           dpb           :rhs-args))
+     (( ldb           ldb))
+     (( ldb-test      ldb-test))
+     (( deposit-field deposit-field :rhs-args))
+     (( mask-field    mask-field))
+     (( byte          byte))
+     (( eqv.     logeqv    :also-unary :unreduce))
+     (( or.      logior    :also-unary :unreduce))
+     (( xor.     logxor    :also-unary :unreduce))
+     (( and.     logand    :also-unary :unreduce))
+     (( nand.    lognand))
+     (( nor.     lognor))
+     (( test.    logtest))
+     (( orc1.    logorc1))
+     (( orc2.    logorc2))
+     (( andc1.   logandc1))
+     (( andc2.   logandc2))
+     ((.eqv.     bit-eqv   :rhs-args))
+     ((.or.      bit-ior   :rhs-args))
+     ((.xor.     bit-xor   :rhs-args))
+     ((.and.     bit-and   :rhs-args))
+     ((.nand.    bit-and   :rhs-args))
+     ((.nor.     bit-nor   :rhs-args))
+     ((.not.     bit-not   :also-unary))
+     ((.orc1.    bit-orc1  :rhs-args))
+     ((.orc2.    bit-orc2  :rhs-args))
+     ((.andc1.   bit-andc1 :rhs-args))
+     ((.andc2.   bit-andc2 :rhs-args))
+     (( <<       ash));;--------------------------------------ARITHMETICS
+     (( lcm      lcm     :also-unary  :unreduce))
+     (( gcd      gcd     :also-unary  :unreduce))
+     (( mod      mod))
+     (( rem      rem))
+     (( min      min     :also-prefix :unreduce)
+      ( max      max     :also-prefix :unreduce))
+     ((  +        +      :also-unary  :unreduce))
+     ((  -        -      :also-unary  :unreduce))
+     (( floor    floor))
+     (( ceiling  ceiling))
+     (( truncate truncate))
+     ((  /        /      :also-unary))
+     ((  *        *      :also-prefix :unreduce))
+     (( **       expt))
+     (( .!.      bit     :rhs-args));;------------------------ARRAY INDEXING
+     ((  !       aref    :rhs-args))
+     ((  ;        ;)));
+
+ assign-properties :=
+   let p = 0
+     (mapc {l -> {incf p;
+                  mapc {s -> {get (car s) 'properties .= p :. cdr s}} l}}
+           *binfix*);
+
+ (assign-properties);
 
  split e op &optional args arg :=
    (cond {null e      $ nreverse $ nreverse arg :. args}
          {car e == op $ split (cdr e) op {nreverse arg :. args}}
          {t           $ split (cdr e) op args {car e :. arg}});
 
- binfix e &optional (ops *binfix*) :=
+ find-op-in e &optional (p 1000) o.r :=
+   (cond {null e $ o.r}
+         {symbolp (car e)
+            $ let q = (get (car e) 'properties)
+                (cond {null q $ find-op-in (cdr e) p o.r}
+                      {< (car q) p || = (car q) p
+                                      && cddr q
+                                      && null (intersection
+                                                '(:rhs-args    :unreduce
+                                                  :lhs-lambda  :left-assoc
+                                                  :lambda/expr :macro :split)
+                                                (cddr q))
+                              $ find-op-in (cdr e) (car q) e}
+                      { t     $ find-op-in (cdr e) p o.r})}
+         {t $ find-op-in (cdr e) p o.r});
+
+ binfix e &optional (max-priority 1000) :=
    labels
      unreduce e op &optional args arg =
-       (cond {null e      $ reverse {binfix (reverse arg) ops :. args}}
-             {car e == op $ unreduce (cdr e) op {binfix (reverse arg) ops :. args}}
+       (cond {null e      $ reverse {binfix (reverse arg) :. args}}
+             {car e == op $ unreduce (cdr e) op {binfix (reverse arg) :. args}}
              {t           $ unreduce (cdr e) op args {car e :. arg}})
 
-     binfix+ e &optional (ops ops) =
+     binfix+ e =
        (if {'; in e}
           (if {'; == car (last e)}
              (binfix+ (butlast e))
              (mapcar #'singleton (unreduce e ';)))
-         `(,(singleton (binfix e ops))))
+         `(,(singleton (binfix e))))
 
-     decl*-binfix+ rhs &optional (ops ops) decls =
+     decl*-binfix+ rhs decls =
        {decl* body =.. (decls rhs decls)
-         `(,@decl* ,@(binfix+ body ops))}
+         `(,@decl* ,@(binfix+ body))}
 
-     doc*-decl*-binfix+ rhs &optional (ops ops) decls =
+     doc*-decl*-binfix+ rhs decls =
        {doc*-decl* body =.. (doc-decls rhs decls)
-         `(,@doc*-decl* ,@(binfix+ body ops))}
+         `(,@doc*-decl* ,@(binfix+ body))}
 
      sbinds e &optional converted s current =
        {symbol-macrolet
-         convert = `(,(singleton (binfix (reverse current) ops)),s,@converted)
+         convert = `(,(singleton (binfix (reverse current))),s,@converted)
            (cond {null e      $ cddr $ reverse convert}
                  {cadr e =='= $ sbinds (cddr e) convert (car e)}
                  {t           $ sbinds (cdr e)  converted s {car e :. current}})}
@@ -415,14 +432,14 @@
      e-binds e &optional binds lhs rhs =
        {labels b-eval-rev e = (singleton
                                 (if {consp e && > (length e) 1}
-                                   (binfix {singleton $ nreverse e} ops)
+                                   (binfix {singleton $ nreverse e})
                                    e))
                bind lhs rhs = {b-eval-rev rhs :. b-eval-rev lhs :. binds}
          (cond {null e     $ if {lhs && rhs}
                                {nreverse (bind lhs rhs) .x. nil}
                                {nreverse binds .x. append (nreverse lhs) (nreverse rhs) e}}
                {car e =='= $ if (null rhs)
-                               (e-binds (cddr e) binds lhs `(,(cadr e))) 
+                               (e-binds (cddr e) binds lhs `(,(cadr e)))
                                (e-binds (cddr e) (bind lhs (last rhs)) (butlast rhs) `(,(cadr e)))}
                {car e =='; $ if {lhs && rhs}
                                {e-binds (cdr e) (bind lhs rhs)}
@@ -431,89 +448,90 @@
                {rhs        $ e-binds (cdr e) binds           lhs {car e :. rhs}}
                {t          $ e-binds (cdr e) binds {car e :. lhs}          rhs})}
 
-  {if {atom e || null ops} e
-    let rhs = {caar ops in e}
-      {if (null rhs) (binfix e (cdr ops))
-        let lhs = (ldiff e rhs)
-            op = (pop rhs)
-            op-lisp = (cadar ops)
-            op-prop = (cddar ops)
+  {if {atom e} e
+    let rhs = (find-op-in e max-priority)
+      {if (null rhs) e
+        let* lhs = (ldiff e rhs)
+             op = (pop rhs)
+             op-prop = (get op 'properties)
+            priority = (pop op-prop)
+             op-lisp = (pop op-prop)
           (cond {op == '; $ error "BINFIX: bare ; in:~% ~{ ~A~}" e}
                 {null rhs $
                    if {:also-postfix in op-prop}
-                      `(,op-lisp,@(binfix lhs ops))
+                      `(,op-lisp,@(binfix lhs))
                        (error "BINFIX: missing r.h.s. of ~S (~S)~@
                                with l.h.s:~%~S" op op-lisp lhs)}
                 {:rhs-lbinds in op-prop $
-                   binds-decls* expr =.. (lbinds (binfix rhs `(,(car ops))))
-                     (singleton (binfix `(,@lhs (,op-lisp ,@binds-decls* ,@(binfix+ expr ops))) ops))}
+                   binds-decls* expr =.. (lbinds rhs)
+                     (singleton (binfix `(,@lhs (,op-lisp ,@binds-decls* ,@(binfix+ expr)))))}
                 {:syms/expr  in op-prop $
                    vars decls =.. (vbinds lhs)
                       `(,op-lisp ,vars ,(car rhs)
                                  ,@{decls && `((declare ,@decls))}
-                                 ,@(decl*-binfix+ (cdr rhs) ops))}
+                                 ,@(decl*-binfix+ (cdr rhs) ()))}
                 {:rhs-sbinds in op-prop $
-                   singleton (binfix `(,@lhs (,op-lisp ,@(sbinds rhs))) ops)}
+                   singleton (binfix `(,@lhs (,op-lisp ,@(sbinds rhs))))}
                 {:rhs-ebinds in op-prop $
                    binds r =.. (e-binds rhs)
-                     (singleton (binfix `(,@lhs (,op-lisp ,@binds) ,@r) ops))}
+                     (singleton (binfix `(,@lhs (,op-lisp ,@binds) ,@r)))}
                 {:rhs-fbinds in op-prop $
-                   binds-decls* expr =.. (fbinds (binfix rhs `(,(car ops))))
-                     (singleton (binfix `(,@lhs (,op-lisp ,@binds-decls* ,@(binfix+ expr ops))) ops))}
+                   binds-decls* expr =.. (fbinds rhs)
+                     (singleton (binfix `(,@lhs (,op-lisp ,@binds-decls* ,@(binfix+ expr)))))}
                 {functionp op-lisp $
                    if (null lhs)
-                      {op :. funcall op-lisp {binfix rhs `(,(car ops))}}
-                      (binfix `(,@lhs,{op :. funcall op-lisp {binfix rhs `(,(car ops))}}) ops)}
+                      {op :. funcall op-lisp {binfix rhs priority}}
+                      (binfix `(,@lhs,{op :. funcall op-lisp (binfix rhs priority)}))}
                 {:lhs-lambda in op-prop $
                    ll decls =.. (lambda-list lhs)
-                      `(,op-lisp ,ll ,@(decl*-binfix+ rhs ops decls))}
+                      `(,op-lisp ,ll ,@(decl*-binfix+ rhs decls))}
                 {:macro in op-prop $
-                  `(progn ,(binfix lhs ops) ,@(reduce #'append (mapcar op-lisp (split rhs op))))}
+                  `(progn ,(binfix lhs) ,@(reduce #'append (mapcar op-lisp (split rhs op))))}
                 {:unreduce in op-prop && position op rhs $ ;;position necessary...
-                  let u = (mapcar #'singleton (unreduce rhs op `(,(binfix lhs (cdr ops)),op-lisp)))
+                  let u = (mapcar #'singleton (unreduce rhs op `(,(binfix lhs),op-lisp)))
                     (cond {lhs $ u}
                           {:also-unary  in op-prop $ `(,op-lisp (,op-lisp ,(caddr u)) ,@(cdddr u))}
                           {:also-prefix in op-prop $ `(,op-lisp (,op-lisp,@(caddr u)) ,@(cdddr u))}
                           {t $ error "BINFIX: missing l.h.s. of ~S (~S)~@
                                       with r.h.s:~%~S" op op-lisp rhs})}
-                {null lhs $ cond{:also-unary  in op-prop $ `(,op-lisp ,(singleton (binfix rhs ops)))}
+                {null lhs $ cond{:also-unary  in op-prop $ `(,op-lisp ,(singleton (binfix rhs)))}
                                 {:also-prefix in op-prop || :prefix in op-prop
                                                          $ `(,op-lisp ,@(if {'; in rhs}
-                                                                          (binfix+ rhs ops)
-                                                                          (binfix rhs ops)))}
+                                                                          (binfix+ rhs)
+                                                                          (binfix rhs)))}
                                 {t $ error "BINFIX: missing l.h.s. of ~S (~S)~@
                                             with r.h.s:~%~S" op op-lisp rhs}}
                 {:def in op-prop $ ll decls =.. (lambda-list (cdr lhs))
                                     `(,op-lisp ,(car lhs) ,ll
-                                               ,@(doc*-decl*-binfix+ rhs ops decls))}
+                                               ,@(doc*-decl*-binfix+ rhs decls))}
                 {:defm in op-prop $
                    `(,op-lisp ,(pop lhs) ,@(cond {consp (car lhs) && null (cdar lhs) $ pop lhs}
                                                  {keywordp (car lhs) $ list (pop lhs)})
                               ,@{ll decls =.. (method-lambda-list lhs)
-                                  `(,ll ,@(doc*-decl*-binfix+ rhs ops decls))})}
+                                  `(,ll ,@(doc*-decl*-binfix+ rhs decls))})}
                 {:left-assoc in op-prop && position op rhs $
                    let* j = (position op rhs)
                        lrhs = (subseq rhs 0 j)
                        rrhs = (subseq rhs j)
-                      (binfix`((,op-lisp ,(singleton (binfix  lhs (cdr ops)))
-                                         ,(singleton (binfix lrhs (cdr ops)))) ,@rrhs) ops)}
+                      (binfix`((,op-lisp ,(singleton (binfix  lhs))
+                                         ,(singleton (binfix lrhs))) ,@rrhs))}
                 {:lambda/expr in op-prop $
                    llist decls =.. (lambda-list lhs)
                      `(,op-lisp ,llist ,(car rhs)
-                                ,@(decl*-binfix+ (cdr rhs) ops decls))}
+                                ,@(decl*-binfix+ (cdr rhs) decls))}
                 {:split in op-prop $
-                   `(,(if {lhs && null (cdr lhs)} (car e) (binfix lhs (cdr ops)))
+                   `(,(if {lhs && null (cdr lhs)} (car e) (binfix lhs))
                      ,{when rhs
-                         let e = (binfix rhs ops)
+                         let e = (binfix rhs)
                             (if (cdr e) e (car e))})}
-                {:prefix in op-prop $ binfix `(,@lhs ,(binfix `(,op,@rhs) ops)) ops}
+                {:prefix in op-prop $ binfix `(,@lhs ,(binfix `(,op,@rhs)))}
                 (t `(,op-lisp
-                     ,(singleton (binfix lhs ops))
+                     ,(singleton (binfix lhs))
                      ,@(cond {null (cdr rhs) $ rhs}
                              {:rhs-args in op-prop $
-                                cond {op in rhs $ `(,(binfix rhs ops))}
-                                     {'; in rhs $ binfix+ rhs ops}
+                                cond {op in rhs $ `(,(binfix rhs))}
+                                     {'; in rhs $ binfix+ rhs}
                                      {t         $ rhs}}
-                             {t $ `(,(binfix rhs ops))}))))}}}
+                             {t $ `(,(binfix rhs))}))))}}}
 
 ;===== BINFIX defined =====
