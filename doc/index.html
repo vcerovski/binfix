@@ -2,7 +2,7 @@
 
 <h1>BINFIX</h1>
 
-<p>Viktor Cerovski, May 2016.</p>
+<p>Viktor Cerovski, July 2016.</p>
 
 <p><a name="Introduction"></a></p>
 
@@ -37,6 +37,7 @@ reference 1.0 version.</p>
 <li><a href="#Lambdas, definitions and type annotations">Lambdas, definitions and type annotations</a>
 <ul>
 <li><a href="#lambda">lambda</a></li>
+<li><a href="#Maps">Mappings</a></li>
 <li><a href="#defun">defun</a></li>
 <li><a href="#&amp;optional">&amp;optional</a></li>
 <li><a href="#Local functions">Local functions</a></li>
@@ -54,6 +55,7 @@ reference 1.0 version.</p>
 <li><a href="#Loops">Loops</a></li>
 </ul></li>
 <li><a href="#Indexing">Indexing</a></li>
+<li><a href="#Mappings">Mappings</a></li>
 <li><a href="#Bits">Working with bits</a></li>
 <li><a href="#Support for macros">Support for macros</a></li>
 <li><a href="#More involved examples">More involved examples</a>
@@ -269,7 +271,11 @@ argument, </p>
 <pre><code>(lambda (x) (declare (type (or symbol number) x)) (cons x x))
 </code></pre>
 
-<p>Mapping is also supported:</p>
+<p><a name="Maps"></a></p>
+
+<h4><code>Mappings</code></h4>
+
+<p><code>mapcar</code> is also supported:</p>
 
 <pre><code>'{x -&gt; sin x * sqrt x @. (f x)}
 </code></pre>
@@ -285,6 +291,18 @@ argument, </p>
 </code></pre>
 
 <p>to the same effect.</p>
+
+<p><code>reduce</code> is represented by <code>@/</code>,</p>
+
+<pre><code>'{#'max @/ x y -&gt; abs{x - y} @. a b}
+</code></pre>
+
+<p>=></p>
+
+<pre><code>(reduce #'max (mapcar (lambda (x y) (abs (- x y))) a b))
+</code></pre>
+
+<p>and other maps have their <code>@</code>'s as well.</p>
 
 <p><a name="defun"></a></p>
 
@@ -841,6 +859,20 @@ example, as well as described in the next section.</p>
 <pre><code>(1 (b 2) 3)
 </code></pre>
 
+<p>Both <code>..=</code> and <code>=..</code> can be nested,</p>
+
+<pre><code>'{a b c =.. (f x)
+  x y z =.. (g z)
+  a * x + b * y + c * z}
+</code></pre>
+
+<p>=></p>
+
+<pre><code>(multiple-value-bind (a b c)
+    (f x)
+  (multiple-value-bind (x y z) (g z) (+ (* a x) (* b y) (* c z))))
+</code></pre>
+
 <p><a name="Loops"></a></p>
 
 <h4>Loops</h4>
@@ -858,6 +890,32 @@ example, as well as described in the next section.</p>
       collect (loop for j = 2 to 4
                     collect (cons i j)))
 </code></pre>
+
+<p><a name="Mappings"></a></p>
+
+<h3>Mappings</h3>
+
+<p>Mappings and function applications are what <code>@</code>-ops are all about,
+as summarized in the following table,</p>
+
+<table>
+  <tr><td>  <code>@</code></td>  <td><code>funcall</code></td></tr>
+  <tr><td>  <code>@.</code></td> <td><code>mapcar</code></td></tr>
+  <tr><td>  <code>@..</code></td><td><code>maplist</code></td></tr>
+  <tr><td>  <code>@n</code></td> <td><code>mapcan</code></td></tr>
+  <tr><td>  <code>@.n</code></td><td><code>mapcon</code></td></tr>
+  <tr><td> <code>.@</code></td>  <td><code>mapc</code></td></tr>
+  <tr><td><code>..@</code></td>  <td><code>mapl</code></td></tr>
+  <tr><td>  <code>@/</code></td> <td><code>reduce</code></td></tr>
+  <tr><td>  <code>@@</code></td> <td><code>apply</code></td></tr>
+  <tr><td> <code>.@.</code></td> <td><code>multiple-value-call</code></td></tr>
+</table>
+
+<p>They all have the same priority and are right-associative, and, since
+they bind weaker than <code>-&gt;</code>, are easy to string together with lambdas,
+as in a map-reduce expr.</p>
+
+<p><code>{'max @/ x y -&gt; abs{x - y} @. a b}</code></p>
 
 <p><a name="Indexing"></a></p>
 
@@ -1316,23 +1374,23 @@ to the strongest-binding OP, with parens enclosing OP(s) of the same priority:</
   psetq          psetq           :rhs-sbinds )
 ( setf           setf            :rhs-ebinds
   psetf          psetf           :rhs-ebinds )
-( .@             mapc            :rhs-args )
-( ..@            mapl            :rhs-args )
-( @/             reduce          :rhs-args )
-( @.             mapcar          :rhs-args )
-( @..            maplist         :rhs-args )
-( @n             mapcan          :rhs-args )
-( @.n            mapcon          :rhs-args )
-( @@             apply           :rhs-args )
-( @              funcall         :rhs-args       :left-assoc     :also-postfix )
+( .@             mapc            :rhs-args
+  ..@            mapl            :rhs-args
+  @/             reduce          :rhs-args
+  @.             mapcar          :rhs-args
+  @..            maplist         :rhs-args
+  @n             mapcan          :rhs-args
+  @.n            mapcon          :rhs-args
+  @@             apply           :rhs-args
+  .@.            multiple-value-call             :rhs-args
+  @              funcall         :rhs-args       :left-assoc     :also-postfix )
 ( :-&gt;            function        :lhs-lambda )
 ( -&gt;             lambda          :lhs-lambda )
 ( values         values          :prefix )
 ( =..            multiple-value-bind             :syms/expr )
-( .@.            multiple-value-call             :rhs-args )
 ( ..=            destructuring-bind              :lambda/expr )
-( !..            nth-value )
-( th-value       nth-value )
+( !..            nth-value
+  th-value       nth-value )
 ( .x.            values          :unreduce       :also-prefix )
 ( :|.|           cons )
 ( ||             or              :unreduce
@@ -1402,9 +1460,10 @@ to the strongest-binding OP, with parens enclosing OP(s) of the same priority:</
   max            max             :also-prefix    :unreduce )
 ( +              +               :also-unary     :unreduce )
 ( -              -               :also-unary     :unreduce )
-( floor          floor )
-( ceiling        ceiling )
-( truncate       truncate )
+( floor          floor           :also-unary )
+( ceiling        ceiling         :also-unary )
+( truncate       truncate        :also-unary )
+( round          round           :also-unary )
 ( /              /               :also-unary )
 ( *              *               :also-prefix    :unreduce )
 ( **             expt )

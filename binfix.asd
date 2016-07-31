@@ -4,7 +4,7 @@
    :description "BINFIX -- A powerful binary infix syntax for Common LISP."
    :author "Viktor Cerovski"
    :licence "GNU GPLv2"
-   :version "0.20"
+   :version "0.21"
    :serial t
    :components
       ((:file "package")

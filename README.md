@@ -2,7 +2,7 @@
 
 # BINFIX
 
-Viktor Cerovski, May 2016.
+Viktor Cerovski, July 2016.
 
 <a name="Introduction"></a>
 ## Introduction
@@ -32,6 +32,7 @@ reference 1.0 version.
     * [Consing](#Consing)
     * [Lambdas, definitions and type annotations](#Lambdas, definitions and type annotations)
         * [lambda](#lambda)
+        * [Mappings](#Maps)
         * [defun](#defun)
         * [&optional](#&optional)
         * [Local functions](#Local functions)
@@ -47,6 +48,7 @@ reference 1.0 version.
     * [Destructuring, multiple values](#Destructuring, multiple values)
     * [Loops](#Loops)
 * [Indexing](#Indexing)
+* [Mappings](#Mappings)
 * [Working with bits](#Bits)
 * [Support for macros](#Support for macros)
 * [More involved examples](#More involved examples)
@@ -224,7 +226,10 @@ argument,
 
     (lambda (x) (declare (type (or symbol number) x)) (cons x x))
 
-Mapping is also supported:
+<a name="Maps"></a>
+#### `Mappings`
+
+`mapcar` is also supported:
 
     '{x -> sin x * sqrt x @. (f x)}
 
@@ -237,6 +242,17 @@ Alternatively, it is possible to use the expression-termination symbol `;`,
     {x -> sin x * sqrt x @. f x;}
 
 to the same effect.
+
+`reduce` is represented by `@/`,
+
+    '{#'max @/ x y -> abs{x - y} @. a b}
+
+=>
+
+    (reduce #'max (mapcar (lambda (x y) (abs (- x y))) a b))
+
+and other maps have their `@`'s as well.
+
 
 <a name="defun"></a>
 #### `defun`
@@ -724,6 +740,18 @@ Another way to write the same expr:
 
     (1 (b 2) 3)
 
+Both `..=` and `=..` can be nested,
+
+    '{a b c =.. (f x)
+      x y z =.. (g z)
+      a * x + b * y + c * z}
+
+=>
+
+    (multiple-value-bind (a b c)
+        (f x)
+      (multiple-value-bind (x y z) (g z) (+ (* a x) (* b y) (* c z))))
+
 <a name="Loops"></a>
 #### Loops
 
@@ -738,6 +766,31 @@ Loops can be also nested without writing parens:
     (loop for i = 1 to 3
           collect (loop for j = 2 to 4
                         collect (cons i j))) 
+
+<a name="Mappings"></a>
+### Mappings
+
+Mappings and function applications are what `@`-ops are all about,
+as summarized in the following table,
+
+<table>
+  <tr><td>  <code>@</code></td>  <td><code>funcall</code></td></tr>
+  <tr><td>  <code>@.</code></td> <td><code>mapcar</code></td></tr>
+  <tr><td>  <code>@..</code></td><td><code>maplist</code></td></tr>
+  <tr><td>  <code>@n</code></td> <td><code>mapcan</code></td></tr>
+  <tr><td>  <code>@.n</code></td><td><code>mapcon</code></td></tr>
+  <tr><td> <code>.@</code></td>  <td><code>mapc</code></td></tr>
+  <tr><td><code>..@</code></td>  <td><code>mapl</code></td></tr>
+  <tr><td>  <code>@/</code></td> <td><code>reduce</code></td></tr>
+  <tr><td>  <code>@@</code></td> <td><code>apply</code></td></tr>
+  <tr><td> <code>.@.</code></td> <td><code>multiple-value-call</code></td></tr>
+</table>
+
+They all have the same priority and are right-associative, and, since
+they bind weaker than `->`, are easy to string together with lambdas,
+as in a map-reduce expr.
+
+`{'max @/ x y -> abs{x - y} @. a b}`
 
 <a name="Indexing"></a>
 ### Indexing
@@ -1162,23 +1215,23 @@ to the strongest-binding OP, with parens enclosing OP(s) of the same priority:
       psetq          psetq           :rhs-sbinds )
     ( setf           setf            :rhs-ebinds
       psetf          psetf           :rhs-ebinds )
-    ( .@             mapc            :rhs-args )
-    ( ..@            mapl            :rhs-args )
-    ( @/             reduce          :rhs-args )
-    ( @.             mapcar          :rhs-args )
-    ( @..            maplist         :rhs-args )
-    ( @n             mapcan          :rhs-args )
-    ( @.n            mapcon          :rhs-args )
-    ( @@             apply           :rhs-args )
-    ( @              funcall         :rhs-args       :left-assoc     :also-postfix )
+    ( .@             mapc            :rhs-args
+      ..@            mapl            :rhs-args
+      @/             reduce          :rhs-args
+      @.             mapcar          :rhs-args
+      @..            maplist         :rhs-args
+      @n             mapcan          :rhs-args
+      @.n            mapcon          :rhs-args
+      @@             apply           :rhs-args
+      .@.            multiple-value-call             :rhs-args
+      @              funcall         :rhs-args       :left-assoc     :also-postfix )
     ( :->            function        :lhs-lambda )
     ( ->             lambda          :lhs-lambda )
     ( values         values          :prefix )
     ( =..            multiple-value-bind             :syms/expr )
-    ( .@.            multiple-value-call             :rhs-args )
     ( ..=            destructuring-bind              :lambda/expr )
-    ( !..            nth-value )
-    ( th-value       nth-value )
+    ( !..            nth-value
+      th-value       nth-value )
     ( .x.            values          :unreduce       :also-prefix )
     ( :|.|           cons )
     ( ||             or              :unreduce
@@ -1248,9 +1301,10 @@ to the strongest-binding OP, with parens enclosing OP(s) of the same priority:
       max            max             :also-prefix    :unreduce )
     ( +              +               :also-unary     :unreduce )
     ( -              -               :also-unary     :unreduce )
-    ( floor          floor )
-    ( ceiling        ceiling )
-    ( truncate       truncate )
+    ( floor          floor           :also-unary )
+    ( ceiling        ceiling         :also-unary )
+    ( truncate       truncate        :also-unary )
+    ( round          round           :also-unary )
     ( /              /               :also-unary )
     ( *              *               :also-prefix    :unreduce )
     ( **             expt )
@@ -1258,7 +1312,6 @@ to the strongest-binding OP, with parens enclosing OP(s) of the same priority:
     ( !              aref            :rhs-args )
     ( |;|            |;| )
     ------------------------------------------------------------------------------
-
 
 => `nil`
 

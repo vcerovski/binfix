@@ -271,22 +271,22 @@
      (( setq setq  :rhs-sbinds)
       ( set  set   :rhs-sbinds)
       (psetq psetq :rhs-sbinds))
-     ((setf setf  :rhs-ebinds)
+     (( setf setf  :rhs-ebinds)
       (psetf psetf :rhs-ebinds))
-     ((.@    mapc       :rhs-args));;-------------------------MAPPING
-     ((..@   mapl       :rhs-args))
-     (( @/   reduce     :rhs-args))
-     (( @.   mapcar     :rhs-args))
-     (( @..  maplist    :rhs-args))
-     (( @n   mapcan     :rhs-args))
-     (( @.n  mapcon     :rhs-args))
-     (( @@   apply      :rhs-args))
-     (( @    funcall    :rhs-args :left-assoc :also-postfix))
+     ((.@    mapc       :rhs-args) ;;-------------------------MAPPING
+      (..@   mapl       :rhs-args)
+      ( @/   reduce     :rhs-args)
+      ( @.   mapcar     :rhs-args)
+      ( @..  maplist    :rhs-args)
+      ( @n   mapcan     :rhs-args)
+      ( @.n  mapcon     :rhs-args)
+      ( @@   apply      :rhs-args)
+      ( .@.  multiple-value-call  :rhs-args)
+      ( @    funcall    :rhs-args :left-assoc :also-postfix))
      (( :->  function   :lhs-lambda))
      (( ->   lambda     :lhs-lambda))
      ((values values    :prefix))
      (( =..  multiple-value-bind  :syms/expr));;--------------MULTIPLE VALUES/DESTRUCTURING
-     (( .@.  multiple-value-call  :rhs-args))
      (( ..=  destructuring-bind   :lambda/expr))
      (( !..      nth-value) 
       ( th-value nth-value))
@@ -361,9 +361,10 @@
       ( max      max     :also-prefix :unreduce))
      ((  +        +      :also-unary  :unreduce))
      ((  -        -      :also-unary  :unreduce))
-     (( floor    floor))
-     (( ceiling  ceiling))
-     (( truncate truncate))
+     (( floor    floor    :also-unary))
+     (( ceiling  ceiling  :also-unary))
+     (( truncate truncate :also-unary))
+     (( round    round    :also-unary))
      ((  /        /      :also-unary))
      ((  *        *      :also-prefix :unreduce))
      (( **       expt))
@@ -388,16 +389,17 @@
    (cond {null e $ o.r}
          {symbolp (car e)
             $ let q = (get (car e) 'properties)
-                (cond {null q $ find-op-in (cdr e) p o.r}
-                      {< (car q) p || = (car q) p
-                                      && cddr q
-                                      && null (intersection
-                                                '(:rhs-args    :unreduce
-                                                  :lhs-lambda  :left-assoc
-                                                  :lambda/expr :macro :split)
-                                                (cddr q))
-                              $ find-op-in (cdr e) (car q) e}
-                      { t     $ find-op-in (cdr e) p o.r})}
+                (if {q && {< (car q) p
+                           || = (car q) p
+                              && cddr q
+                              && null (intersection
+                                        '(:rhs-args    :unreduce
+                                          :lhs-lambda  :left-assoc
+                                          :lambda/expr :macro :split
+                                          :syms/expr)
+                                        (cddr q))}}
+                   {find-op-in (cdr e) (car q) e}
+                   {find-op-in (cdr e) p o.r})}
          {t $ find-op-in (cdr e) p o.r});
 
  binfix e &optional (max-priority 1000) :=
@@ -529,7 +531,8 @@
                      ,(singleton (binfix lhs))
                      ,@(cond {null (cdr rhs) $ rhs}
                              {:rhs-args in op-prop $
-                                cond {op in rhs $ `(,(binfix rhs))}
+                                cond {find-op-in rhs (1+ priority)
+                                                $ `(,(binfix rhs))}
                                      {'; in rhs $ binfix+ rhs}
                                      {t         $ rhs}}
                              {t $ `(,(binfix rhs))}))))}}}
