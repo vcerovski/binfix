@@ -125,7 +125,8 @@
             $ `(,@{types && nreverse types}
                 ,@(nreverse defs))}
          {assoc (car x) *def-symbol*
-            $ binds decl* r =.. (sbind* (cdr x))
+            $ binds decl* r =.. (sbind* (cdr (if {car (last x) == ';} x
+                                                `(,@x ;))))
                 {decl* r =.. (decls r (declare* decl* declaim))
                    (defs r (revappend {let def = (cdr (assoc (car x) *def-symbol*))
                                          (mapcar {a -> def :. a} binds)}
