@@ -2,7 +2,7 @@
 
 # BINFIX
 
-Viktor Cerovski, July 2016.
+Viktor Cerovski, Aug 2016.
 
 <a name="Introduction"></a>
 ## Introduction
@@ -465,6 +465,7 @@ More detailed definitions are also straightforward to specify:
                            declare (ignore d)
                            with-slots (x y z) p
                              (format s "#<~$ ~$ ~$>" x y z)}
+        :constructor create-point (x y z = 0f0)
         x :single-float = 0f0
         y :single-float = 0f0
         z :single-float = 0f0
@@ -484,18 +485,19 @@ More detailed definitions are also straightforward to specify:
      (defstruct
          (point
           (:print-function
-           (lambda (s p d)
+           (lambda (p s d)
              (declare (ignore d))
              (with-slots (x y z)
                  p
-               (format s "#<~$ ~$ ~$>" x y z)))))
+               (format s "#<~$ ~$ ~$>" x y z))))
+          (:constructor create-point (x y &optional (z 0.0))))
        "Point"
        (x 0.0 :type single-float)
        (y 0.0 :type single-float)
        (z 0.0 :type single-float))
      (defun f (x)
-       (declare (type single-float x)
-                (inline))
+       (declare (inline))
+       (declare (type single-float x))
        (* (sqrt x) (sin x))))
 
 `def`ining of symbols follows the same syntax as `let` binding, which

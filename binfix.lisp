@@ -75,11 +75,14 @@
                 (error "BINFIX def struct ~A has two doc-strings,~%~S~%and~%~S" name doc (car x))
                 (struct (cdr x) defs types name opts slots (car x))}
          {keywordp (car x)
-            $ if {car x == :named}
-                (struct (cdr x) defs types name
-                        {car x :. opts} slots doc)
-                (struct (cddr x) defs types name
-                        {`(,(car x),(cadr x)) :. opts} slots doc)}
+            $ cond {car x == :named
+                      $ struct (cdr x) defs types name
+                               {:named :. opts} slots doc}
+                   {car x == :constructor
+                      $ struct (cdddr x) defs types name
+                              `((:constructor,(cadr x),(lambda-list (caddr x))),@opts) slots doc}
+                   {t $ struct (cddr x) defs types name
+                               {`(,(car x),(cadr x)) :. opts} slots doc}}
          {cadr x == '=
             $ if {fourth x in '(:type :read-only)}
                 (struct (nthcdr 5 x) defs types name opts

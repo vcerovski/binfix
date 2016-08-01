@@ -2,7 +2,7 @@
 
 <h1>BINFIX</h1>
 
-<p>Viktor Cerovski, July 2016.</p>
+<p>Viktor Cerovski, Aug 2016.</p>
 
 <p><a name="Introduction"></a></p>
 
@@ -543,6 +543,7 @@ to facilitate their easy writing:</p>
                        declare (ignore d)
                        with-slots (x y z) p
                          (format s "#&lt;~$ ~$ ~$&gt;" x y z)}
+    :constructor create-point (x y z = 0f0)
     x :single-float = 0f0
     y :single-float = 0f0
     z :single-float = 0f0
@@ -563,18 +564,19 @@ to facilitate their easy writing:</p>
  (defstruct
      (point
       (:print-function
-       (lambda (s p d)
+       (lambda (p s d)
          (declare (ignore d))
          (with-slots (x y z)
              p
-           (format s "#&lt;~$ ~$ ~$&gt;" x y z)))))
+           (format s "#&lt;~$ ~$ ~$&gt;" x y z))))
+      (:constructor create-point (x y &amp;optional (z 0.0))))
    "Point"
    (x 0.0 :type single-float)
    (y 0.0 :type single-float)
    (z 0.0 :type single-float))
  (defun f (x)
-   (declare (type single-float x)
-            (inline))
+   (declare (inline))
+   (declare (type single-float x))
    (* (sqrt x) (sin x))))
 </code></pre>
 
