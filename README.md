@@ -808,6 +808,7 @@ the weakest to the strongest binding OP:
   <tr><td><code>th-bit</code></td>  <td><code>logbitp</code></td>  </tr>
   <tr><td><code>th-cdr</code></td>  <td><code>nthcdr</code></td>   </tr>
   <tr><td><code>!.</code></td>      <td><code>svref</code></td>    </tr>
+  <tr><td><code>!!.</code></td>     <td><code>row-major-aref</code></td></tr>
   <tr><td><code>.!!.</code></td>    <td><code>bit</code></td>      </tr>
   <tr><td><code>!!</code></td>      <td><code>aref</code></td>     </tr>
   <tr><td><code>.!.</code></td>     <td><code>bit</code></td>      </tr>
@@ -1260,10 +1261,9 @@ to the strongest-binding OP, with parens enclosing OP(s) of the same priority:
     ( .!!.           bit             :rhs-args )
     ( th-cdr         nthcdr )
     ( th             nth )
-    ( elt            elt )
     ( .!             elt )
-    ( svref          svref )
     ( !.             svref )
+    ( !!.            row-major-aref )
     ( !!             aref            :rhs-args )
     ( th-bit         logbitp )
     ( dpb            dpb             :rhs-args )

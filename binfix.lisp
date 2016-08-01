@@ -322,10 +322,11 @@
      ((.!!.      bit       :rhs-args));;----------------------INDEXING
      (( th-cdr   nthcdr))
      (( th       nth))
-     (( elt      elt))    ;;DEPRECIATED
+   ;;(( elt      elt))    ;;DEPRECIATED
      (( .!       elt))
-     (( svref    svref))  ;;DEPRECIATED
+   ;;(( svref    svref))  ;;DEPRECIATED
      (( !.       svref))
+     (( !!.      row-major-aref))
      (( !!       aref      :rhs-args))
      (( th-bit        logbitp));;-----------------------------BIT ARITHMETICS 
      (( dpb           dpb           :rhs-args))
