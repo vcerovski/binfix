@@ -294,8 +294,6 @@
      (( ..=  destructuring-bind   :lambda/expr))
      (( !..      nth-value) 
       ( th-value nth-value))
-     (( .x.  values     :unreduce :also-prefix))
-     (( :.   cons));;-----------------------------------------S-EXPR
      (( ||       or     :unreduce);;-------------------------LOGICAL OPS
       ( or       or     :unreduce :also-prefix))
      (( &&       and    :unreduce)
@@ -305,10 +303,12 @@
      (( <=       <=     :unreduce :also-prefix))
      (( >=       >=     :unreduce :also-prefix))
      (( ===      equalp))
-     (( equalp   equalp))
+     (( equalp   equalp)) ;; DEPRECIATED
      (( equal    equal))
      (( ==       eql))
      (( eql      eql    :also-prefix))
+     (( .x.      values     :unreduce :also-prefix));; :also-prefix depreciated
+     (( :.   cons))
      (( =s=      string=))
      (( =c=      char=  :unreduce))
      ((  =        =     :unreduce :also-prefix))

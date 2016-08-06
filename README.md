@@ -164,11 +164,11 @@ Operation `:.` stands for `cons`. For instance,
 
 with the familiar behaviour:
 
-    {{1 :. 2 :. 3} equal '(1 2 . 3)}
+    {1 :. 2 :. 3 equal '(1 2 . 3)}
 
 => `t`
 
-    {{1 :. 2 :. 3 :. {}} equal '(1 2 3)}
+    {1 :. 2 :. 3 :. {} equal '(1 2 3)}
 
 => `t`
 
@@ -1235,8 +1235,6 @@ to the strongest-binding OP, with parens enclosing OP(s) of the same priority:
     ( ..=            destructuring-bind              :lambda/expr )
     ( !..            nth-value
       th-value       nth-value )
-    ( .x.            values          :unreduce       :also-prefix )
-    ( :|.|           cons )
     ( ||             or              :unreduce
       or             or              :unreduce       :also-prefix )
     ( &&             and             :unreduce
@@ -1250,6 +1248,8 @@ to the strongest-binding OP, with parens enclosing OP(s) of the same priority:
     ( equal          equal )
     ( ==             eql )
     ( eql            eql             :also-prefix )
+    ( .x.            values          :unreduce       :also-prefix )
+    ( :|.|           cons )
     ( =s=            string= )
     ( =c=            char=           :unreduce )
     ( =              =               :unreduce       :also-prefix )
