@@ -237,7 +237,6 @@
  *binfix* =.
    `((( <&              prog1))
      (( &               progn           :unreduce))
-     
      (( def             defs            :macro));;------------DEFINITIONS
      (( let             let             :rhs-lbinds);;-------LET constructs
       ( let*            let*            :rhs-lbinds)
@@ -250,7 +249,7 @@
      (( :==             defmacro        :def)
       ( :=              defun           :def)
       ( :-              defmethod       :defm)
-      ( :type=   deftype   :def))
+      ( :type=          deftype         :def))
      (( block    block     :prefix);;------------------------PREFIX FORMS
       ( tagbody  tagbody   :prefix)
       ( catch    catch     :prefix)
@@ -264,7 +263,6 @@
       ( typecase typecase  :prefix)
       (etypecase etypecase :prefix)
       (ctypecase ctypecase :prefix))
-     (( loop ,#'identity   :prefix));;------------------------W/UNCHANGED RHS
      ((  ?   ()         :split));;----------------------------$pliters
      ((  $   ()         :split))
      (( .=   setf) ;;----------------------------------------ASSIGNMENT
@@ -289,46 +287,57 @@
       ( @    funcall    :rhs-args :left-assoc :also-postfix))
      (( :->  function   :lhs-lambda))
      (( ->   lambda     :lhs-lambda))
-     ((values values    :prefix))
      (( =..  multiple-value-bind  :syms/expr));;--------------MULTIPLE VALUES/DESTRUCTURING
      (( ..=  destructuring-bind   :lambda/expr))
-     (( !..      nth-value) 
-      ( th-value nth-value))
+     ((values values    :prefix)
+      ( .x.   values    :unreduce :also-prefix));; :also-prefix depreciated
+     (( loop ,#'identity   :prefix))
      (( ||       or     :unreduce);;-------------------------LOGICAL OPS
       ( or       or     :unreduce :also-prefix))
      (( &&       and    :unreduce)
       ( and      and    :unreduce :also-prefix))
-     (( <        <      :unreduce :also-prefix));;------------COMPARISONS
-     (( >        >      :unreduce :also-prefix))
-     (( <=       <=     :unreduce :also-prefix))
-     (( >=       >=     :unreduce :also-prefix))
      (( ===      equalp))
-     (( equalp   equalp)) ;; DEPRECIATED
+   ;;(( equalp   equalp)) ;; DEPRECIATED
      (( equal    equal))
      (( ==       eql))
      (( eql      eql    :also-prefix))
-     (( .x.      values     :unreduce :also-prefix));; :also-prefix depreciated
-     (( :.   cons))
+     (( eq       eq))
+     (( subtype-of subtypep))
+     (( :.       cons))
+     (( in       member))
+     (( th-cdr   nthcdr))
      (( =s=      string=))
      (( =c=      char=  :unreduce))
      ((  =        =     :unreduce :also-prefix))
      (( /=       /=     :unreduce :also-prefix))
-     (( eq       eq))
-     (( subtypep subtypep))
-     (( in       member));;-----------------------------------END OF COMPARISONS
+     (( <        <      :unreduce :also-prefix));;------------COMPARISONS
+     (( >        >      :unreduce :also-prefix))
+     (( <=       <=     :unreduce :also-prefix))
+     (( >=       >=     :unreduce :also-prefix))
+     ;;-----------------------------------END OF COMPARISONS
+     (( th-bit   logbitp))
      ;;================ :lower  binding user defined ops go here =================
      ;;================ :higher binding user defined ops go here =================
      (( coerce   coerce))
-     ((.!!.      bit       :rhs-args));;----------------------INDEXING
-     (( th-cdr   nthcdr))
+     (( !..      nth-value) ;;----------------------INDEXING 
+      ( th-value nth-value))
      (( th       nth))
-   ;;(( elt      elt))    ;;DEPRECIATED
-     (( .!       elt))
-   ;;(( svref    svref))  ;;DEPRECIATED
-     (( !.       svref))
-     (( !!.      row-major-aref))
+     (( .!       elt) 
+      ( !.       svref)
+      ( !!.      row-major-aref))
      (( !!       aref      :rhs-args))
-     (( th-bit        logbitp));;-----------------------------BIT ARITHMETICS 
+     ((.!!.      bit       :rhs-args))
+     ((.eqv.     bit-eqv   :rhs-args))
+     ((.or.      bit-ior   :rhs-args))
+     ((.xor.     bit-xor   :rhs-args))
+     ((.and.     bit-and   :rhs-args))
+     ((.nand.    bit-and   :rhs-args))
+     ((.nor.     bit-nor   :rhs-args))
+     ((.not.     bit-not   :also-unary))
+     ((.orc1.    bit-orc1  :rhs-args))
+     ((.orc2.    bit-orc2  :rhs-args))
+     ((.andc1.   bit-andc1 :rhs-args))
+     ((.andc2.   bit-andc2 :rhs-args))
      (( dpb           dpb           :rhs-args))
      (( ldb           ldb))
      (( ldb-test      ldb-test))
@@ -346,17 +355,6 @@
      (( orc2.    logorc2))
      (( andc1.   logandc1))
      (( andc2.   logandc2))
-     ((.eqv.     bit-eqv   :rhs-args))
-     ((.or.      bit-ior   :rhs-args))
-     ((.xor.     bit-xor   :rhs-args))
-     ((.and.     bit-and   :rhs-args))
-     ((.nand.    bit-and   :rhs-args))
-     ((.nor.     bit-nor   :rhs-args))
-     ((.not.     bit-not   :also-unary))
-     ((.orc1.    bit-orc1  :rhs-args))
-     ((.orc2.    bit-orc2  :rhs-args))
-     ((.andc1.   bit-andc1 :rhs-args))
-     ((.andc2.   bit-andc2 :rhs-args))
      (( <<       ash));;--------------------------------------ARITHMETICS
      (( lcm      lcm     :also-unary  :unreduce))
      (( gcd      gcd     :also-unary  :unreduce))

@@ -801,13 +801,13 @@ The following table summarizes BINFIX OPs for indexing, from
 the weakest to the strongest binding OP:
 
 <table>
-  <tr><td><code>!..</code></td>     <td><code>nth-value</code></td></tr>
-  <tr><td><code>th-value</code></td><td><code>nth-value</code></td></tr>
+  <tr><td><code>th-cdr</code></td>  <td><code>nthcdr</code></td>   </tr>
+  <tr><td><code>th-bit</code></td>  <td><code>logbitp</code></td>  </tr>
+  <tr><td><code>!..</code> &nbsp;
+          <code>th-value</code></td><td><code>nth-value</code></td></tr>
+  <tr><td><code>!.</code></td>      <td><code>svref</code></td>    </tr>
   <tr><td><code>.!</code></td>      <td><code>elt</code></td>      </tr>
   <tr><td><code>th</code></td>      <td><code>nth</code></td>      </tr>
-  <tr><td><code>th-bit</code></td>  <td><code>logbitp</code></td>  </tr>
-  <tr><td><code>th-cdr</code></td>  <td><code>nthcdr</code></td>   </tr>
-  <tr><td><code>!.</code></td>      <td><code>svref</code></td>    </tr>
   <tr><td><code>!!.</code></td>     <td><code>row-major-aref</code></td></tr>
   <tr><td><code>.!!.</code></td>    <td><code>bit</code></td>      </tr>
   <tr><td><code>!!</code></td>      <td><code>aref</code></td>     </tr>
@@ -815,7 +815,8 @@ the weakest to the strongest binding OP:
   <tr><td><code>!</code></td>       <td><code>aref</code></td>     </tr>
 </table>
 
-`!..` and `th-value` are mere synonyms and have the same priority, while `!!`
+`!..` and `th-value` are mere synonyms and thus of the same priority, as are
+`.!` `!.` and `!!.`, while `!!`
 is a weaker binding `!`, allowing easier writting of expr. with arithmetic
 operations with indices, like
 
@@ -1205,7 +1206,6 @@ to the strongest-binding OP, with parens enclosing OP(s) of the same priority:
       typecase       typecase        :prefix
       etypecase      etypecase       :prefix
       ctypecase      ctypecase       :prefix )
-    ( loop           #<FUNCTION identity>            :prefix )
     ( ?              nil             :split )
     ( $              nil             :split )
     ( .=             setf
@@ -1230,42 +1230,53 @@ to the strongest-binding OP, with parens enclosing OP(s) of the same priority:
       @              funcall         :rhs-args       :left-assoc     :also-postfix )
     ( :->            function        :lhs-lambda )
     ( ->             lambda          :lhs-lambda )
-    ( values         values          :prefix )
     ( =..            multiple-value-bind             :syms/expr )
     ( ..=            destructuring-bind              :lambda/expr )
-    ( !..            nth-value
-      th-value       nth-value )
+    ( values         values          :prefix
+      .x.            values          :unreduce       :also-prefix )
+    ( loop           #<FUNCTION identity>            :prefix )
     ( ||             or              :unreduce
       or             or              :unreduce       :also-prefix )
     ( &&             and             :unreduce
       and            and             :unreduce       :also-prefix )
-    ( <              <               :unreduce       :also-prefix )
-    ( >              >               :unreduce       :also-prefix )
-    ( <=             <=              :unreduce       :also-prefix )
-    ( >=             >=              :unreduce       :also-prefix )
     ( ===            equalp )
-    ( equalp         equalp )
     ( equal          equal )
     ( ==             eql )
     ( eql            eql             :also-prefix )
-    ( .x.            values          :unreduce       :also-prefix )
+    ( eq             eq )
+    ( subtype-of     subtypep )
     ( :|.|           cons )
+    ( in             member )
+    ( th-cdr         nthcdr )
     ( =s=            string= )
     ( =c=            char=           :unreduce )
     ( =              =               :unreduce       :also-prefix )
     ( /=             /=              :unreduce       :also-prefix )
-    ( eq             eq )
-    ( subtypep       subtypep )
-    ( in             member )
-    ( coerce         coerce )
-    ( .!!.           bit             :rhs-args )
-    ( th-cdr         nthcdr )
-    ( th             nth )
-    ( .!             elt )
-    ( !.             svref )
-    ( !!.            row-major-aref )
-    ( !!             aref            :rhs-args )
+    ( <              <               :unreduce       :also-prefix )
+    ( >              >               :unreduce       :also-prefix )
+    ( <=             <=              :unreduce       :also-prefix )
+    ( >=             >=              :unreduce       :also-prefix )
     ( th-bit         logbitp )
+    ( coerce         coerce )
+    ( !..            nth-value
+      th-value       nth-value )
+    ( th             nth )
+    ( .!             elt
+      !.             svref
+      !!.            row-major-aref )
+    ( !!             aref            :rhs-args )
+    ( .!!.           bit             :rhs-args )
+    ( .eqv.          bit-eqv         :rhs-args )
+    ( .or.           bit-ior         :rhs-args )
+    ( .xor.          bit-xor         :rhs-args )
+    ( .and.          bit-and         :rhs-args )
+    ( .nand.         bit-and         :rhs-args )
+    ( .nor.          bit-nor         :rhs-args )
+    ( .not.          bit-not         :also-unary )
+    ( .orc1.         bit-orc1        :rhs-args )
+    ( .orc2.         bit-orc2        :rhs-args )
+    ( .andc1.        bit-andc1       :rhs-args )
+    ( .andc2.        bit-andc2       :rhs-args )
     ( dpb            dpb             :rhs-args )
     ( ldb            ldb )
     ( ldb-test       ldb-test )
@@ -1283,17 +1294,6 @@ to the strongest-binding OP, with parens enclosing OP(s) of the same priority:
     ( orc2.          logorc2 )
     ( andc1.         logandc1 )
     ( andc2.         logandc2 )
-    ( .eqv.          bit-eqv         :rhs-args )
-    ( .or.           bit-ior         :rhs-args )
-    ( .xor.          bit-xor         :rhs-args )
-    ( .and.          bit-and         :rhs-args )
-    ( .nand.         bit-and         :rhs-args )
-    ( .nor.          bit-nor         :rhs-args )
-    ( .not.          bit-not         :also-unary )
-    ( .orc1.         bit-orc1        :rhs-args )
-    ( .orc2.         bit-orc2        :rhs-args )
-    ( .andc1.        bit-andc1       :rhs-args )
-    ( .andc2.        bit-andc2       :rhs-args )
     ( <<             ash )
     ( lcm            lcm             :also-unary     :unreduce )
     ( gcd            gcd             :also-unary     :unreduce )
@@ -1310,6 +1310,7 @@ to the strongest-binding OP, with parens enclosing OP(s) of the same priority:
     ( !              aref            :rhs-args )
     ( |;|            |;| )
     ------------------------------------------------------------------------------
+
 
 => `nil`
 

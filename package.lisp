@@ -13,7 +13,7 @@
            #:th-bit  #:.nor.   #:or.    #:xor.    #:and.   #:nand.  #:nor.
            #:andc2.  #:eqv.    #:test.  #:orc1.   #:orc2.  #:andc1. #:.eqv.
            #:.or.    #:.xor.   #:.and.  #:.nand.  #:.not.  #:.orc1. #:.orc2.
-           #:.andc1. #:.andc2. #:.eqv.
+           #:.andc1. #:.andc2. #:.eqv.  #:subtype-of
           #-sbcl #:struct))
 
 #+clisp (shadowing-import 'symbol-macro :binfix)
