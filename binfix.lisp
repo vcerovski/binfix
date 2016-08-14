@@ -115,6 +115,28 @@
 
  defparameter *def-method* ();
 
+ sbind* e &optional binds s current decls :=
+   labels make-bind s e = `(,s ,(singleton (binfix (nreverse e))))
+     (cond {null e
+              $ let* current = (nreverse current)
+                     e = (pop current)
+                  {cdr {nreverse $ `(,s ,e) :. binds} .x. decls .x. current}}
+           {car e in *decls* || listp (car e) && caar e in *decls*
+              $ cdr (nreverse {make-bind s current :. binds}) .x. decls .x. e}
+           {car e == ';
+              $ cdr (nreverse {make-bind s current :. binds}) .x. decls .x. cdr e}
+           {cadr e == '=
+              $ sbind* (cddr e)
+                       {make-bind s current :. binds} (car e) ()
+                       decls}
+           {keywordp (cadr e) && caddr e == '=
+              $ sbind* (cdddr e)
+                       {make-bind s current :. binds} (car e) ()
+                      `((type,(keyword-type-spec (cadr e)),(car e)),@decls)}
+           {t $ sbind* (cdr e)
+                       binds s {car e :. current}
+                       decls});
+
  defs x &optional defs types :=
    labels check-def x assgn *x* descr =
      {let def = (binfix (cdr x))
@@ -170,28 +192,6 @@
                       decls)}
         {t $ error "BINFIX: symbol expected, not ~S in~@
                    ~S" (car e) (reverse vars)};
-
- sbind* e &optional binds s current decls :=
-   labels make-bind s e = `(,s ,(singleton (binfix (nreverse e))))
-     (cond {null e
-              $ let* current = (nreverse current)
-                     e = (pop current)
-                  {cdr {nreverse $ `(,s ,e) :. binds} .x. decls .x. current}}
-           {car e in *decls* || listp (car e) && caar e in *decls*
-              $ cdr (nreverse {make-bind s current :. binds}) .x. decls .x. e}
-           {car e == ';
-              $ cdr (nreverse {make-bind s current :. binds}) .x. decls .x. cdr e}
-           {cadr e == '=
-              $ sbind* (cddr e)
-                       {make-bind s current :. binds} (car e) ()
-                       decls}
-           {keywordp (cadr e) && caddr e == '=
-              $ sbind* (cdddr e)
-                       {make-bind s current :. binds} (car e) ()
-                      `((type,(keyword-type-spec (cadr e)),(car e)),@decls)}
-           {t $ sbind* (cdr e)
-                       binds s {car e :. current}
-                       decls});
 
  lbinds e :=
    let *decls* = '(declare)
