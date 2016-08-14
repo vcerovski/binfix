@@ -137,6 +137,11 @@
                        binds s {car e :. current}
                        decls});
 
+ def-sbind* binds :==
+   `(sbind* (cdr (if {car (last,binds) == ';}
+                        ,binds
+                    `(,@,binds ;))));
+
  defs x &optional defs types :=
    labels check-def x assgn *x* descr =
      {let def = (binfix (cdr x))
@@ -147,8 +152,7 @@
             $ `(,@{types && nreverse types}
                 ,@(nreverse defs))}
          {assoc (car x) *def-symbol*
-            $ binds decl* r =.. (sbind* (cdr (if {car (last x) == ';} x
-                                                `(,@x ;))))
+            $ binds decl* r =.. (def-sbind* x)
                 {decl* r =.. (decls r (declare* decl* declaim))
                    (defs r (revappend {let def = (cdr (assoc (car x) *def-symbol*))
                                          (mapcar {a -> def :. a} binds)}
