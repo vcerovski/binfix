@@ -10,6 +10,7 @@
            #:<&  #:@/  #:.@. #:.@  #:..@
            #:th  #:th-cdr    #:th-value  #:.! #:!.  #:!.. #:.!.  #:.!!.
            #:def #:parameter #:var #:constant #:generic   #:symbol-macro
+                 #:class
            #:th-bit  #:.nor.   #:or.    #:xor.    #:and.   #:nand.  #:nor.
            #:andc2.  #:eqv.    #:test.  #:orc1.   #:orc2.  #:andc1. #:.eqv.
            #:.or.    #:.xor.   #:.and.  #:.nand.  #:.not.  #:.orc1. #:.orc2.

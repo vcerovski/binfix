@@ -64,6 +64,7 @@ reference 1.0 version.</p>
 <li><a href="#join">join</a></li>
 <li><a href="#values-bind">values-bind</a></li>
 <li><a href="#for">for</a></li>
+<li><a href="#Cartesian to polar coordinates">Cartesian to polar coordinates</a></li>
 </ul></li>
 <li><a href="#Implementation">Implementation</a>
 <ul>
@@ -580,6 +581,11 @@ to facilitate their easy writing:</p>
    (* (sqrt x) (sin x))))
 </code></pre>
 
+<p><code>def class</code> syntax is like <code>defclass</code> without parens.  For this to work, class
+options (<code>:documentation</code> and <code>:metaclass</code>) have to be given <em>before</em>
+description of slots, while <code>:default-initargs</code> comes last as usual, just
+unparenthesized (see <a href="#Cartesian to polar coordinates">example</a>.)</p>
+
 <p><code>def</code>ining of symbols follows the same syntax as <code>let</code> binding, which
 is covered next.</p>
 
@@ -587,8 +593,8 @@ is covered next.</p>
 
 <h3>LETs</h3>
 
-<p>LET symbol-binding forms (<code>let</code>, <code>let*</code> and <code>symbol-macrolet</code>) in BINFIX use
-<code>=</code>  with an optional type-annotation:</p>
+<p>LET symbol-binding forms (<code>let</code>, <code>let*</code>, <code>symbol-macrolet</code>, etc) in BINFIX use
+<code>=</code> with an optional type-annotation:</p>
 
 <pre><code>'{let x :bit = 1
       y = {2 ** 3}
@@ -1144,6 +1150,53 @@ following example of a procedural for-loop macro</p>
       do (setf (aref a i) (1+ i)))
 t
 </code></pre>
+
+<p><a name="Cartesian to polar coordinates"></a></p>
+
+<h4>Cartesian to polar coordinates</h4>
+
+<p>An example from <em>Common LISP the Language 2nd ed.</em> where cartesian
+coordinates are converted into polar coordinates via change of class can be
+straightforwardly written in BINFIX as</p>
+
+<pre><code>{def class position () ();
+
+     class x-y-position (position) 
+      x :initform 0 :initarg :x  
+      y :initform 0 :initarg :y;
+
+     class rho-theta-position (position) 
+      rho :initform 0
+      theta :initform 0
+
+ def update-instance-for-different-class :before 
+      old :x-y-position
+      new :rho-theta-position &amp;key :-
+      ;; Copy the position information from old to new to make new 
+      ;; be a rho-theta-position at the same position as old. 
+        let x = slot-value old 'x 
+            y = slot-value old 'y;
+          slot-value new 'rho .= sqrt {x * x + y * y};
+          slot-value new 'theta .= atan y x
+
+;;; At this point an instance of the class x-y-position can be 
+;;; changed to be an instance of the class rho-theta-position 
+;;; using change-class: 
+
+&amp; p1 =. make-instance 'x-y-position :x 2 :y 0
+
+&amp; change-class p1 'rho-theta-position
+
+;;; The result is that the instance bound to p1 is now 
+;;; an instance of the class rho-theta-position. 
+;;; The update-instance-for-different-class method 
+;;; performed the initialization of the rho and theta 
+;;; slots based on the values of the x and y slots, 
+;;; which were maintained by the old instance.
+}
+</code></pre>
+
+<p>where Steele's comments are left verbatim.</p>
 
 <p><a name="Implementation"></a></p>
 

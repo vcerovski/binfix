@@ -142,6 +142,23 @@
                         ,binds
                     `(,@,binds ;))));
 
+ defclass-body b &optional slot slots class-opts :=
+   (if {null b || car b == ';}
+      (values `(,{cdr $ nreverse $ if slot {reverse slot :. slots} slots}
+                ,@(nreverse class-opts))
+              (cdr b))
+      {let e = (pop b)
+         (cond {keywordp e
+                  $ cond {e == :default-initargs
+                            $ let* br = {'; in b}
+                                   inits = (ldiff b br)
+                                (defclass-body br slot slots `((:default-initargs ,@inits) ,@class-opts))}
+                         {slot $ defclass-body (cdr b) {car b :. e :. slot} slots class-opts}
+                         {t $ defclass-body (cdr b) () slots `((,e,(car b)) ,@class-opts)}}
+               {symbolp e
+                  $ defclass-body b (when e `(,e)) {reverse slot :. slots} class-opts}
+               {t $ error "BINFIX def class contains ~A" e})});
+
  defs x &optional defs types :=
    labels check-def x assgn *x* descr =
      {let def = (binfix (cdr x))
@@ -165,6 +182,9 @@
                     #+sbcl{sb-alien:struct}
             $ assgn types r =.. (struct (cdr x) defs types)
                 (defs r assgn types)}
+         {car x == 'class
+            $ class-def r =..(defclass-body (cdddr x))
+                (defs r `((defclass ,(cadr x) ,(caddr x) ,@class-def) ,@defs) types)}
          {find-if {e -> e in '(:= :== :- :type=)} x
             $ `(,(binfix x))}
          {car x == 'binfix
