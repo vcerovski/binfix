@@ -46,7 +46,7 @@
              {listp s $
                ll decls =.. (lambda-list s)
                  (lambda-list l {ll :. arg} (append (cdar decls) types))}
-             {t $ error "BINFIX lambda-list expects symbol or list, not ~S" s});
+             {t $ error "BINFIX lambda-list expects symbol or list instead of ~S" s});
 
  method-lambda-list l &optional args :=
    if (null l) {nreverse args .x. ()}
@@ -194,10 +194,22 @@
  defparameter *decls* '(declare declaim);
 
  decls e &optional decls doc :=
-  let s = (car e)
-    (cond {               s in *decls* $ decls (cddr e) {`(,s,(cadr e)):. decls} doc}
-          {listp s && car s in *decls* $ decls (cdr e)  { s            :. decls} doc}
-          {t $ `(,@doc ,@decls) .x. e});
+  labels var*-keyword e &optional vars =
+    (cond {null e           $ nil .x. nreverse vars}
+          {keywordp (car e) $ keyword-type-spec (car e) :. reverse vars .x. cdr e}
+          {symbolp (car e)  $ var*-keyword (cdr e) {car e :. vars}}
+          {t                $ error "BINFIX declaration got ~A instead of symbol." (car e)})
+  {let s = (car e)
+    (cond {s in *decls*
+             $ if (symbolp (cadr e))
+                 {vars r =.. (var*-keyword (cdr e))
+                   (decls r  ;;{vars && s :. r}
+                          {if vars {`(,s,vars) :. decls} decls}
+                          doc)}
+                 (decls (cddr e) {`(,s,(cadr e)):. decls} doc)}
+          {listp s && car s in *decls*
+             $ decls (cdr e) {s :. decls} doc}
+          {t $ `(,@doc ,@decls) .x. e})};
 
  doc-decls e &optional decls :=
    if {stringp (car e) && cdr e}

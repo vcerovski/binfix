@@ -407,6 +407,20 @@ variant:
       (declare (fixnum y))
       (+ x (expt y 2)))
 
+Another way to declare `x` and `y` is
+
+    '{f x y = 2 :=
+       declare x y :fixnum
+       declare (inline)
+       x + y ** 2}
+
+=>
+
+    (defun f (x &optional (y 2))
+      (declare (inline))
+      (declare (fixnum x y))
+      (+ x (expt y 2)))
+
 Operation `:->` can be used to specify function type. For example, in
 SBCL 1.1.17 function `sin` has declared type that can be written as
 

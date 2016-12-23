@@ -478,6 +478,22 @@ variant:</p>
   (+ x (expt y 2)))
 </code></pre>
 
+<p>Another way to declare <code>x</code> and <code>y</code> is</p>
+
+<pre><code>'{f x y = 2 :=
+   declare x y :fixnum
+   declare (inline)
+   x + y ** 2}
+</code></pre>
+
+<p>=></p>
+
+<pre><code>(defun f (x &amp;optional (y 2))
+  (declare (inline))
+  (declare (fixnum x y))
+  (+ x (expt y 2)))
+</code></pre>
+
 <p>Operation <code>:-&gt;</code> can be used to specify function type. For example, in
 SBCL 1.1.17 function <code>sin</code> has declared type that can be written as</p>
 
