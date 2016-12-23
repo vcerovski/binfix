@@ -2,7 +2,7 @@
 
 <h1>BINFIX</h1>
 
-<p>Viktor Cerovski, Aug 2016.</p>
+<p>Viktor Cerovski, Dec 2016.</p>
 
 <p><a name="Introduction"></a></p>
 
@@ -72,6 +72,7 @@ reference 1.0 version.</p>
 </ul></li>
 <li><a href="#Appendix">Appendix</a>
 <ul>
+<li><a href="#Syntax-highlighting">Syntax highlighting</a></li>
 <li><a href="#Operation properties">Operation properties</a></li>
 <li><a href="#List of all operations">List of all operations</a></li>
 </ul></li>
@@ -111,6 +112,20 @@ and can be obtained by</p>
 
 <pre><code>git clone https://github.com/vcerovski/binfix
 </code></pre>
+
+<p>There is also a syntax-highlighting file for <code>vim</code> editor, <code>binfix.vim</code>.
+Its installation consists of copying it into vimrc/syntax folder, which is
+on Linux located at <code>~/.vim/syntax</code> (should be created if it doesn't exist.)</p>
+
+<p>Once installed, after loading a LISP file, LISP+BINFIX syntax highlighting
+can be activated by <code>:set syntax=binfix</code>.  Loading can be done automatically
+by adding</p>
+
+<pre><code>filetype on
+au BufNewFile,BufRead *.lisp,*.cl set syntax=binfix
+</code></pre>
+
+<p>to <code>.vimrc</code>.</p>
 
 <p><a name="Examples"></a></p>
 
@@ -1338,6 +1353,22 @@ Examples of succesful combinations of backquoting and BINFIX are given
 <p><a name="Appendix"></a></p>
 
 <h2>Appendix</h2>
+
+<p><a name="Syntax-highlighting"></a></p>
+
+<h3>Syntax highlighting</h3>
+
+<p>Provided <code>binfix.vim</code> file covers <code>vim</code> editor with a syntax-highlighting
+extension, which is based and dependends on <code>lisp.vim</code> that comes 
+bundled with <code>vim</code>.</p>
+
+<p>Here are gui and terminal looks:</p>
+
+<p><img src="syntax-gui.png" alt="gui" title="" />
+(theme: <code>solarized</code>, font: <code>Inconsolata Medium</code>)</p>
+
+<p><img src="syntax-term.png" alt="terminal" title="" />
+(theme: <code>herald</code>, font: <code>Terminus</code>)</p>
 
 <p><a name="Operation properties"></a></p>
 
