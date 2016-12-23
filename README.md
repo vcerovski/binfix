@@ -1204,10 +1204,10 @@ bundled with `vim`.
 
 Here are gui and terminal looks:
 
-![gui](syntax-gui.png)
+![gui](./syntax-gui.png)
 (theme: `solarized`, font: `Inconsolata Medium`)
 
-![terminal](syntax-term.png)
+![terminal](./syntax-term.png)
 (theme: `herald`, font: `Terminus`)
 
 <a name="Operation properties"></a>
