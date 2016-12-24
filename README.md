@@ -702,6 +702,8 @@ Binfix `<&` stands for `prog1`,
 
     (lambda (x) (prog1 (f (* x x)) (format t "Calculation done.~%")))
 
+while `multiple-value-prog1` is given by `<&..`.
+
 <a name="`$`plitter"></a>
 ### `$`plitter
 

@@ -45,7 +45,7 @@ syn keyword lispKey  	declare
 syn keyword lispFunc	:=	:==	:-	:->	:type=
 syn keyword lispFunc	<<	**	in	:.	==	===	=s=	=c=
 syn keyword lispFunc	-=	+=	.=	.=.	=.	=..	..=
-syn keyword lispFunc	.x. 	\|\|	&&	&	<&	;	?	$	;
+syn keyword lispFunc	.x. 	\|\|	&&	&	<&	<&..	;	?	$	;
 syn keyword lispFunc	->	@@	@.	@n	@	@..	@.n	.@	..@	@/	.@.
 syn keyword lispFunc	!	.!	!.	.!.	.!!.	!!	!!.	!..
 syn keyword lispFunc	th	th-cdr	th-bit	th-value	subtype-of

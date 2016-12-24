@@ -271,8 +271,9 @@
 
 
  *binfix* =.
-   `((( <&              prog1))
-     (( &               progn           :unreduce))
+   `((( <&              prog1)
+      ( <&..            multiple-value-prog1))
+     ((  &              progn           :unreduce))
      (( def             defs            :macro));;------------DEFINITIONS
      (( let             let             :rhs-lbinds);;-------LET constructs
       ( let*            let*            :rhs-lbinds)
