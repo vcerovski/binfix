@@ -116,6 +116,31 @@
 
  defparameter *def-method* ();
 
+ defparameter *decls* '(declare declaim);
+
+ decls e &optional decls doc :=
+  labels var*-keyword e &optional vars =
+    (cond {null e           $ nil .x. nreverse vars}
+          {keywordp (car e) $ keyword-type-spec (car e) :. reverse vars .x. cdr e}
+          {symbolp (car e)  $ var*-keyword (cdr e) {car e :. vars}}
+          {t                $ error "BINFIX declaration got ~A instead of symbol." (car e)})
+   let s = (car e)
+     cond {s in *decls*
+             $ if (symbolp (cadr e))
+                 {vars r =.. (var*-keyword (cdr e))
+                    decls r  ;;{vars && s :. r}
+                          {if vars {`(,s,vars) :. decls} decls}
+                          doc}
+                 (decls (cddr e) {`(,s,(cadr e)):. decls} doc)}
+          {listp s && car s in *decls*
+             $ decls (cdr e) {s :. decls} doc}
+          {t $ `(,@doc ,@decls) .x. e};
+
+ doc-decls e &optional decls :=
+   if {stringp (car e) && cdr e}
+      (decls (cdr e) decls `(,(car e)))
+      (decls e decls);
+
  sbind* e &optional binds s current decls :=
    labels make-bind s e = `(,s ,(singleton (binfix (nreverse e))))
       cond {null e
@@ -143,7 +168,7 @@
                         ,binds
                     `(,@,binds ;))));
 
- defclass-body b &optional slot slots class-opts :=
+ def-class b &optional slot slots class-opts :=
    if {null b || car b == ';}
       (values `(,{cdr $ nreverse $ if slot {reverse slot :. slots} slots}
                 ,@(nreverse class-opts))
@@ -153,18 +178,18 @@
                   $ cond {e == :default-initargs
                             $ let* br = {'; in b}
                                    inits = (ldiff b br)
-                                defclass-body br slot slots `((:default-initargs ,@inits) ,@class-opts)}
-                         {slot $ defclass-body (cdr b) {car b :. e :. slot} slots class-opts}
-                         {t $ defclass-body (cdr b) () slots `((,e,(car b)) ,@class-opts)}}
+                                def-class br slot slots `((:default-initargs ,@inits) ,@class-opts)}
+                         {slot $ def-class (cdr b) {car b :. e :. slot} slots class-opts}
+                         {t $ def-class (cdr b) () slots `((,e,(car b)) ,@class-opts)}}
                {symbolp e
-                  $ defclass-body b (when e `(,e)) {reverse slot :. slots} class-opts}
+                  $ def-class b (when e `(,e)) {reverse slot :. slots} class-opts}
                {t $ error "BINFIX def class contains ~A" e};
 
  defs x &optional defs types :=
-   labels check-def x assgn *x* descr =
+   labels check-def x assgn +x+ descr =
      {let def = (binfix (cdr x))
         if {assgn in cdr x}
-           (defs () `((,(cdr (assoc (car x) *x*)) ,@(cdr def)) ,@defs) types)
+           (defs () `((,(cdr (assoc (car x) +x+)) ,@(cdr def)) ,@defs) types)
            (error "BINFIX def ~A instead of ~A definition has~%~S" (car x) descr (cdr x))}
     cond {null x
             $ `(,@{types && nreverse types}
@@ -184,38 +209,13 @@
             $ assgn types r =.. (struct (cdr x) defs types)
                 (defs r assgn types)}
          {car x == 'class
-            $ class-def r =..(defclass-body (cdddr x))
+            $ class-def r =..(def-class (cdddr x))
                 (defs r `((defclass ,(cadr x) ,(caddr x) ,@class-def) ,@defs) types)}
          {find-if {e -> e in '(:= :== :- :type=)} x
             $ `(,(binfix x))}
          {car x == 'binfix
             $ `((defbinfix ,@(cdr x)))}
          {t $ error "BINFIX def has a trailing:~%~S" x};
-
- defparameter *decls* '(declare declaim);
-
- decls e &optional decls doc :=
-  labels var*-keyword e &optional vars =
-    (cond {null e           $ nil .x. nreverse vars}
-          {keywordp (car e) $ keyword-type-spec (car e) :. reverse vars .x. cdr e}
-          {symbolp (car e)  $ var*-keyword (cdr e) {car e :. vars}}
-          {t                $ error "BINFIX declaration got ~A instead of symbol." (car e)})
-  {let s = (car e)
-    (cond {s in *decls*
-             $ if (symbolp (cadr e))
-                 {vars r =.. (var*-keyword (cdr e))
-                   (decls r  ;;{vars && s :. r}
-                          {if vars {`(,s,vars) :. decls} decls}
-                          doc)}
-                 (decls (cddr e) {`(,s,(cadr e)):. decls} doc)}
-          {listp s && car s in *decls*
-             $ decls (cdr e) {s :. decls} doc}
-          {t $ `(,@doc ,@decls) .x. e})};
-
- doc-decls e &optional decls :=
-   if {stringp (car e) && cdr e}
-      (decls (cdr e) decls `(,(car e)))
-      (decls e decls);
 
  vbinds e &optional vars decls :=
    cond {null e $ reverse vars .x. reverse decls}
