@@ -4,14 +4,14 @@
 
 syn keyword lispKey array atom bignum bit bit-vector boolean character compiled-function complex
 syn keyword lispKey cons double-float fixnum float function hash-table integer keyword list long-float
-syn keyword lispKey nil null number package pathname random-state ratio rational readtable sequence
+syn keyword lispKey nil null number package pathname random-state ratio rational real readtable sequence
 syn keyword lispKey short-float signed-byte simple-array simple-bit-vector simple-string simple-vector
 syn keyword lispKey single-float standard-char stream symbol t unsigned-byte vector
 syn keyword lispKey common string string-char
 
 syn keyword lispKey :array :atom :bignum :bit :bit-vector :boolean :character :compiled-function :complex
 syn keyword lispKey :cons :double-float :fixnum :float :function :hash-table :integer :keyword :list :long-float
-syn keyword lispKey :nil :null :number :package :pathname :random-state :ratio :rational :readtable :sequence
+syn keyword lispKey :nil :null :number :package :pathname :random-state :ratio :rational :real :readtable :sequence
 syn keyword lispKey :short-float :signed-byte :simple-array :simple-bit-vector :simple-string :simple-vector
 syn keyword lispKey :single-float :standard-char :stream :symbol :t :unsigned-byte :vector
 syn keyword lispKey :common :string :string-char
