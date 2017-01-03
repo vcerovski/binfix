@@ -81,10 +81,9 @@ BINFIX is developed using
 [SBCL](https://en.wikipedia.org/wiki/Steel_Bank_Common_Lisp), and checked to
 work fine with [CLISP](https://en.wikipedia.org/wiki/CLISP),
 and [Clozure CL](https://en.wikipedia.org/wiki/Clozure_CL),
-while with [ECL](https://en.wikipedia.org/wiki/Embeddable_Common_Lisp) there
-have been some problems with loading and testing recently, so for the
-time being BINFIX is not running on ECL.
-<!-- passes tests when hand-loaded but does not go through the package system yet. -->
+while with [ECL](https://en.wikipedia.org/wiki/Embeddable_Common_Lisp) passes
+tests when hand-loaded but does not go through the package system yet (tried
+with v16.1.2).
 
 BINFIX shadows `!` and `symbol-macrol` in CLISP , `@` in Clozure CL and ECL, as
 well as `var` (`sb-debug:var`) in SBCL.
@@ -1229,10 +1228,10 @@ bundled with `vim`.
 
 Here are gui and terminal looks:
 
-![gui](./syntax-gui.png)
+![gui](https://github.com/vcerovski/binfix/doc/syntax-gui.png)
 (theme: `solarized`, font: `Inconsolata Medium`)
 
-![terminal](./syntax-term.png)
+![terminal](https://github.com/vcerovski/binfix/doc/syntax-term.png)
 (theme: `herald`, font: `Terminus`)
 
 <a name="Operation properties"></a>

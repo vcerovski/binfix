@@ -99,10 +99,9 @@ downloading/installation/loading trivial:</p>
 <a href="https://en.wikipedia.org/wiki/Steel_Bank_Common_Lisp">SBCL</a>, and checked to
 work fine with <a href="https://en.wikipedia.org/wiki/CLISP">CLISP</a>,
 and <a href="https://en.wikipedia.org/wiki/Clozure_CL">Clozure CL</a>,
-while with <a href="https://en.wikipedia.org/wiki/Embeddable_Common_Lisp">ECL</a> there
-have been some problems with loading and testing recently, so for the
-time being BINFIX is not running on ECL.
-<!-- passes tests when hand-loaded but does not go through the package system yet. --></p>
+while with <a href="https://en.wikipedia.org/wiki/Embeddable_Common_Lisp">ECL</a> passes
+tests when hand-loaded but does not go through the package system yet (tried
+with v16.1.2).</p>
 
 <p>BINFIX shadows <code>!</code> and <code>symbol-macrol</code> in CLISP , <code>@</code> in Clozure CL and ECL, as
 well as <code>var</code> (<code>sb-debug:var</code>) in SBCL.</p>
@@ -1388,10 +1387,10 @@ bundled with <code>vim</code>.</p>
 
 <p>Here are gui and terminal looks:</p>
 
-<p><img src="./syntax-gui.png" alt="gui" title="" />
+<p><img src="syntax-gui.png" alt="gui" title="" />
 (theme: <code>solarized</code>, font: <code>Inconsolata Medium</code>)</p>
 
-<p><img src="./syntax-term.png" alt="terminal" title="" />
+<p><img src="syntax-term.png" alt="terminal" title="" />
 (theme: <code>herald</code>, font: <code>Terminus</code>)</p>
 
 <p><a name="Operation properties"></a></p>
