@@ -1,29 +1,29 @@
-; BINFIX by V.Cerovski 2015,6
+; BINFIX by V.Cerovski 2015,7
 
 (in-package :binfix)
 
 (defparameter *binfix*
-  '((|;| progn)
-    (:== def defmacro)
-    (:=  def defun)
-    (:-  def defmethod)
-    ( =. setq)
-    (.=  setf)
-    (->  def lambda)
-    ($)
-    (labels flet= labels)
+  '((|;|    infix     (progn))
+    (:==    def       defmacro)
+    (:=     def       defun)
+    (:-     def       defmethod)
+    ( =.    infix     (setq))
+    (.=     infix     (setf))
+    (->     def-lambda)
+    ($      infix     ())
     (symbol-macrolet  let= symbol-macrolet)
-    (let  let= let)
-    (let* let= let*)
-    (=..  var-bind multiple-value-bind)
-    (.x.  unreduc .x. values)
-    (:.   cons)
-    (||   or)
-    (&&   and)
-    (==   eql)
-    (=c=  char=)
-    (in   member)
-    ( !   aref)))
+    (let    let=      let)
+    (let*   let=      let*)
+    (labels flet=     labels)
+    (=..    var-bind  multiple-value-bind)
+    (.x.    unreduc   .x. values)
+    (:.     infix     (cons))
+    (||     infix     (or))
+    (&&     infix     (and))
+    (==     infix     (eql))
+    (=c=    infix     (char=))
+    (in     infix     (member))
+    ( !     infix     (aref))))
 
 (defun binfix (e &optional (ops *binfix*))
   (cond ((atom e) e)
@@ -33,13 +33,11 @@
              (if (null op.rhs)
                (binfix e (cdr ops))
                (let ((lhs (ldiff e op.rhs)))
-                 `(,@op
-                    ,(if (eql (car op) 'def)
-                       lhs
-                       (binfix lhs (cdr ops)))
-                    ,(if (eql (car op) 'unreduc)
-                       (cdr op.rhs)
-                       (binfix (cdr op.rhs) ops)))))))))
+                 (macroexpand-1
+                   `(,@op ,lhs ,(cdr op.rhs)))))))))
+
+(defmacro infix (op lhs rhs)
+  `(,@op ,(binfix lhs) ,(binfix rhs)))
 
 (defun semicolon (s ch)
   (declare (ignore ch))
@@ -57,7 +55,7 @@
           (semicolon (get-macro-character #\;)))
       (unwind-protect
         (progn (set-macro-character #\; #'semicolon)
-               (binfix (read-delimited-list #\} s t)))
+               (values (binfix (read-delimited-list #\} s t)))) ;;values b/c of clisp
         (set-macro-character #\; semicolon)
         (incf *timing* (- (get-internal-real-time) time))))))
 

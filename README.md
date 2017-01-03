@@ -1095,86 +1095,109 @@ processes each one.
 Bootstraping is done beginning with proto-BINFIX,
 
     (defparameter *binfix*
-      '(( &  progn)
-        (:== def defmacro)
-        (:=  def defun)
-        (:-  def defmethod)
-        ( =. setq)
-        (.=  setf)
-        (->  def lambda)
-        ($)
-        (labels flet= labels)
-        (let  let= let)
-        (let* let= let*)
-        (:.   cons)
-        (||   or)
-        (&&   and)
-        (==   eql)
-        (=c=  char=)
-        (in   member)
-        ( !   aref)))
-    
+      '((|;|    infix     (progn))
+        (:==    def       defmacro)
+        (:=     def       defun)
+        (:-     def       defmethod)
+        ( =.    infix     (setq))
+        (.=     infix     (setf))
+        (->     def-lambda)
+        ($      infix     ())
+        (symbol-macrolet  let= symbol-macrolet)
+        (let    let=      let)
+        (let*   let=      let*)
+        (labels flet=     labels)
+        (=..    var-bind  multiple-value-bind)
+        (.x.    unreduc   .x. values)
+        (:.     infix     (cons))
+        (||     infix     (or))
+        (&&     infix     (and))
+        (==     infix     (eql))
+        (=c=    infix     (char=))
+        (in     infix     (member))
+        ( !     infix     (aref))))
+     
     (defun binfix (e &optional (ops *binfix*))
       (cond ((atom e) e)
             ((null ops) (if (cdr e) e (car e)))
             (t (let* ((op (car ops))
-                      (i (position (pop op) e)))
-                 (if (null i)
+                      (op.rhs (member (pop op) e)))
+                 (if (null op.rhs)
                    (binfix e (cdr ops))
-                  `(,@op
-                    ,(if (eql (car op) 'def)
-                        (subseq e 0 i)
-                        (binfix (subseq e 0 i) (cdr ops)))
-                    ,(binfix (subseq e (1+ i)) ops)))))))
-    
+                   (let ((lhs (ldiff e op.rhs)))
+                     (macroexpand-1
+                       `(,@op ,lhs ,(cdr op.rhs)))))))))
+     
+    (defmacro infix (op lhs rhs)
+      `(,@op ,(binfix lhs) ,(binfix rhs)))
+     
     (set-macro-character #\{
       (lambda (s ch) (declare (ignore ch))
         (binfix (read-delimited-list #\} s t))))
-    
+     
     (set-macro-character #\} (get-macro-character #\) ))
 
 which captures the basics of BINFIX.
 
-The next bootstrap phase defines macro `def` and, in the same 
-single BINFIX expression, macros `let=` and `flet=`
+Since v0.15, BINFIX interns a symbol consisting of a single `;` char not
+followed by `;` char, while two or more consequtive `;` are interpreted
+as a usual LISP comment.  This behavior is limited to BINFIX
+expressions only, while outside of them the standard LISP rules apply.
+
+The next bootstrap phase defines macros `def`, `def-lambda`, `let=`,
+`flet=` and `unreduc`, done in `proto1.lisp`,
 
     {defmacro def (what args body)
-      `(,what ,@(if {what == 'lambda}
-                  `(,(if {args && atom args} `(,args) args))
-                   (if (atom args) `(,args ()) `(,(car args),(cdr args))))
-              ,body) &
-
+      `(,what ,@(if (atom args)
+                   `(,args ())
+                   `(,(car args),(cdr args)))
+              ,(binfix body));
+    
+     def-lambda args body :==
+      `(lambda ,(if (consp args) args `(,args))
+         ,(binfix body));
+    
      let= let lhs body &aux vars :==
       loop while {cadr body == '=}
-         do {push `(,(car body),(caddr body)) vars &
+         do {push `(,(car body),(caddr body)) vars;
              body =. cdddr body}
-         finally (return (let ((let `(,let ,(nreverse vars) ,@body)))
-                           (if lhs `(,@lhs ,let) let))) &
-
+         finally (return (let ((let `(,let ,(nreverse vars) ,(binfix body))))
+                           (if lhs (binfix `(,@lhs ,let)) let)));
+    
      flet= flet lhs body &aux funs :==
       loop for r = {'= in body} while r
            for (name . lambda) = (ldiff body r)
-           do {push `(,name ,lambda ,(cadr r)) funs &
+           do {push `(,name ,lambda ,(cadr r)) funs;
                body =. cddr r}
-           finally (return (let ((flet `(,flet ,(nreverse funs) ,@body)))
-                             (if lhs `(,@lhs ,flet) flet)))}
+           finally {return let flet = `(,flet ,(reverse funs) ,(binfix body))
+                             if lhs (binfix `(,@lhs ,flet)) flet};
+    
+     unreduc op op-lisp lhs rhs :==
+       labels
+         unreduce e &optional args arg =
+           (cond {null e      $ nreverse {binfix (nreverse arg) :. args}}
+                 {car e == op $ unreduce (cdr e) {binfix (nreverse arg) :. args}}
+                 {t           $ unreduce (cdr e) args {car e :. arg}})
+       `(,op-lisp ,@(unreduce rhs `(,(binfix lhs))));
+    
+     var-bind op lhs rhs :== `(,op ,lhs ,(car rhs) ,(binfix (cdr rhs)))}
 
 which wraps up proto-BINFIX.
 
-Since v0.15, BINFIX interns a symbol consisting of a single `;` char not
-followed by `;` char, while two or more consequtive `;` are interpreted
-as starting a comment.  This behavior is limited to BINFIX
-expressions only, while outside of them the standard LISP rules apply.
 
 Since v0.19, proto-BINFIX introduces `unreduc` property.
 
-The rest is written using this syntax, and consists of handling of lambda lists
-and `let`s, a longer list of OPs with properties, redefined `binfix` to
-its full capability, and, finally, several interface functions for
+The rest is written using proto-BINFIX syntax, and consists of handling of
+lambda lists and `let`s, a longer list of OPs with properties, redefined
+`binfix` to its full capability, and, finally, several interface functions for
 dealing with OPs (`lsbinfix`, `defbinfix` and `rmbinfix`).
 
 Priorities of operations in proto-BINIFIX are given only relatively, with no
 numerical values and thus with no two operations of the same priority.
+
+Lhs and rhs of proto-BINFIX expressions refer to other proto-BINFIX
+expressions (since v0.22.3), which in particular means that there is
+no implicit-progn in proto-BINFIX let's and def's.
 
 Since v0.20, symbol of a BINFIX operation has a list of properties stored into
 the symbol property `binfix::properties`, which includes a numerically given
