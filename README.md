@@ -323,6 +323,9 @@ As you may by now expect, the following is also permited
       if {n <= 0} m
          {fac {n - 1} {n * m}}}
 
+*supplied-p* variable `var` for an optional or keyword argument is
+given by `?var` after the assignment.
+
 <a name="Local functions"></a>
 #### Local functions
 

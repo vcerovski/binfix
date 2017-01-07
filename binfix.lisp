@@ -17,6 +17,8 @@
    `{,decl* && list {',decl :. nreverse ,decl*}};
 
  collect-&parts l &optional arg types :=
+   labels ?-symbol-p      s = {symbol-name s ! 0 =c= #\?}
+          ?-symbol-symbol s = {intern $ subseq (symbol-name s) 1}
    if (null l) {nreverse arg .x. declare* types}
      let s = (pop l)
         cond {listp s || &lambdap s $ collect-&parts l {s :. arg} types}
@@ -27,8 +29,10 @@
                     pop l;
                     n =. car l};
                   if {n == '=}
-                   (collect-&parts (cddr l) `((,s,(cadr l)),@arg) types)
-                   (collect-&parts l `(,s,@arg) types)}}
+                    (if (?-symbol-p (caddr l))
+                      (collect-&parts (cdddr l) `((,s,(cadr l),(?-symbol-symbol (caddr l))),@arg) types)
+                      (collect-&parts (cddr l)  `((,s,(cadr l)                            ),@arg) types))
+                    (collect-&parts l `(,s,@arg) types)}}
              {t $ error "BINFIX lambda-list cannot collect-&parts of ~S" l};
 
  lambda-list l &optional arg types :=
