@@ -498,7 +498,7 @@
            cond {op == '; $ error "BINFIX: bare ; in:~% ~{ ~A~}" e}
                 {null rhs $
                    if {:also-postfix in op-prop}
-                      `(,op-lisp,@(binfix lhs))
+                      `(,op-lisp ,(singleton (binfix lhs)))
                        (error "BINFIX: missing r.h.s. of ~S (~S)~@
                                with l.h.s:~%~S" op op-lisp lhs)}
                 {:rhs-lbinds in op-prop $
