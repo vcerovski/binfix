@@ -383,8 +383,8 @@ and comments have a straightforward syntax:</p>
      {fac {n - 1} {n * m}}}
 </code></pre>
 
-<p><em>supplied-p</em> variable <code>var</code> for an optional or keyword argument is
-given by <code>?var</code> after the assignment.</p>
+<p><em>supplied-p</em> variable <code>var</code> for an optional/keyword argument is given by <code>?var</code>
+after the assignment.</p>
 
 <p><a name="Local functions"></a></p>
 
@@ -1305,7 +1305,7 @@ as a usual LISP comment.  This behavior is limited to BINFIX
 expressions only, while outside of them the standard LISP rules apply.</p>
 
 <p>The next bootstrap phase defines macros <code>def</code>, <code>def-lambda</code>, <code>let=</code>,
-<code>flet=</code> and <code>unreduc</code>, done in <code>proto1.lisp</code>,</p>
+<code>flet=</code>, <code>unreduc</code> and <code>var-bind</code>, done in <code>proto1.lisp</code>,</p>
 
 <pre><code>{defmacro def (what args body)
   `(,what ,@(if (atom args)
@@ -1345,7 +1345,10 @@ expressions only, while outside of them the standard LISP rules apply.</p>
 
 <p>which wraps up proto-BINFIX.</p>
 
-<p>Since v0.19, proto-BINFIX introduces <code>unreduc</code> property.</p>
+<p>Since v0.15, BINFIX interns a symbol consisting of a single <code>;</code> char not
+followed by <code>;</code> char, while two or more consequtive <code>;</code> are interpreted
+as starting a comment.  This behavior is limited to BINFIX
+expressions only, while outside of them the standard LISP rules apply.</p>
 
 <p>The rest is written using proto-BINFIX syntax, and consists of handling of
 lambda lists and <code>let</code>s, a longer list of OPs with properties, redefined
@@ -1408,18 +1411,16 @@ unparenthesized method lambda list.</p>
 
 <p><code>:lhs-lambda</code> -- OP has lambda list as its LHS.</p>
 
-<p><code>:rhs-lbinds</code> -- OP has let-binds at the beginning of its LHS,<br>
+<p><code>:rhs-lbinds</code> -- OP has let-binds at the beginning of its RHS,<br>
 [<em>symbol</em> [<em>keyword</em>] <strong><code>=</code></strong> <em>expr</em>]* <em>declaration</em>*</p>
 
 <p><code>:rhs-fbinds</code> -- OP has flet-binds at the beginning of its LHS, including
 optional declarations.</p>
 
 <p><code>:rhs-sbinds</code> -- OP has symbol-binds as its RHS. They are let-binds without
-annotations or declarations,
-[<em>symbol</em> <strong><code>=</code></strong> <em>expr</em><sup>+</sup>]<sup>+</sup></p>
+annotations or declarations.</p>
 
-<p><code>:rhs-ebinds</code> -- OP has expr-binds at the beginning of its RHS,
-[<em>expr</em><sup>+</sup> <strong><code>=</code></strong> <em>expr</em>]*</p>
+<p><code>:rhs-ebinds</code> -- OP has expr-binds at the beginning of its RHS.</p>
 
 <p><code>:unreduce</code> -- All appearances of OP at the current level should be unreduced,
 i.e replaced with a single call with multiple arguments.</p>
@@ -1449,7 +1450,9 @@ by optional declarations and a BINFIX-expression.</p>
 
 <p><code>:macro</code> -- OP is a macro.</p>
 
-<p><a name="List of all operations"></a></p>
+<p><code>:single</code> -- OP requires to be the only OP in the current expr with its
+priority.  For example, parsing of: <code>{values a  b .x. c}</code> reports an ambiguity error.
+<a name="List of all operations"></a></p>
 
 <h3>List of all operations</h3>
 

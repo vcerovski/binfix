@@ -331,31 +331,33 @@
      (( ->   lambda     :lhs-lambda))
      (( =..  multiple-value-bind  :syms/expr));;--------------MULTIPLE VALUES/DESTRUCTURING
      (( ..=  destructuring-bind   :lambda/expr))
-     ((values values    :prefix)
-      ( .x.   values    :unreduce :also-prefix));; :also-prefix depreciated
+     ((values values    :prefix   :single)
+      ( .x.   values    :unreduce :single))
      (( loop ,#'identity   :prefix))
      (( ||       or     :unreduce);;-------------------------LOGICAL OPS
       ( or       or     :unreduce :also-prefix))
      (( &&       and    :unreduce)
       ( and      and    :unreduce :also-prefix))
-     (( ===      equalp))
-   ;;(( equalp   equalp)) ;; DEPRECIATED
-     (( equal    equal))
-     (( ==       eql))
-     (( eql      eql    :also-prefix))
-     (( eq       eq))
+
+     (( ===      equalp :single)
+      ( equal    equal  :single)
+      ( ==       eql    :single)
+      ( eql      eql    :single)
+      ( eq       eq     :single))
+
      (( subtype-of subtypep))
      (( :.       cons))
      (( in       member))
      (( th-cdr   nthcdr))
-     (( =s=      string=))
-     (( =c=      char=  :unreduce))
-     ((  =        =     :unreduce :also-prefix))
-     (( /=       /=     :unreduce :also-prefix))
-     (( <        <      :unreduce :also-prefix));;------------COMPARISONS
-     (( >        >      :unreduce :also-prefix))
-     (( <=       <=     :unreduce :also-prefix))
-     (( >=       >=     :unreduce :also-prefix))
+
+     (( =s=      string= :single)
+      ( =c=      char=   :single :unreduce)
+      (  =        =      :single :unreduce :also-prefix)
+      ( /=       /=      :single :unreduce :also-prefix)
+      ( <        <       :single :unreduce :also-prefix)
+      ( >        >       :single :unreduce :also-prefix)
+      ( <=       <=      :single :unreduce :also-prefix)
+      ( >=       >=      :single :unreduce :also-prefix))
      ;;-----------------------------------END OF COMPARISONS
      (( th-bit   logbitp))
      ;;================ :lower  binding user defined ops go here =================
@@ -369,17 +371,17 @@
       ( !!.      row-major-aref))
      (( !!       aref      :rhs-args))
      ((.!!.      bit       :rhs-args))
-     ((.eqv.     bit-eqv   :rhs-args))
-     ((.or.      bit-ior   :rhs-args))
-     ((.xor.     bit-xor   :rhs-args))
-     ((.and.     bit-and   :rhs-args))
-     ((.nand.    bit-and   :rhs-args))
-     ((.nor.     bit-nor   :rhs-args))
-     ((.not.     bit-not   :also-unary))
-     ((.orc1.    bit-orc1  :rhs-args))
-     ((.orc2.    bit-orc2  :rhs-args))
-     ((.andc1.   bit-andc1 :rhs-args))
-     ((.andc2.   bit-andc2 :rhs-args))
+     ((.eqv.     bit-eqv   :rhs-args)
+      (.or.      bit-ior   :rhs-args)
+      (.xor.     bit-xor   :rhs-args)
+      (.and.     bit-and   :rhs-args)
+      (.nand.    bit-and   :rhs-args)
+      (.nor.     bit-nor   :rhs-args)
+      (.not.     bit-not   :also-unary)
+      (.orc1.    bit-orc1  :rhs-args)
+      (.orc2.    bit-orc2  :rhs-args)
+      (.andc1.   bit-andc1 :rhs-args)
+      (.andc2.   bit-andc2 :rhs-args))
      (( dpb           dpb           :rhs-args))
      (( ldb           ldb))
      (( ldb-test      ldb-test))
@@ -402,8 +404,8 @@
      (( gcd      gcd     :also-unary  :unreduce))
      (( mod      mod))
      (( rem      rem))
-     (( min      min     :also-prefix :unreduce)
-      ( max      max     :also-prefix :unreduce))
+     (( min      min     :also-prefix :unreduce :single)
+      ( max      max     :also-prefix :unreduce :single))
      ((  +        +      :also-unary  :unreduce))
      ((  -        -      :also-unary  :unreduce))
      ((  /        /      :also-unary))
@@ -426,12 +428,16 @@
          {car e == op $ split (cdr e) op {nreverse arg :. args}}
          {t           $ split (cdr e) op args {car e :. arg}};
 
- find-op-in e &optional (p 1000) o.r :=
+ find-op-in e &optional (p 1000) last-o o.r :=
     cond {null e $ o.r}
          {symbolp (car e)
             $ let q = (get (car e) 'properties)
                  if {q && {< (car q) p
                            || = (car q) p
+                              && not {   :single in cdr q
+                                      && :single in cdr (get last-o 'properties)
+                                      && not {car e == last-o}
+                                      && error "BINFIX parsing ambiguity between ~S and ~S" last-o (car e)}
                               && cddr q
                               && null (intersection
                                         '(:rhs-args    :unreduce
@@ -439,9 +445,9 @@
                                           :lambda/expr :macro :split
                                           :syms/expr)
                                         (cddr q))}}
-                   {find-op-in (cdr e) (car q) e}
-                   {find-op-in (cdr e) p o.r}}
-         {t $ find-op-in (cdr e) p o.r};
+                   {find-op-in (cdr e) (car q) (car e) e }
+                   {find-op-in (cdr e)  p      last-o o.r}}
+         {t $ find-op-in (cdr e) p last-o o.r};
 
  binfix e &optional (max-priority 1000) :=
    labels

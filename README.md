@@ -323,8 +323,8 @@ As you may by now expect, the following is also permited
       if {n <= 0} m
          {fac {n - 1} {n * m}}}
 
-*supplied-p* variable `var` for an optional or keyword argument is
-given by `?var` after the assignment.
+*supplied-p* variable `var` for an optional/keyword argument is given by `?var`
+after the assignment.
 
 <a name="Local functions"></a>
 #### Local functions
@@ -1147,7 +1147,7 @@ as a usual LISP comment.  This behavior is limited to BINFIX
 expressions only, while outside of them the standard LISP rules apply.
 
 The next bootstrap phase defines macros `def`, `def-lambda`, `let=`,
-`flet=` and `unreduc`, done in `proto1.lisp`,
+`flet=`, `unreduc` and `var-bind`, done in `proto1.lisp`,
 
     {defmacro def (what args body)
       `(,what ,@(if (atom args)
@@ -1186,8 +1186,10 @@ The next bootstrap phase defines macros `def`, `def-lambda`, `let=`,
 
 which wraps up proto-BINFIX.
 
-
-Since v0.19, proto-BINFIX introduces `unreduc` property.
+Since v0.15, BINFIX interns a symbol consisting of a single `;` char not
+followed by `;` char, while two or more consequtive `;` are interpreted
+as starting a comment.  This behavior is limited to BINFIX
+expressions only, while outside of them the standard LISP rules apply.
 
 The rest is written using proto-BINFIX syntax, and consists of handling of
 lambda lists and `let`s, a longer list of OPs with properties, redefined
@@ -1248,18 +1250,16 @@ unparenthesized method lambda list.
 
 `:lhs-lambda` -- OP has lambda list as its LHS.
 
-`:rhs-lbinds` -- OP has let-binds at the beginning of its LHS,<br>
+`:rhs-lbinds` -- OP has let-binds at the beginning of its RHS,<br>
 [*symbol* [*keyword*] **`=`** *expr*]\* *declaration*\*
 
 `:rhs-fbinds` -- OP has flet-binds at the beginning of its LHS, including
 optional declarations.
 
 `:rhs-sbinds` -- OP has symbol-binds as its RHS. They are let-binds without
-annotations or declarations,
-[*symbol* **`=`** *expr*<sup>+</sup>]<sup>+</sup>
+annotations or declarations.
 
-`:rhs-ebinds` -- OP has expr-binds at the beginning of its RHS,
-[*expr*<sup>+</sup> **`=`** *expr*]\*
+`:rhs-ebinds` -- OP has expr-binds at the beginning of its RHS.
 
 `:unreduce` -- All appearances of OP at the current level should be unreduced,
 i.e replaced with a single call with multiple arguments.
@@ -1289,6 +1289,9 @@ by optional declarations and a BINFIX-expression.
 
 `:macro` -- OP is a macro.
 
+
+`:single` -- OP requires to be the only OP in the current expr with its
+priority.  For example, parsing of: `{values a  b .x. c}` reports an ambiguity error.
 <a name="List of all operations"></a>
 ### List of all operations
 
