@@ -558,21 +558,17 @@
                                                  {keywordp (car lhs) $ list (pop lhs)})
                               ,@{ll decls =.. (method-lambda-list lhs)
                                   `(,ll ,@(doc*-decl*-binfix+ rhs decls))})}
-                {:left-assoc in op-prop && position op rhs $
-                   let* j = (position op rhs)
-                       lrhs = (subseq rhs 0 j)
-                       rrhs = (subseq rhs j)
-                       binfix`((,op-lisp ,(singleton (binfix  lhs))
-                                         ,(singleton (binfix lrhs))) ,@rrhs)}
+                {:left-assoc in op-prop && find op rhs $
+                   binfix`((,op-lisp ,(singleton (binfix  lhs))
+                                     ,(singleton (binfix lrhs))) ,@rrhs)}
                 {:lambda/expr in op-prop $
                    llist decls =.. (lambda-list lhs)
                      `(,op-lisp ,llist ,(car rhs)
                                 ,@(decl*-binfix+ (cdr rhs) decls))}
                 {:split in op-prop $
-                   `(,(if {lhs && null (cdr lhs)} (car e) (binfix lhs))
-                     ,{when rhs
-                         let e = (binfix rhs)
-                            (if (cdr e) e (car e))})}
+                   `(,(singleton (binfix lhs))
+                     ,(singleton (binfix rhs)))}
+
                 {:prefix in op-prop $ binfix `(,@lhs ,(binfix `(,op,@rhs)))}
                 (t `(,op-lisp
                      ,(singleton (binfix lhs))
