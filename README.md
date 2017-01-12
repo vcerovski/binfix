@@ -362,6 +362,7 @@ All three above definitions of `fac` are transformed by `binfix` to
                  (if (= n 0)
                      m
                      (f (1- n) (* n m)))))
+        (f n 1)))
 
 which can be demonstrated by simply evaluating the quoted expressions.
 
