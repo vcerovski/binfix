@@ -189,6 +189,47 @@
                   $ def-class b (when e `(,e)) {reverse slot :. slots} class-opts}
                {t $ error "BINFIX def class contains ~A" e};
 
+ mbind n ll d b :=
+   ll ldecl* =.. (method-lambda-list ll)
+     decl* body =.. (decls b ldecl*)
+       `(,n ,ll ,@decl* ,@d ,(singleton (binfix body)));
+
+ collect-d= d= e &optional expr llist body defs last-def? :=
+   cond {null e
+           $ cdr $ nreverse $ `(,llist ,@(nreverse (cdr body)) ,@(nreverse expr)) :. defs}
+        {car e == d=
+           $ if last-def? (error "Unfinnished body of a ~S definition in:~@
+                                 ~S~%Missing ; ?" d= (nreverse expr))
+               (collect-d= d= (cdr e) () (nreverse expr) () {{llist :. nreverse (cdr body)} :. defs} t)}
+        {car e == ';
+           $ collect-d= d= (cdr e) () llist `(; ,@expr ,@body) defs nil}
+        {t $ collect-d= d= (cdr e) {car e :. expr} llist body defs last-def?};
+
+ def-generic b &optional params entries :=
+   cond {null b
+           $ `(,@(method-lambda-list params) ,@(nreverse entries)) .x. ()}
+        {null params
+           $ let rest = {'; in b} ;; ;-terminated method lambda list.
+               if rest
+                 (def-generic (cdr rest) {let h =(ldiff b rest) `(,(car h),(cdr h))})
+                 (def-generic () `(,(car b),(cdr b)))}
+        {stringp (car b)
+           $ def-generic (cdr b) params `((:documentation,(car b)) ,@entries)}
+        {car b in '(declare :generic-function-class :method-class)
+           $ def-generic (cddr b) params `((,(car b),(cadr b)) ,@entries)}
+        {car b in '(:argument-precedence-order :method-combination)
+           $ loop for nxt = (cdr b) then (cdr nxt)
+                  until {null nxt || keywordp (car nxt) || '; == car nxt}
+                  finally (def-generic nxt params `(,(ldiff b nxt) ,@entries))}
+        {':- in b
+           $ `(,@(method-lambda-list params)
+               ,@(nreverse entries)
+               ,@(mapcar {mdef -> mbind :method (car mdef) () (cdr mdef)}
+                         (collect-d= :- b))) .x. ()}
+      ;;{car b == '; ;; doen't work because ; is consumed at this point.
+      ;;   $ `(,@(method-lambda-list params) ,@(nreverse entries)) .x. cdr b}
+        {t $ error "BINFIX def generic has a trailing ~S" (ldiff b {'; in b})};
+
  defs x &optional defs types :=
    labels check-def x assgn +x+ descr =
      {let def = (binfix (cdr x))
@@ -198,6 +239,9 @@
     cond {null x
             $ `(,@{types && nreverse types}
                 ,@(nreverse defs))}
+         {car x == 'generic
+            $ defgen r =.. (def-generic (cdr x))
+                defs r `((defgeneric ,@defgen) ,@defs) types}
          {assoc (car x) *def-symbol*
             $ binds decl* r =.. (def-sbind* x)
                 {decl* r =.. (decls r (declare* decl* declaim))

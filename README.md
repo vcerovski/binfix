@@ -2,7 +2,7 @@
 
 # BINFIX
 
-Viktor Cerovski, Jan 2017.
+Viktor Cerovski, Feb 2017.
 
 <a name="Introduction"></a>
 ## Introduction
@@ -990,6 +990,26 @@ Evaluation of the above returns `t` and prints the following
 
     (member 2 (join 'x (join '(1 2 3) (join '((a)) (* -1 2)))))
     => (2 3 (a) -2)
+
+Another way to write `join` in BINFIX is as a single `defgeneric` definition, using `def generic`,
+
+    {def generic join a b;
+       "Generic join."
+       a :list b :list :- append a b;
+       a :t    b :list :- a :. b;
+       a :list b :t    :- `(,@a ,b);
+       a :t    b :t    :- list a b}
+
+which expands into
+
+    (progn
+     (defgeneric join
+         (a b)
+       (:documentation "Generic join.")
+       (:method ((a list) (b list)) (append a b))
+       (:method ((a t) (b list)) (cons a b))
+       (:method ((a list) (b t)) `(,@a ,b))
+       (:method ((a t) (b t)) (list a b))))
 
 <a name="values-bind"></a>
 #### `values-bind`
