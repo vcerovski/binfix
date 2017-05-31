@@ -8,8 +8,18 @@
    let S = {singleton $ read-from-string
                           (concatenate 'string "(" (symbol-name k) ")")
                           () :eof}
-     if {symbolp S && not (keywordp S) || listp S} S
-        (error "Incorrect BINFIX keyword-type specifier ~S" k);
+     cond {symbolp S && not (keywordp S) $ S}
+          {listp S $ case (car S)
+                       {'lambda   $ `(function ,@(cdr S))}
+                       {'function $ `(ftype (function ,@(cdr S)))}
+                       { t        $ S }}
+          {t       $ error "Incorrect BINFIX keyword-type specifier ~S" k};
+
+ type-keyword-type s ktype :=
+   let type = (keyword-type-spec ktype)
+     if {symbolp type || not {car type in `(type ftype)}}
+       `(type ,type ,s)
+       `(    ,@type ,s);
 
  &lambdap s :== `{,s in lambda-list-keywords};
 
@@ -25,7 +35,7 @@
              {symbolp s $
                let n = (car l)
                  {when (keywordp n)
-                   {push `(type,(keyword-type-spec n),s) types;
+                   {push (type-keyword-type s n) types;
                     pop l;
                     n =. car l};
                   if {n == '=}
@@ -42,7 +52,7 @@
                cond {keywordp (car l) $
                       if {cadr l == '=}
                         (collect-&parts `(&optional,s,@l) arg types)
-                        (lambda-list (cdr l) `(,s,@arg) `((type,(keyword-type-spec (car l)),s),@types))}
+                        (lambda-list (cdr l) `(,s,@arg) {type-keyword-type s (car l) :. types})}
                     {s =='&whole $ lambda-list (cdr l) `(,(car l),s,@arg) types}
                     { &lambdap s $ collect-&parts l `(,s,@arg) types}
                     {car l == '= $ collect-&parts `(&optional,s,@l) arg types}
@@ -127,7 +137,13 @@
     (cond {null e           $ nil .x. nreverse vars}
           {keywordp (car e) $ keyword-type-spec (car e) :. reverse vars .x. cdr e}
           {symbolp (car e)  $ var*-keyword (cdr e) {car e :. vars}}
-          {t                $ error "BINFIX declaration got ~A instead of symbol." (car e)})
+          {consp (car e) && caar e in '(type ftype)
+                            $ `(,@(car e) ,@(reverse vars)) .x. cdr e}
+          {consp (car e) && caar e == 'function
+                            $ `(ftype ,(car e) ,@(reverse vars)) .x. cdr e}
+          {consp (car e) && caar e == 'lambda
+                            $ `(type (function ,@(cdar e)) ,@(reverse vars)) .x. cdr e}
+          {t                $ error "BINFIX decl. of ~A got ~A instead of type-specifier." (nreverse vars) (car e)})
    let s = (car e)
      cond {s in *decls*
              $ if (symbolp (cadr e))
@@ -162,7 +178,7 @@
            {keywordp (cadr e) && caddr e == '=
               $ sbind* (cdddr e)
                        {make-bind s current :. binds} (car e) ()
-                      `((type,(keyword-type-spec (cadr e)),(car e)),@decls)}
+                       {type-keyword-type (car e) (cadr e) :. decls}}
            {t $ sbind* (cdr e)
                        binds s {car e :. current}
                        decls};
@@ -271,7 +287,7 @@
             if (keywordp (cadr e))
               (vbinds (cddr e)
                       {car e :. vars}
-                      {`(type ,(keyword-type-spec (cadr e)),(car e)) :. decls})
+                      {type-keyword-type (car e) (cadr e) :. decls})
               (vbinds (cdr e)
                       {car e :. vars}
                       decls)}
@@ -288,9 +304,10 @@
    symbol-macrolet
      finish =
        {decl* r =.. (decls (if name {name :. revappend llist (nreverse body)}
-                                            {revappend llist (nreverse body)}))
-          `(,(nreverse binds) ,@(declare* decl*)) .x. r}
-   {labels
+                                            {revappend llist (nreverse body)})
+                           (declare* ()))
+          `(,(nreverse binds) ,@decl*) .x. r}
+   labels
      bind n ll d b =
        {ll ldecl* =.. (lambda-list (nreverse ll))
           decl* body =.. (decls (nreverse b) ldecl*)
@@ -316,7 +333,7 @@
          {body  $ fbinds (cdr e) binds name llist {car e :. body}}
          {llist $ fbinds (cdr e) binds name {car e :. llist} body}
          {name  $ fbinds (cdr e) binds name `(,(car e))}
-         {t     $ fbinds (cdr e) binds (car e)}};
+         {t     $ fbinds (cdr e) binds (car e)};
 
 
  *binfix* =.

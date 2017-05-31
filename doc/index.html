@@ -2,7 +2,7 @@
 
 <h1>BINFIX</h1>
 
-<p>Viktor Cerovski, Feb 2017.</p>
+<p>Viktor Cerovski, May 2017.</p>
 
 <p><a name="Introduction"></a></p>
 
@@ -45,6 +45,7 @@ reference 1.0 version.</p>
 <li><a href="#defmacro">defmacro</a></li>
 <li><a href="#def">def</a></li>
 <li><a href="#types">Type annotations, declarations and definitions</a></li>
+<li><a href="#funtypes">Funtion types</a></li>
 </ul></li>
 <li><a href="#LETs">LETs</a></li>
 <li><a href="#SETs">SETs</a></li>
@@ -386,6 +387,12 @@ and comments have a straightforward syntax:</p>
 <p><em>supplied-p</em> variable <code>var</code> for an optional/keyword argument is given by <code>?var</code>
 after the assignment.</p>
 
+<p><code>{f x y = 0 ?supplied-y &amp;key z = 0 ?supplied-z :=</code><em><code>&lt;body expr&gt;</code></em><code>}</code>,</p>
+
+<p>where, within <em><code>&lt;body expr&gt;</code></em>, boolean variables <code>supplied-y</code> and <code>supplied-z</code>
+are available (for the standard check whether respective values were provided
+in the call of <code>f</code>.)</p>
+
 <p><a name="Local functions"></a></p>
 
 <h4>Local functions</h4>
@@ -512,6 +519,10 @@ variant:</p>
   (+ x (expt y 2)))
 </code></pre>
 
+<p><a name="funtypes"></a></p>
+
+<h4>Function types</h4>
+
 <p>Operation <code>:-&gt;</code> can be used to specify function type. For example, in
 SBCL 1.1.17 function <code>sin</code> has declared type that can be written as</p>
 
@@ -531,6 +542,55 @@ SBCL 1.1.17 function <code>sin</code> has declared type that can be written as</
       (complex double-float))
   &amp;optional))
 </code></pre>
+
+<p>Function <code>fac</code> with a local function from <a href="#Local functions">this example</a>
+can have its type declared as</p>
+
+<pre><code>'{fac n :integer :=
+   labels
+     f n m := if {n = 0} m
+                 {f (1- n) {n * m}};
+     declare f {integer integer :-&gt; integer}
+    f n 1}
+</code></pre>
+
+<p>=></p>
+
+<pre><code>(defun fac (n)
+  (declare (type integer n))
+  (labels ((f (n m)
+             (if (= n 0)
+                 m
+                 (f (1- n) (* n m)))))
+    (declare (ftype (function (integer integer) integer) f))
+    (f n 1)))
+</code></pre>
+
+<p>Declaration which annotates that symbol value of a symbol is a function can be
+achieved by using <code>-&gt;</code> instead of <code>:-&gt;</code> in declaration of the symbol.  For
+instance:</p>
+
+<pre><code>'{f x :integer :=
+   let f = x -&gt; 1+ x;
+     declare f {integer -&gt; integer}
+   {flet f x := 1- x;
+      declare f {integer :-&gt; integer}
+      cons (f x) {f @ x}}}
+</code></pre>
+
+<p>=></p>
+
+<pre><code>(defun f (x)
+  (declare (type integer x))
+  (let ((f (lambda (x) (1+ x))))
+    (declare (type (function (integer) integer) f))
+    (flet ((f (x)
+             (1- x)))
+      (declare (ftype (function (integer) integer) f))
+      (cons (f x) (funcall f x)))))
+</code></pre>
+
+<p>which has the expected behavior:  <code>(f 0)</code> => <code>(-1 . 1)</code></p>
 
 <p>Type definitions are given using <code>:type=</code> OP, as in</p>
 
@@ -1139,10 +1199,10 @@ blog</a>)</p>
 <p>Another way to write <code>join</code> in BINFIX is as a single <code>defgeneric</code> definition, using <code>def generic</code>,</p>
 
 <pre><code>{def generic join a b;
-   "Generic join."                                                    
-   a :list b :list :- append a b;                                      
+   "Generic join."
+   a :list b :list :- append a b;
    a :t    b :list :- a :. b;
-   a :list b :t    :- `(,@a ,b);                                       
+   a :list b :t    :- `(,@a ,b);
    a :t    b :t    :- list a b}
 </code></pre>
 

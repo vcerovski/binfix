@@ -2,7 +2,7 @@
 
 # BINFIX
 
-Viktor Cerovski, Feb 2017.
+Viktor Cerovski, May 2017.
 
 <a name="Introduction"></a>
 ## Introduction
@@ -40,6 +40,7 @@ reference 1.0 version.
         * [defmacro](#defmacro)
         * [def](#def)
         * [Type annotations, declarations and definitions](#types)
+        * [Funtion types](#funtypes)
     * [LETs](#LETs)
     * [SETs](#SETs)
     * [Implicit `progn`](#Implicit progn)
@@ -326,6 +327,12 @@ As you may by now expect, the following is also permited
 *supplied-p* variable `var` for an optional/keyword argument is given by `?var`
 after the assignment.
 
+`{f x y = 0 ?supplied-y &key z = 0 ?supplied-z := `*`<body expr>`*`}`,
+
+where, within *`<body expr>`*, boolean variables `supplied-y` and `supplied-z`
+are available (for the standard check whether respective values were provided
+in the call of `f`.)
+
 <a name="Local functions"></a>
 #### Local functions
 
@@ -438,6 +445,9 @@ Another way to declare `x` and `y` is
       (declare (fixnum x y))
       (+ x (expt y 2)))
 
+<a name="funtypes"></a>
+#### Function types
+
 Operation `:->` can be used to specify function type. For example, in
 SBCL 1.1.17 function `sin` has declared type that can be written as
 
@@ -455,6 +465,52 @@ SBCL 1.1.17 function `sin` has declared type that can be written as
           (complex single-float)
           (complex double-float))
       &optional))
+
+Function `fac` with a local function from [this example](#Local functions)
+can have its type declared as
+
+    '{fac n :integer :=
+       labels
+         f n m := if {n = 0} m
+                     {f (1- n) {n * m}};
+         declare f {integer integer :-> integer}
+        f n 1}
+
+=>
+
+    (defun fac (n)
+      (declare (type integer n))
+      (labels ((f (n m)
+                 (if (= n 0)
+                     m
+                     (f (1- n) (* n m)))))
+        (declare (ftype (function (integer integer) integer) f))
+        (f n 1)))
+
+Declaration which annotates that symbol value of a symbol is a function can be
+achieved by using `->` instead of `:->` in declaration of the symbol.  For
+instance:
+
+    '{f x :integer :=
+       let f = x -> 1+ x;
+         declare f {integer -> integer}
+       {flet f x := 1- x;
+          declare f {integer :-> integer}
+          cons (f x) {f @ x}}}
+
+=>
+
+    (defun f (x)
+      (declare (type integer x))
+      (let ((f (lambda (x) (1+ x))))
+        (declare (type (function (integer) integer) f))
+        (flet ((f (x)
+                 (1- x)))
+          (declare (ftype (function (integer) integer) f))
+          (cons (f x) (funcall f x)))))
+
+which has the expected behavior:  `(f 0)` => `(-1 . 1)`
+
 
 Type definitions are given using `:type=` OP, as in
 
