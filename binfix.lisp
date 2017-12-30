@@ -475,12 +475,16 @@
      (( .!.      bit     :rhs-args));;------------------------ARRAY INDEXING
      ((  !       aref    :rhs-args))
      ((  ;        ;)));
+ declaim (fixnum *no-of-bops*);
+ defvar *no-of-bops* 0;
 
  assign-properties :=
-   let p = 0
+   let p = {*no-of-bops* =. 0}
       mapc {l -> {incf p;
-                  mapc {s -> {get (car s) 'properties .= p :. cdr s}} l}}
-           *binfix* ;
+                  mapc {s -> {get (car s) 'properties .= p :. cdr s;
+                              incf *no-of-bops*}}
+                       l}}
+           *binfix*;
 
  (assign-properties);
 
@@ -489,7 +493,7 @@
          {car e == op $ split (cdr e) op {nreverse arg :. args}}
          {t           $ split (cdr e) op args {car e :. arg}};
 
- find-op-in e &optional (p 1000) last-o o.r :=
+ find-op-in e &optional (p (1+ *no-of-bops*)) last-o o.r :=
     cond {null e $ o.r}
          {symbolp (car e)
             $ let q = (get (car e) 'properties)
@@ -588,7 +592,7 @@
                 {:rhs-fbinds in op-prop $
                    binds-decls* expr =.. (fbinds rhs)
                      singleton (binfix `(,@lhs (,op-lisp ,@binds-decls* ,@(binfix+ expr))))}
-                {functionp op-lisp $
+                {functionp op-lisp $ ;; DEPRECIATED
                    if (null lhs)
                       {op :. funcall op-lisp {binfix rhs priority}}
                       (binfix `(,@lhs,{op :. funcall op-lisp (binfix rhs priority)}))}
