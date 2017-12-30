@@ -2,7 +2,7 @@
 
 # BINFIX
 
-Viktor Cerovski, May 2017.
+Viktor Cerovski, Dec 2017.
 
 <a name="Introduction"></a>
 ## Introduction
@@ -48,6 +48,7 @@ reference 1.0 version.
     * [Multiple-choice forms](#Multiple-choice forms)
     * [Destructuring, multiple values](#Destructuring, multiple values)
     * [Loops](#Loops)
+    * [Hash tables and association lists](#Hash tables and association lists)
 * [Indexing](#Indexing)
 * [Mappings](#Mappings)
 * [Working with bits](#Bits)
@@ -865,6 +866,14 @@ Loops can be also nested without writing parens:
           collect (loop for j = 2 to 4
                         collect (cons i j))) 
 
+<a name="Hash tables and association lists"></a>
+#### Hash tables and association lists
+
+Hash tables are supported in binfix through OPs `~!` (`gethash`),
+`~~` (`remhash`) and `@~` (`maphash`).
+
+Association lists are accessible via `!~~` (`assoc`) and `~~!` (`rassoc`).
+
 <a name="Mappings"></a>
 ### Mappings
 
@@ -880,6 +889,7 @@ as summarized in the following table,
   <tr><td> <code>.@</code></td>  <td><code>mapc</code></td></tr>
   <tr><td><code>..@</code></td>  <td><code>mapl</code></td></tr>
   <tr><td>  <code>@/</code></td> <td><code>reduce</code></td></tr>
+  <tr><td>  <code>@~</code></td> <td><code>maphash</code></td></tr>
   <tr><td>  <code>@@</code></td> <td><code>apply</code></td></tr>
   <tr><td> <code>.@.</code></td> <td><code>multiple-value-call</code></td></tr>
 </table>
@@ -907,6 +917,11 @@ the weakest to the strongest binding OP:
   <tr><td><code>!!.</code></td>     <td><code>row-major-aref</code></td></tr>
   <tr><td><code>.!!.</code></td>    <td><code>bit</code></td>      </tr>
   <tr><td><code>!!</code></td>      <td><code>aref</code></td>     </tr>
+  <tr><td><code>~!</code>
+          <code>!~~</code>
+          <code>~~!</code></td>     <td><code>gethash</code>
+                                        <code>assoc</code>
+                                        <code>rassoc</code></td>   </tr>
   <tr><td><code>.!.</code></td>     <td><code>bit</code></td>      </tr>
   <tr><td><code>!</code></td>       <td><code>aref</code></td>     </tr>
 </table>
@@ -1381,7 +1396,8 @@ to the strongest-binding OP, with parens enclosing OP(s) of the same priority:
 
       BINFIX         LISP            Properties
     ==============================================================================
-    ( <&             prog1 )
+    ( <&             prog1
+      <&..           multiple-value-prog1 )
     ( &              progn           :unreduce )
     ( def            binfix::defs    :macro )
     ( let            let             :rhs-lbinds
@@ -1428,6 +1444,7 @@ to the strongest-binding OP, with parens enclosing OP(s) of the same priority:
       @..            maplist         :rhs-args
       @n             mapcan          :rhs-args
       @.n            mapcon          :rhs-args
+      @~             maphash
       @@             apply           :rhs-args
       .@.            multiple-value-call             :rhs-args
       @              funcall         :rhs-args       :left-assoc     :also-postfix )
@@ -1435,30 +1452,30 @@ to the strongest-binding OP, with parens enclosing OP(s) of the same priority:
     ( ->             lambda          :lhs-lambda )
     ( =..            multiple-value-bind             :syms/expr )
     ( ..=            destructuring-bind              :lambda/expr )
-    ( values         values          :prefix
-      .x.            values          :unreduce       :also-prefix )
+    ( values         values          :prefix         :single
+      .x.            values          :unreduce       :single )
     ( loop           #<FUNCTION identity>            :prefix )
     ( ||             or              :unreduce
       or             or              :unreduce       :also-prefix )
     ( &&             and             :unreduce
       and            and             :unreduce       :also-prefix )
-    ( ===            equalp )
-    ( equal          equal )
-    ( ==             eql )
-    ( eql            eql             :also-prefix )
-    ( eq             eq )
+    ( ===            equalp          :single
+      equal          equal           :single
+      ==             eql             :single
+      eql            eql             :single
+      eq             eq              :single )
     ( subtype-of     subtypep )
     ( :|.|           cons )
     ( in             member )
     ( th-cdr         nthcdr )
-    ( =s=            string= )
-    ( =c=            char=           :unreduce )
-    ( =              =               :unreduce       :also-prefix )
-    ( /=             /=              :unreduce       :also-prefix )
-    ( <              <               :unreduce       :also-prefix )
-    ( >              >               :unreduce       :also-prefix )
-    ( <=             <=              :unreduce       :also-prefix )
-    ( >=             >=              :unreduce       :also-prefix )
+    ( =s=            string=         :single
+      =c=            char=           :single         :unreduce
+      =              =               :single         :unreduce       :also-prefix
+      /=             /=              :single         :unreduce       :also-prefix
+      <              <               :single         :unreduce       :also-prefix
+      >              >               :single         :unreduce       :also-prefix
+      <=             <=              :single         :unreduce       :also-prefix
+      >=             >=              :single         :unreduce       :also-prefix )
     ( th-bit         logbitp )
     ( coerce         coerce )
     ( !..            nth-value
@@ -1467,19 +1484,22 @@ to the strongest-binding OP, with parens enclosing OP(s) of the same priority:
     ( .!             elt
       !.             svref
       !!.            row-major-aref )
-    ( !!             aref            :rhs-args )
     ( .!!.           bit             :rhs-args )
-    ( .eqv.          bit-eqv         :rhs-args )
-    ( .or.           bit-ior         :rhs-args )
-    ( .xor.          bit-xor         :rhs-args )
-    ( .and.          bit-and         :rhs-args )
-    ( .nand.         bit-and         :rhs-args )
-    ( .nor.          bit-nor         :rhs-args )
-    ( .not.          bit-not         :also-unary )
-    ( .orc1.         bit-orc1        :rhs-args )
-    ( .orc2.         bit-orc2        :rhs-args )
-    ( .andc1.        bit-andc1       :rhs-args )
-    ( .andc2.        bit-andc2       :rhs-args )
+    ( !!             aref            :rhs-args )
+    ( binfix::~!     gethash         :single         :rhs-args
+      !~~            assoc           :single
+      ~~!            rassoc          :single )
+    ( .eqv.          bit-eqv         :rhs-args
+      .or.           bit-ior         :rhs-args
+      .xor.          bit-xor         :rhs-args
+      .and.          bit-and         :rhs-args
+      .nand.         bit-and         :rhs-args
+      .nor.          bit-nor         :rhs-args
+      .not.          bit-not         :also-unary
+      .orc1.         bit-orc1        :rhs-args
+      .orc2.         bit-orc2        :rhs-args
+      .andc1.        bit-andc1       :rhs-args
+      .andc2.        bit-andc2       :rhs-args )
     ( dpb            dpb             :rhs-args )
     ( ldb            ldb )
     ( ldb-test       ldb-test )
@@ -1502,8 +1522,8 @@ to the strongest-binding OP, with parens enclosing OP(s) of the same priority:
     ( gcd            gcd             :also-unary     :unreduce )
     ( mod            mod )
     ( rem            rem )
-    ( min            min             :also-prefix    :unreduce
-      max            max             :also-prefix    :unreduce )
+    ( min            min             :also-prefix    :unreduce       :single
+      max            max             :also-prefix    :unreduce       :single )
     ( +              +               :also-unary     :unreduce )
     ( -              -               :also-unary     :unreduce )
     ( /              /               :also-unary )
