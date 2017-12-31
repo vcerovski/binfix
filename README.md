@@ -12,6 +12,8 @@ S-expressions of Common LISP ranging from simple arithmetic and logical
 forms to whole programs.
 
 It is in experimental phase with a few important new features still to come.
+(more than 10 kLOC currently.)
+There are a few important new features still to come.
 One of them, available from v0.16, is use of a single `;` symbol as a
 form-separating symbol in [implicit-progn](#LET ; progn example), [expression
 terminator](#SETF expr-termination) for SETFs, or as end of [LET binds
