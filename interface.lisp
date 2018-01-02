@@ -15,7 +15,7 @@
    '(member :lhs-lambda :def :defm :split :unreduce  :syms/expr :lambda/expr
             :rhs-lbinds :rhs-sbinds :rhs-ebinds :rhs-fbinds :prefix
             :also-prefix :also-unary :also-postfix :left-assoc :rhs-args
-            :macro) &
+            :macro :lhs-quote) &
 
  rmbinfix op :symbol :=
    *binfix* =. delete-if {o -> null (cdr o) && caar o == op} *binfix*;

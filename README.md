@@ -2,7 +2,7 @@
 
 # BINFIX
 
-Viktor Cerovski, Dec 2017.
+Viktor Cerovski, Jan 2018.
 
 <a name="Introduction"></a>
 ## Introduction
@@ -670,8 +670,9 @@ Note the three levels of parens gone.
 <a name="SETs"></a>
 ### SETs
 
-In addition to `=.` and `.=` OPs representing, respectively, a single `setq`
-and `setf` assignment, multiple assignments via SETs can be done using `=`,
+In addition to `=.`, `=...` and `.=` OPs representing, respectively, a single
+`setq`, `multiple-value-setq` and `setf` assignment, multiple assignments via
+SETs can be done using `=`,
 
     '{psetq x =   cos a * x + sin a * y
             y = - sin a * x + cos a * y}
@@ -852,6 +853,8 @@ Both `..=` and `=..` can be nested,
     (multiple-value-bind (a b c)
         (f x)
       (multiple-value-bind (x y z) (g z) (+ (* a x) (* b y) (* c z))))
+
+`multiple-value-setq` is given by `=...`
 
 <a name="Loops"></a>
 #### Loops
@@ -1381,6 +1384,8 @@ by optional declarations and a BINFIX-expression.
 
 `:rhs-args` -- OP takes LHS as 1st and RHS as remaining arguments.
 
+`:lhs-quote` -- OP quotes LHS.
+
 `:macro` -- OP is a macro.
 
 
@@ -1429,6 +1434,7 @@ to the strongest-binding OP, with parens enclosing OP(s) of the same priority:
       ctypecase      ctypecase       :prefix )
     ( ?              nil             :split )
     ( $              nil             :split )
+    ( =...           multiple-value-setq             :lhs-quote )
     ( .=             setf
       +=             incf
       -=             decf

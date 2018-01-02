@@ -368,7 +368,8 @@
       (ctypecase ctypecase :prefix))
      ((  ?   ()         :split));;----------------------------$pliters
      ((  $   ()         :split))
-     (( .=   setf) ;;----------------------------------------ASSIGNMENT
+     (( =... multiple-value-setq   :lhs-quote)) ;;------------ASSIGNMENT 
+     (( .=   setf)
       ( +=   incf)
       ( -=   decf)
       (  =.  setq)
@@ -641,7 +642,7 @@
 
                 {:prefix in op-prop $ binfix `(,@lhs ,(binfix `(,op,@rhs)))}
                 (t `(,op-lisp
-                     ,(singleton (binfix lhs))
+                     ,(if {:lhs-quote in op-prop} lhs (singleton (binfix lhs)))
                      ,@(cond {null (cdr rhs) $ rhs}
                              {:rhs-args in op-prop $
                                 cond {find-op-in rhs (1+ priority)

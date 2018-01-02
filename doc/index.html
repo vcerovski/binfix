@@ -2,7 +2,7 @@
 
 <h1>BINFIX</h1>
 
-<p>Viktor Cerovski, Dec 2017.</p>
+<p>Viktor Cerovski, Jan 2018.</p>
 
 <p><a name="Introduction"></a></p>
 
@@ -766,8 +766,9 @@ Nesting of <code>let</code>s without parens follows the right-associativity</p>
 
 <h3>SETs</h3>
 
-<p>In addition to <code>=.</code> and <code>.=</code> OPs representing, respectively, a single <code>setq</code>
-and <code>setf</code> assignment, multiple assignments via SETs can be done using <code>=</code>,</p>
+<p>In addition to <code>=.</code>, <code>=...</code> and <code>.=</code> OPs representing, respectively, a single
+<code>setq</code>, <code>multiple-value-setq</code> and <code>setf</code> assignment, multiple assignments via
+SETs can be done using <code>=</code>,</p>
 
 <pre><code>'{psetq x =   cos a * x + sin a * y
         y = - sin a * x + cos a * y}
@@ -979,6 +980,8 @@ example, as well as described in the next section.</p>
     (f x)
   (multiple-value-bind (x y z) (g z) (+ (* a x) (* b y) (* c z))))
 </code></pre>
+
+<p><code>multiple-value-setq</code> is given by <code>=...</code></p>
 
 <p><a name="Loops"></a></p>
 
@@ -1549,6 +1552,8 @@ by optional declarations and a BINFIX-expression.</p>
 
 <p><code>:rhs-args</code> -- OP takes LHS as 1st and RHS as remaining arguments.</p>
 
+<p><code>:lhs-quote</code> -- OP quotes LHS.</p>
+
 <p><code>:macro</code> -- OP is a macro.</p>
 
 <p><code>:single</code> -- OP requires to be the only OP in the current expr with its
@@ -1598,6 +1603,7 @@ to the strongest-binding OP, with parens enclosing OP(s) of the same priority:</
   ctypecase      ctypecase       :prefix )
 ( ?              nil             :split )
 ( $              nil             :split )
+( =...           multiple-value-setq             :lhs-quote )
 ( .=             setf
   +=             incf
   -=             decf

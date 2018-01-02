@@ -1,5 +1,5 @@
 " BINFIX Vim syntax file
-" by V. Cerovski Dec 2016
+" by V. Cerovski Jan 2018
 " based and dependent on the standard LISP syntax file of vim, lisp.vim
 
 syn keyword lispKey array atom bignum bit bit-vector boolean character compiled-function complex
@@ -46,7 +46,7 @@ syn keyword lispKey  		struct	var	parameter	constant	symbol-macro
 syn keyword lispKey  	declare
 syn keyword lispFunc	:=	:==	:-	:->	:type=
 syn keyword lispFunc	<<	**	in	:.	==	===	=s=	=c=
-syn keyword lispFunc	-=	+=	.=	.=.	=.	=..	..=
+syn keyword lispFunc	-=	+=	.=	.=.	=.	=..	..=     =...
 syn keyword lispFunc	.x. 	\|\|	&&	&	<&	<&..	;	?	$	;
 syn keyword lispFunc	->	@@	@.	@n	@	@..	@.n	.@	..@	@/	.@.
 syn keyword lispFunc	\~\~!	!\~\~	@\~	!\~
