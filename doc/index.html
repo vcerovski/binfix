@@ -1572,8 +1572,6 @@ atoms/S-expr or a single <code>;</code> separated B-expr.</p>
 <a href="#types">keyword-type</a> annotation,) an expression as RHS followed
 by optional declarations and a BINFIX-expression.</p>
 
-<p><code>#'my-fun</code> -- function <code>my-fun</code> will be applied to the untransformed RHS.</p>
-
 <p><code>:split</code> -- OP splits the expr at this point.</p>
 
 <p><code>:rhs-args</code> -- OP takes LHS as 1st and RHS as remaining arguments.</p>
@@ -1683,7 +1681,7 @@ to the strongest-binding OP, with parens enclosing OP(s) of the same priority:</
 ( ..=            destructuring-bind              :lambda/expr )
 ( values         values          :prefix         :single
   .x.            values          :unreduce       :single )
-( loop           #&lt;FUNCTION identity&gt;            :prefix )
+( loop           loop            :prefix         :quote-rhs )
 ( ||             or              :unreduce
   or             or              :unreduce       :also-prefix )
 ( &amp;&amp;             and             :unreduce

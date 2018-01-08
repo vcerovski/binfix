@@ -428,7 +428,7 @@
      (( ..=  destructuring-bind   :lambda/expr))
      ((values values    :prefix   :single)
       ( .x.   values    :unreduce :single))
-     (( loop ,#'identity   :prefix))
+     (( loop  loop      :prefix   :quote-rhs))
      (( ||       or     :unreduce);;-------------------------LOGICAL OPS
       ( or       or     :unreduce :also-prefix))
      (( &&       and    :unreduce)
@@ -644,10 +644,7 @@
                 {:rhs-fbinds in op-prop $
                    binds-decls* expr =.. (fbinds rhs)
                      singleton (binfix `(,@lhs (,op-lisp ,@binds-decls* ,@(binfix+ expr))))}
-                {functionp op-lisp $ ;; DEPRECIATED
-                   if (null lhs)
-                      {op :. funcall op-lisp {binfix rhs priority}}
-                      (binfix `(,@lhs,{op :. funcall op-lisp (binfix rhs priority)}))}
+
                 {:lhs-lambda in op-prop $
                    ll decls =.. (lambda-list lhs)
                       `(,op-lisp ,ll ,@(decl*-binfix+ rhs decls))}

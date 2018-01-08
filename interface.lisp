@@ -30,7 +30,7 @@
       (when {car o == op || listp (car o) && member op o :key #'car}
          (return i)) &
 
- declaim-fun defbinfix {symbol &optional {symbol || function} priority &rest t :-> boolean} &
+ declaim-fun defbinfix {symbol &optional symbol priority &rest t :-> boolean} &
 
  defbinfix op lisp-op = op p = :later &rest prop :=
   "DEFBINFIX op [lisp-op [priority op [property]*]]"
