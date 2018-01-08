@@ -1407,7 +1407,7 @@ by optional declarations and a BINFIX-expression.
 
 `:rhs-args` -- OP takes LHS as 1st and RHS as remaining arguments.
 
-`:lhs-quote` -- OP quotes LHS.
+`:quote-lhs` -- OP quotes LHS.
 
 `:quote-rhs` -- OP quotes RHS.
 
@@ -1484,7 +1484,7 @@ to the strongest-binding OP, with parens enclosing OP(s) of the same priority:
       ctypecase      ctypecase       :prefix )
     ( ?              nil             :split )
     ( $              nil             :split )
-    ( =...           multiple-value-setq             :lhs-quote )
+    ( =...           multiple-value-setq             :quote-lhs )
     ( .=             setf
       +=             incf
       -=             decf

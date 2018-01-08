@@ -1578,7 +1578,7 @@ by optional declarations and a BINFIX-expression.</p>
 
 <p><code>:rhs-args</code> -- OP takes LHS as 1st and RHS as remaining arguments.</p>
 
-<p><code>:lhs-quote</code> -- OP quotes LHS.</p>
+<p><code>:quote-lhs</code> -- OP quotes LHS.</p>
 
 <p><code>:quote-rhs</code> -- OP quotes RHS.</p>
 
@@ -1655,7 +1655,7 @@ to the strongest-binding OP, with parens enclosing OP(s) of the same priority:</
   ctypecase      ctypecase       :prefix )
 ( ?              nil             :split )
 ( $              nil             :split )
-( =...           multiple-value-setq             :lhs-quote )
+( =...           multiple-value-setq             :quote-lhs )
 ( .=             setf
   +=             incf
   -=             decf
