@@ -1542,7 +1542,7 @@ to the strongest-binding OP, with parens enclosing OP(s) of the same priority:
       !!.            row-major-aref )
     ( .!!.           bit             :rhs-args )
     ( !!             aref            :rhs-args )
-    ( binfix::~!     gethash         :single         :rhs-args
+    ( ~!             gethash         :single         :rhs-args
       !~~            assoc           :single
       ~~!            rassoc          :single )
     ( .eqv.          bit-eqv         :rhs-args
