@@ -12,16 +12,16 @@
 S-expressions of Common LISP ranging from simple arithmetic and logical
 forms to whole programs.</p>
 
-<p>It is in experimental phase with a few important new features still to come.
-(more than 10 kLOC currently.)
-There are a few important new features still to come.
+<p>It is in experimental phase, developed and tested by writing lots of code
+(more than 10 kLOC currently.)</p>
+
+<p>There are a few important new features still to come.
 One of them, available from v0.16, is use of a single <code>;</code> symbol as a
 form-separating symbol in <a href="#LET ; progn example">implicit-progn</a>, <a href="#SETF expr-termination">expression
 terminator</a> for SETFs, or as end of <a href="#LET ; examples">LET binds
 symbol</a> or <a href="#Local functions">local functions definition</a>.
-There is also <code>def</code>, for <a href="#def">defining things</a>.</p>
-
-<p>The most recent one is the same priority OPs (since v0.20).</p>
+There is also <code>def</code>, for <a href="#def">defining things</a>, and the latest is
+writing standard LISP definitions <a href="#progn-m">without outer parens</a>.</p>
 
 <p>Once the rest of them have been implemented, BINFIX will go to RC and then to
 reference 1.0 version.</p>
@@ -48,6 +48,7 @@ reference 1.0 version.</p>
 <li><a href="#def">def</a></li>
 <li><a href="#types">Type annotations, declarations and definitions</a></li>
 <li><a href="#funtypes">Funtion types</a></li>
+<li><a href="#progn-m">Definitions and declarations without parens</a></li>
 </ul></li>
 <li><a href="#LETs">LETs</a></li>
 <li><a href="#SETs">SETs</a></li>
@@ -654,7 +655,6 @@ to facilitate their easy writing:</p>
 <p>=></p>
 
 <pre><code>(progn
- nil
  (declaim (type fixnum *x*)
           (type fixnum *y*))
  (defparameter *x* 1)
@@ -685,6 +685,32 @@ unparenthesized (see <a href="#Cartesian to polar coordinates">example</a>.)</p>
 
 <p><code>def</code>ining of symbols follows the same syntax as <code>let</code> binding, which
 is covered next.</p>
+
+<p><a name="progn-m"></a></p>
+
+<h4>Definitions and delcarations without parens</h4>
+
+<p>BINFIX allows writing of standard LISP definition forms without outer parens,
+as in</p>
+
+<pre><code>'{declaim (fixnum a b c)
+  defvar a 0
+  defvar b 1 "variable b"
+  defvar c 2}
+</code></pre>
+
+<p>=> </p>
+
+<pre><code>(progn
+ (declaim (fixnum a b c))
+ (defvar a 0)
+ (defvar b 1 "variable b")
+ (defvar c 2))
+</code></pre>
+
+<p>This extends to all Common LISP def-forms, <code>declaim</code> and <code>proclaim</code>.</p>
+
+<p>The result is wrapped up in a <code>progn</code>.</p>
 
 <p><a name="LETs"></a></p>
 
@@ -1554,11 +1580,17 @@ by optional declarations and a BINFIX-expression.</p>
 
 <p><code>:lhs-quote</code> -- OP quotes LHS.</p>
 
+<p><code>:quote-rhs</code> -- OP quotes RHS.</p>
+
 <p><code>:macro</code> -- OP is a macro.</p>
 
+<p><code>:progn</code> -- OP is in a progn-monad (<a href="#progn-m">example</a>).  Currently implemented
+for :prefix :quote-rhs/:macro.</p>
+
 <p><code>:single</code> -- OP requires to be the only OP in the current expr with its
-priority.  For example, parsing of: <code>{values a  b .x. c}</code> reports an ambiguity error.
-<a name="List of all operations"></a></p>
+priority.  For example, parsing of: <code>{values a  b .x. c}</code> reports an ambiguity error.</p>
+
+<p><a name="List of all operations"></a></p>
 
 <h3>List of all operations</h3>
 
@@ -1574,8 +1606,28 @@ to the strongest-binding OP, with parens enclosing OP(s) of the same priority:</
 ==============================================================================
 ( &lt;&amp;             prog1
   &lt;&amp;..           multiple-value-prog1 )
-( &amp;              progn           :unreduce )
-( def            binfix::defs    :macro )
+( &amp;              progn           :progn )
+( def            binfix::defs-macro              :progn          :prefix         :macro
+  defclass       defclass        :progn          :prefix         :quote-rhs
+  defstruct      defstruct       :progn          :prefix         :quote-rhs
+  deftype        deftype         :progn          :prefix         :quote-rhs
+  defparameter   defparameter    :progn          :prefix         :quote-rhs
+  defvar         defvar          :progn          :prefix         :quote-rhs
+  defconstant    defconstant     :progn          :prefix         :quote-rhs
+  define-condition               define-condition                :progn          :prefix         :quote-rhs
+  define-setf-expander           define-setf-expander            :progn          :prefix         :quote-rhs
+  binfix::define-setf-method     binfix::define-setf-method      :progn          :prefix         :quote-rhs
+  defsetf        defsetf         :progn          :prefix         :quote-rhs
+  defgeneric     defgeneric      :progn          :prefix         :quote-rhs
+  defmethod      defmethod       :progn          :prefix         :quote-rhs
+  define-method-combination      define-method-combination       :progn          :prefix         :quote-rhs
+  defun          defun           :progn          :prefix         :quote-rhs
+  defmacro       defmacro        :progn          :prefix         :quote-rhs
+  define-compiler-macro          define-compiler-macro           :progn          :prefix         :quote-rhs
+  define-symbol-macro            define-symbol-macro             :progn          :prefix         :quote-rhs
+  define-modify-macro            define-modify-macro             :progn          :prefix         :quote-rhs
+  declaim        declaim         :progn          :prefix         :quote-rhs
+  proclaim       proclaim        :progn          :prefix         :quote-rhs )
 ( let            let             :rhs-lbinds
   let*           let*            :rhs-lbinds
   symbol-macrolet                symbol-macrolet :rhs-lbinds

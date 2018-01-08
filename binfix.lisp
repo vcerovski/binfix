@@ -1,4 +1,4 @@
-; BINFIX by V.Cerovski 2015,7
+; BINFIX by V.Cerovski 2015,8
 
 (in-package :binfix)
 
@@ -253,18 +253,20 @@
            (defs () `((,(cdr (assoc (car x) +x+)) ,@(cdr def)) ,@defs) types)
            (error "BINFIX def ~A instead of ~A definition has~%~S" (car x) descr (cdr x))}
     cond {null x
-            $ `(,@{types && nreverse types}
-                ,@(nreverse defs))}
+            $ `(progn ,@{types && nreverse types}
+                      ,@(nreverse defs))}
          {car x == 'generic
             $ defgen r =.. (def-generic (cdr x))
                 defs r `((defgeneric ,@defgen) ,@defs) types}
          {assoc (car x) *def-symbol*
-            $ binds decl* r =.. (def-sbind* x)
-                {decl* r =.. (decls r (declare* decl* declaim))
-                   (defs r (revappend {let def = (cdr (assoc (car x) *def-symbol*))
-                                         (mapcar {a -> def :. a} binds)}
+            $ if {null (cddr x) || caddr x == ';} ;; It's a hack, sbind* should support it.
+                (defs (cdddr x) `((,(cdr (assoc (car x) *def-symbol*)),(cadr x)) ,@defs) types)
+                {binds decl* r =.. (def-sbind* x)
+                  decl* r =.. (decls r (declare* decl* declaim))
+                    defs r (revappend {let def = (cdr (assoc (car x) *def-symbol*))
+                                          mapcar {a -> def :. a} binds}
                                       defs)
-                        (if decl* {append decl* types} types))}}
+                         (if decl* {append decl* types} types)}}
          {assoc (car x) *def-macro*    $ check-def x ':== *def-macro*    "macro"}
          {assoc (car x) *def-function* $ check-def x ':=  *def-function* "function"}
          {assoc (car x) *def-method*   $ check-def x ':-  *def-method*   "method"}
@@ -335,12 +337,42 @@
          {name  $ fbinds (cdr e) binds name `(,(car e))}
          {t     $ fbinds (cdr e) binds (car e)};
 
+ defs-macro &rest defs :== defs defs;
 
  *binfix* =.
    `((( <&              prog1)
       ( <&..            multiple-value-prog1))
-     ((  &              progn           :unreduce))
-     (( def             defs            :macro));;------------DEFINITIONS
+     ((  &              progn           :progn))
+
+     (( def                       defs-macro                :progn :prefix :macro     ) ;;---------DEFINITIONS
+      ;; data defs
+      ( defclass                  defclass                  :progn :prefix :quote-rhs )
+      ( defstruct                 defstruct                 :progn :prefix :quote-rhs )
+      ( deftype                   deftype                   :progn :prefix :quote-rhs )
+      ( defparameter              defparameter              :progn :prefix :quote-rhs )
+      ( defvar                    defvar                    :progn :prefix :quote-rhs )
+      ( defconstant               defconstant               :progn :prefix :quote-rhs )
+      ;; error conditions
+      ( define-condition          define-condition          :progn :prefix :quote-rhs )
+      ;; setf
+      ( define-setf-expander      define-setf-expander      :progn :prefix :quote-rhs )
+      ( define-setf-method        define-setf-method        :progn :prefix :quote-rhs )
+      ( defsetf                   defsetf                   :progn :prefix :quote-rhs )
+      ;; generic functions
+      ( defgeneric                defgeneric                :progn :prefix :quote-rhs )
+      ( defmethod                 defmethod                 :progn :prefix :quote-rhs )
+      ( define-method-combination define-method-combination :progn :prefix :quote-rhs )
+      ;; functions
+      ( defun                     defun                     :progn :prefix :quote-rhs )
+      ;; macro functions
+      ( defmacro                  defmacro                  :progn :prefix :quote-rhs )
+      ( define-compiler-macro     define-compiler-macro     :progn :prefix :quote-rhs )
+      ( define-symbol-macro       define-symbol-macro       :progn :prefix :quote-rhs )
+      ( define-modify-macro       define-modify-macro       :progn :prefix :quote-rhs )
+      ;; global declarations
+      ( declaim                   declaim                   :progn :prefix :quote-rhs )
+      ( proclaim                  proclaim                  :progn :prefix :quote-rhs ))
+
      (( let             let             :rhs-lbinds);;-------LET constructs
       ( let*            let*            :rhs-lbinds)
       ( symbol-macrolet symbol-macrolet :rhs-lbinds)
@@ -513,14 +545,28 @@
                               && null (intersection
                                         '(:rhs-args    :unreduce
                                           :lhs-lambda  :left-assoc
-                                          :lambda/expr :macro :split
+                                          :lambda/expr :split
                                           :syms/expr)
                                         (cddr q))}}
                    {find-op-in (cdr e) (car q) (car e) e }
                    {find-op-in (cdr e)  p      last-o o.r}}
          {t $ find-op-in (cdr e) p last-o o.r};
 
- binfix e &optional (max-priority 1000) :=
+ progn-monad form1 &optional form2 :=
+   labels
+     unit form = {if {consp form && car form == 'progn}
+                     form
+                    `(progn ,form)}
+
+     join form1 form2 = `(progn ,@(cdr form1) ,@(cdr form2))
+
+     if form2
+       (if (null form1)
+         (unit form2)
+         (join (unit form1) (unit form2)))
+       (unit form1);
+
+ binfix e &optional (max-priority *no-of-bops*) :=
    labels
      unreduce e op &optional args arg =
        (cond {null e      $ reverse {binfix (reverse arg) :. args}}
@@ -605,8 +651,18 @@
                 {:lhs-lambda in op-prop $
                    ll decls =.. (lambda-list lhs)
                       `(,op-lisp ,ll ,@(decl*-binfix+ rhs decls))}
+                {:progn in op-prop $
+                   cond {:prefix in op-prop && {:quote-rhs in op-prop || :macro in op-prop}
+                           $ progn-monad (singleton (binfix lhs))
+                                         (singleton (if {:macro in op-prop}
+                                                        (macroexpand-1 `(,op-lisp ,@rhs))
+                                                       `(,op-lisp ,@rhs)))}
+                        {t $ progn-monad (singleton (binfix lhs)) ;; partial implementation.
+                                        `(,op-lisp ,(singleton (binfix rhs)))}}
                 {:macro in op-prop $
-                  `(progn ,(binfix lhs) ,@(reduce #'append (mapcar op-lisp (split rhs op))))}
+                   if {:prefix in op-prop}
+                      {singleton $ binfix $ `(,@lhs ,(singleton (macroexpand-1 `(,op-lisp ,@rhs))))}
+                      (error "BINFIX macro implemented only for :prefix OPs")}
                 {:unreduce in op-prop && position op rhs $ ;;position necessary...
                   let u = (mapcar #'singleton (unreduce rhs op `(,(binfix lhs),op-lisp)))
                      cond {lhs $ u}
@@ -616,9 +672,9 @@
                                       with r.h.s:~%~S" op op-lisp rhs}}
                 {null lhs $ cond{:also-unary  in op-prop $ `(,op-lisp ,(singleton (binfix rhs)))}
                                 {:also-prefix in op-prop || :prefix in op-prop
-                                                         $ `(,op-lisp ,@(if {'; in rhs}
-                                                                          (binfix+ rhs)
-                                                                          (binfix rhs)))}
+                                    $ `(,op-lisp ,@(cond {:quote-rhs in op-prop $ rhs}
+                                                         {'; in rhs $ binfix+ rhs}
+                                                         { t        $ binfix rhs}))}
                                 {t $ error "BINFIX: missing l.h.s. of ~S (~S)~@
                                             with r.h.s:~%~S" op op-lisp rhs}}
                 {:def in op-prop $ ll decls =.. (lambda-list (cdr lhs))
@@ -630,8 +686,7 @@
                               ,@{ll decls =.. (method-lambda-list lhs)
                                   `(,ll ,@(doc*-decl*-binfix+ rhs decls))})}
                 {:left-assoc in op-prop && find op rhs $
-                   binfix`((,op-lisp ,(singleton (binfix  lhs))
-                                     ,(singleton (binfix lrhs))) ,@rrhs)}
+                   binfix `(,op-lisp ,(singleton (binfix  lhs)) ,@rhs)}
                 {:lambda/expr in op-prop $
                    llist decls =.. (lambda-list lhs)
                      `(,op-lisp ,llist ,(car rhs)
@@ -640,7 +695,10 @@
                    `(,(singleton (binfix lhs))
                      ,(singleton (binfix rhs)))}
 
-                {:prefix in op-prop $ binfix `(,@lhs ,(binfix `(,op,@rhs)))}
+                {:prefix in op-prop $
+                   binfix `(,@lhs ,(cond {:quote-rhs in op-prop  $ `(,op,@rhs)}
+                                         {'; in rhs              $ `(,op,@(binfix+ rhs))}
+                                         {t $ binfix `(,op,@rhs)}))}
                 (t `(,op-lisp
                      ,(if {:lhs-quote in op-prop} lhs (singleton (binfix lhs)))
                      ,@(cond {null (cdr rhs) $ rhs}

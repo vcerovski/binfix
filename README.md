@@ -11,16 +11,16 @@ BINFIX (blend from "Binary Infix") is a poweful infix syntax notation for
 S-expressions of Common LISP ranging from simple arithmetic and logical
 forms to whole programs.
 
-It is in experimental phase with a few important new features still to come.
+It is in experimental phase, developed and tested by writing lots of code
 (more than 10 kLOC currently.)
+
 There are a few important new features still to come.
 One of them, available from v0.16, is use of a single `;` symbol as a
 form-separating symbol in [implicit-progn](#LET ; progn example), [expression
 terminator](#SETF expr-termination) for SETFs, or as end of [LET binds
 symbol](#LET ; examples) or [local functions definition](#Local functions).
-There is also `def`, for [defining things](#def).
-
-The most recent one is the same priority OPs (since v0.20).
+There is also `def`, for [defining things](#def), and the latest is
+writing standard LISP definitions [without outer parens](#progn-m).
 
 Once the rest of them have been implemented, BINFIX will go to RC and then to
 reference 1.0 version.
@@ -43,6 +43,7 @@ reference 1.0 version.
         * [def](#def)
         * [Type annotations, declarations and definitions](#types)
         * [Funtion types](#funtypes)
+        * [Definitions and declarations without parens](#progn-m)
     * [LETs](#LETs)
     * [SETs](#SETs)
     * [Implicit `progn`](#Implicit progn)
@@ -568,7 +569,6 @@ More detailed definitions are also straightforward to specify:
 =>
 
     (progn
-     nil
      (declaim (type fixnum *x*)
               (type fixnum *y*))
      (defparameter *x* 1)
@@ -599,6 +599,29 @@ unparenthesized (see [example](#Cartesian to polar coordinates).)
 
 `def`ining of symbols follows the same syntax as `let` binding, which
 is covered next.
+
+<a name="progn-m"></a>
+#### Definitions and delcarations without parens
+
+BINFIX allows writing of standard LISP definition forms without outer parens,
+as in
+
+    '{declaim (fixnum a b c)
+      defvar a 0
+      defvar b 1 "variable b"
+      defvar c 2}
+
+=> 
+
+    (progn
+     (declaim (fixnum a b c))
+     (defvar a 0)
+     (defvar b 1 "variable b")
+     (defvar c 2))
+
+This extends to all Common LISP def-forms, `declaim` and `proclaim`.
+
+The result is wrapped up in a `progn`.
 
 <a name="LETs"></a>
 ### LETs
@@ -1386,11 +1409,18 @@ by optional declarations and a BINFIX-expression.
 
 `:lhs-quote` -- OP quotes LHS.
 
+`:quote-rhs` -- OP quotes RHS.
+
 `:macro` -- OP is a macro.
+
+
+`:progn` -- OP is in a progn-monad ([example](#progn-m)).  Currently implemented
+for :prefix :quote-rhs/:macro.
 
 
 `:single` -- OP requires to be the only OP in the current expr with its
 priority.  For example, parsing of: `{values a  b .x. c}` reports an ambiguity error.
+
 <a name="List of all operations"></a>
 ### List of all operations
 
@@ -1405,8 +1435,28 @@ to the strongest-binding OP, with parens enclosing OP(s) of the same priority:
     ==============================================================================
     ( <&             prog1
       <&..           multiple-value-prog1 )
-    ( &              progn           :unreduce )
-    ( def            binfix::defs    :macro )
+    ( &              progn           :progn )
+    ( def            binfix::defs-macro              :progn          :prefix         :macro
+      defclass       defclass        :progn          :prefix         :quote-rhs
+      defstruct      defstruct       :progn          :prefix         :quote-rhs
+      deftype        deftype         :progn          :prefix         :quote-rhs
+      defparameter   defparameter    :progn          :prefix         :quote-rhs
+      defvar         defvar          :progn          :prefix         :quote-rhs
+      defconstant    defconstant     :progn          :prefix         :quote-rhs
+      define-condition               define-condition                :progn          :prefix         :quote-rhs
+      define-setf-expander           define-setf-expander            :progn          :prefix         :quote-rhs
+      binfix::define-setf-method     binfix::define-setf-method      :progn          :prefix         :quote-rhs
+      defsetf        defsetf         :progn          :prefix         :quote-rhs
+      defgeneric     defgeneric      :progn          :prefix         :quote-rhs
+      defmethod      defmethod       :progn          :prefix         :quote-rhs
+      define-method-combination      define-method-combination       :progn          :prefix         :quote-rhs
+      defun          defun           :progn          :prefix         :quote-rhs
+      defmacro       defmacro        :progn          :prefix         :quote-rhs
+      define-compiler-macro          define-compiler-macro           :progn          :prefix         :quote-rhs
+      define-symbol-macro            define-symbol-macro             :progn          :prefix         :quote-rhs
+      define-modify-macro            define-modify-macro             :progn          :prefix         :quote-rhs
+      declaim        declaim         :progn          :prefix         :quote-rhs
+      proclaim       proclaim        :progn          :prefix         :quote-rhs )
     ( let            let             :rhs-lbinds
       let*           let*            :rhs-lbinds
       symbol-macrolet                symbol-macrolet :rhs-lbinds
@@ -1541,7 +1591,6 @@ to the strongest-binding OP, with parens enclosing OP(s) of the same priority:
     ( !              aref            :rhs-args )
     ( |;|            |;| )
     ------------------------------------------------------------------------------
-
-
+    
 => `nil`
 

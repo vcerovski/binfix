@@ -1,4 +1,4 @@
-; BINFIX by V.Cerovski 2015,6
+; BINFIX by V.Cerovski 2015,8
 
 (in-package :binfix)
 
@@ -15,7 +15,7 @@
    '(member :lhs-lambda :def :defm :split :unreduce  :syms/expr :lambda/expr
             :rhs-lbinds :rhs-sbinds :rhs-ebinds :rhs-fbinds :prefix
             :also-prefix :also-unary :also-postfix :left-assoc :rhs-args
-            :macro :lhs-quote) &
+            :macro :lhs-quote :quote-rhs :progn) &
 
  rmbinfix op :symbol :=
    *binfix* =. delete-if {o -> null (cdr o) && caar o == op} *binfix*;

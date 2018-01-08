@@ -49,7 +49,7 @@ syn keyword lispFunc	<<	**	in	:.	==	===	=s=	=c=
 syn keyword lispFunc	-=	+=	.=	.=.	=.	=..	..=     =...
 syn keyword lispFunc	.x. 	\|\|	&&	&	<&	<&..	;	?	$	;
 syn keyword lispFunc	->	@@	@.	@n	@	@..	@.n	.@	..@	@/	.@.
-syn keyword lispFunc	\~\~!	!\~\~	@\~	!\~
+syn keyword lispFunc	\~\~!	!\~\~	@\~	!\~     @\~
 syn keyword lispFunc	!	.!	!.	.!.	.!!.	!!	!!.	!..
 syn keyword lispFunc	th	th-cdr	th-bit	th-value	subtype-of
 syn keyword lispFunc	 eqv.	 or.	 xor.	 and.	 nand.	 nor.	test.	 orc1.	 orc2.	 andc1.	 andc2.
