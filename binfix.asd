@@ -1,10 +1,10 @@
-; BINFIX by V.Cerovski 2015,6
+; BINFIX by V.Cerovski 2015,9
 
 (asdf:defsystem #:binfix
    :description "BINFIX -- A powerful binary infix syntax for Common LISP."
    :author "Viktor Cerovski"
    :licence "GNU GPLv2"
-   :version "0.26"
+   :version "0.26.1"
    :serial t
    :components
       ((:file "package")

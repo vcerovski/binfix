@@ -1520,8 +1520,8 @@ to the strongest-binding OP, with parens enclosing OP(s) of the same priority:
       ==             eql             :single
       eql            eql             :single
       eq             eq              :single
-      ~~             remhash         :single )
-    ( subtype-of     subtypep )
+      ~~             remhash         :single
+      subtype-of     subtypep        :single )
     ( :|.|           cons )
     ( in             member )
     ( th-cdr         nthcdr )

@@ -441,9 +441,9 @@
       ( ==       eql    :single)
       ( eql      eql    :single)
       ( eq       eq     :single)
-      ( ~~      remhash :single))
+      ( ~~      remhash :single)
+      ( subtype-of subtypep :single))
 
-     (( subtype-of subtypep))
      (( :.       cons))
      (( in       member))
      (( th-cdr   nthcdr))
