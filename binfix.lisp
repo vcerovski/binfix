@@ -1,4 +1,4 @@
-; BINFIX by V.Cerovski 2015,8
+; BINFIX by V.Cerovski 2015,9
 
 (in-package :binfix)
 
@@ -440,7 +440,8 @@
       ( equal    equal  :single)
       ( ==       eql    :single)
       ( eql      eql    :single)
-      ( eq       eq     :single))
+      ( eq       eq     :single)
+      ( ~~      remhash :single))
 
      (( subtype-of subtypep))
      (( :.       cons))

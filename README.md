@@ -2,7 +2,7 @@
 
 # BINFIX
 
-Viktor Cerovski, Jan 2018.
+Viktor Cerovski, Feb 2019.
 
 <a name="Introduction"></a>
 ## Introduction
@@ -1519,7 +1519,8 @@ to the strongest-binding OP, with parens enclosing OP(s) of the same priority:
       equal          equal           :single
       ==             eql             :single
       eql            eql             :single
-      eq             eq              :single )
+      eq             eq              :single
+      ~~             remhash         :single )
     ( subtype-of     subtypep )
     ( :|.|           cons )
     ( in             member )
