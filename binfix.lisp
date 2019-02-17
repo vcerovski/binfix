@@ -210,16 +210,18 @@
      decl* body =.. (decls b ldecl*)
        `(,n ,ll ,@decl* ,@d ,(singleton (binfix body)));
 
- collect-d= d= e &optional expr llist body defs last-def? :=
+ collect-d= d= e &optional expr lhs rhs lr last-d= :=
    cond {null e
-           $ cdr $ nreverse $ `(,llist ,@(nreverse (cdr body)) ,@(nreverse expr)) :. defs}
+           $ cdr $ nreverse $ `(,lhs ,@(nreverse (cdr rhs)) ,@(nreverse expr)) :. lr}
         {car e == d=
-           $ if last-def? (error "Unfinnished body of a ~S definition in:~@
-                                 ~S~%Missing ; ?" d= (nreverse expr))
-               (collect-d= d= (cdr e) () (nreverse expr) () {{llist :. nreverse (cdr body)} :. defs} t)}
+           $ if last-d=
+               (collect-d= d= (cdr e) () (nreverse (butlast expr)) () {{lhs :. last expr} :. lr} t)
+               (collect-d= d= (cdr e) () (nreverse expr) () {{lhs :. nreverse (cdr rhs)} :. lr} t)}
         {car e == ';
-           $ collect-d= d= (cdr e) () llist `(; ,@expr ,@body) defs nil}
-        {t $ collect-d= d= (cdr e) {car e :. expr} llist body defs last-def?};
+           $ collect-d= d= (cdr e) () lhs `(; ,@expr ,@rhs) lr}
+        {null (cdr e)
+           $ collect-d= d= '(;)    {car e :. expr} lhs rhs lr last-d=}
+        {t $ collect-d= d= (cdr e) {car e :. expr} lhs rhs lr last-d=};
 
  def-generic b &optional params entries :=
    cond {null b
