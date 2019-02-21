@@ -17,23 +17,25 @@
             :also-prefix :also-unary :also-postfix :left-assoc :rhs-args
             :macro :quote-lhs :quote-rhs :progn) &
 
- rmbinfix op :symbol :=
-   *binfix* =. delete-if {o -> null (cdr o) && caar o == op} *binfix*;
-   *binfix* =. o -> delete op o :key #'car @. *binfix*;
-   remprop op 'properties;
-   () &
-
  op-position op :symbol :=
-  "Returns index of *binfix* elem that contains op, or nil otherwise."
-   loop for i = 0 then (1+ i)
-        for o in *binfix* do
-      (when {car o == op || listp (car o) && member op o :key #'car}
-         (return i)) &
+  "Returns index of the first element of *binfix* that contains op, or nil otherwise."
+   position-if {ops -> member op ops :key #'car} *binfix* &
+
+ rmbinfix op :symbol :=
+  "Removes binfix operation OP. Returns nil."
+   let i = op-position op;
+     when i
+       let B-ops = *binfix* .! i;
+         unless {setf *binfix* .! i = delete op B-ops :key 'car}
+           setq *binfix* = delete-if 'null *binfix*;
+         remprop op 'properties;
+         nil &
 
  declaim-fun defbinfix {symbol &optional symbol priority &rest t :-> boolean} &
 
  defbinfix op lisp-op = op p = :later &rest prop :=
   "DEFBINFIX op [lisp-op [priority op [property]*]]"
+   rmbinfix op;
    let i = {ecase p;
              :first      ? 0;
              :last       ? op-position '; ;
@@ -42,7 +44,6 @@
              :before :as ? op-position (pop prop);
              :after      ? op-position (pop prop) + 1};
      every {p -> etypecase p (property p)} prop;
-     rmbinfix op;
      unless i (error "DEFBINFIX ~S ~S cannot find binfix op." op p);
      *binfix* =. append (subseq *binfix* 0 i)
                        `(((,op ,lisp-op ,@prop) ,@{p == :as && *binfix* .! i}))
