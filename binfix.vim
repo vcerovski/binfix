@@ -41,15 +41,16 @@ syn match lispAtomBarSymbol	!'|..\{-}|!		contains=lispAtomMark
 
 syn region lispAtomList		contained	matchgroup=Special start="{"	skip="|.\{-}|" matchgroup=Special end="}"	contains=@lispAtomCluster,lispString,lispEscapeSpecial
 
+syntax iskeyword 38,42,43,45,47-58,60-62,64-90,97-122,!,~,@,.,|,$,?,;
 syn keyword lispFunc	def
 syn keyword lispKey  		struct	var	parameter	constant	symbol-macro
 syn keyword lispKey  	declare
 syn keyword lispFunc	:=	:==	:-	:->	:type=
 syn keyword lispFunc	<<	**	in	:.	==	===	=s=	=c=
-syn keyword lispFunc	-=	+=	.=	.=.	=.	=..	..=     =...
-syn keyword lispFunc	.x. 	\|\|	&&	&	<&	<&..	;	?	$	;
+syn keyword lispFunc	-=	+=	.=	.=.	=.	=..	..=	=...
+syn keyword lispFunc	.x.	\|\|	&&	&	<&	<&..	;	?	$
 syn keyword lispFunc	->	@@	@.	@n	@	@..	@.n	.@	..@	@/	.@.
-syn keyword lispFunc	\~\~!	!\~\~	@\~	!\~     @\~
+syn keyword lispFunc	~~!	!~~	@~	~!	!~	~~
 syn keyword lispFunc	!	.!	!.	.!.	.!!.	!!	!!.	!..
 syn keyword lispFunc	th	th-cdr	th-bit	th-value	subtype-of
 syn keyword lispFunc	 eqv.	 or.	 xor.	 and.	 nand.	 nor.	test.	 orc1.	 orc2.	 andc1.	 andc2.
