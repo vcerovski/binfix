@@ -62,6 +62,7 @@ reference 1.0 version.
     * [values-bind](#values-bind)
     * [for](#for)
     * [Cartesian to polar coordinates](#Cartesian to polar coordinates)
+    * [Using binfix in packages, sbcl caveat](#packaging)
 * [Implementation](#Implementation)
     * [proto-BINFIX](#proto-BINFIX)
 * [Appendix](#Appendix)
@@ -1201,6 +1202,48 @@ straightforwardly written in BINFIX as
     }
 
 where Steele's comments are left verbatim.
+
+<a name="packaging"></a>
+#### Using binfix in packages, SBCL caveat
+
+BINFIX can be included into packages by `defpackage`, with recomended `(:use
+:binfix)` option.
+
+`sbcl`, however, interns symbols `struct` and `var` in its
+own packages that are *locked*, thus simple shadowing import does not work and
+in effect BINFIX `def struct` and `def var` do not work either.
+
+To circumvent this limitation, option `(:shadowing-import-from #:binfix #:struct #:var)`
+should be added to `defpackage`.
+
+Here is a minimal example:
+
+    $ sbcl
+    This is SBCL 1.3.14.debian, an implementation of ANSI Common Lisp.
+    More information about SBCL is available at <http://www.sbcl.org/>.
+    
+    SBCL is free software, provided as is, with absolutely no warranty.
+    It is mostly in the public domain; some portions are provided under
+    BSD-style licenses.  See the CREDITS and COPYING files in the
+    distribution for more information.
+    * (ql:quickload :binfix)
+    To load "binfix":
+      Load 1 ASDF system:
+        binfix
+    ; Loading "binfix"
+    
+    (:BINFIX)
+    * (defpackage :test (:use :cl :binfix)
+                  #+sbcl(:shadowing-import-from :binfix :struct :var))
+    
+    #<PACKAGE "TEST">
+    * (in-package :test)
+    
+    #<PACKAGE "TEST">
+    * '{def struct s a b c; var *a* = 1}
+    
+    (PROGN (DEFSTRUCT S A B C) (DEFVAR *A* 1))
+
 
 <a name="Implementation"></a>
 ## Implementation

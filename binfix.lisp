@@ -78,42 +78,42 @@
              {listp s $ method-lambda-list l {s :. args}}
              {t $ error "BINFIX method-lambda-list expects symbol or list, not ~S" s};
 
- struct x &optional defs types name opts slots doc :=
+ dstruct x &optional defs types name opts slots doc :=
     cond {null x || car x == ';
             $ `(defstruct ,(if opts `(,name,@(nreverse opts)) name)
                                   ,@{doc && `(,doc)} ,@(nreverse slots)) :. defs
                .x. types .x. cdr x}
          {null name
-            $ struct (cdr x) defs types (car x)}
+            $ dstruct (cdr x) defs types (car x)}
          {stringp (car x)
             $ if doc
                 (error "BINFIX def struct ~A has two doc-strings,~%~S~%and~%~S" name doc (car x))
-                (struct (cdr x) defs types name opts slots (car x))}
+                (dstruct (cdr x) defs types name opts slots (car x))}
          {keywordp (car x)
             $ cond {car x == :named
-                      $ struct (cdr x) defs types name
+                      $ dstruct (cdr x) defs types name
                                {:named :. opts} slots doc}
                    {car x == :constructor
-                      $ struct (cdddr x) defs types name
+                      $ dstruct (cdddr x) defs types name
                               `((:constructor,(cadr x),(lambda-list (caddr x))),@opts) slots doc}
-                   {t $ struct (cddr x) defs types name
+                   {t $ dstruct (cddr x) defs types name
                                {`(,(car x),(cadr x)) :. opts} slots doc}}
          {cadr x == '=
             $ if {fourth x in '(:type :read-only)}
-                (struct (nthcdr 5 x) defs types name opts
+                (dstruct (nthcdr 5 x) defs types name opts
                         {`(,(car x),(caddr x),(fourth x),(fifth x)) :. slots} doc)
-                (struct (nthcdr 3 x) defs types name opts
+                (dstruct (nthcdr 3 x) defs types name opts
                         {`(,(car x),(caddr x)) :. slots} doc)}
          {keywordp (cadr x) && caddr x == '=
             $ if {fifth x == :read-only}
-                (struct (nthcdr 6 x) defs types name opts
+                (dstruct (nthcdr 6 x) defs types name opts
                         {`(,(car x),(cadddr x):type,(keyword-type-spec(cadr x)),@(subseq x 4 6)) :. slots} doc)
-                (struct (nthcdr 4 x) defs types name opts
+                (dstruct (nthcdr 4 x) defs types name opts
                         {`(,(car x),(cadddr x):type,(keyword-type-spec(cadr x))) :. slots} doc)}
          {t $ if {cadr x == :read-only}
-                (struct (cdddr x) defs types name opts
+                (dstruct (cdddr x) defs types name opts
                         {subseq x 0 3 :. slots} doc)
-                (struct (cdr x) defs types name opts
+                (dstruct (cdr x) defs types name opts
                         {car x :. slots} doc)};
 
  defparameter *def-symbol*
@@ -274,7 +274,7 @@
          {assoc (car x) *def-method*   $ check-def x ':-  *def-method*   "method"}
          {car x == '#-sbcl{struct}
                     #+sbcl{sb-alien:struct}
-            $ assgn types r =.. (struct (cdr x) defs types)
+            $ assgn types r =.. (dstruct (cdr x) defs types)
                 (defs r assgn types)}
          {car x == 'class
             $ class-def r =..(def-class (cdddr x))

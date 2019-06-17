@@ -15,11 +15,12 @@
            #:andc2.  #:eqv.    #:test.  #:orc1.   #:orc2.  #:andc1. #:.eqv.
            #:.or.    #:.xor.   #:.and.  #:.nand.  #:.not.  #:.orc1. #:.orc2.
            #:.andc1. #:.andc2. #:.eqv.  #:subtype-of
-          #-sbcl #:struct))
+           #:struct))
 
 #+clisp (shadowing-import 'symbol-macro :binfix)
 #+clisp (shadowing-import '! :binfix)
   #+ecl (shadowing-import '@ :binfix)
   #+ccl (shadowing-import '@ :binfix)
  #+sbcl (shadowing-import 'var :binfix)
+ #+sbcl (shadowing-import 'struct :binfix)
 
