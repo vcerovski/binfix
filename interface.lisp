@@ -9,7 +9,7 @@
          finally (return `(declaim ,@decl)) &
 
  deftype priority ()
-   '(member :first :last :earlier :later :before :after :as) &
+   '(member :first :last :earlier :later :before :after :as :same-as) &
 
  deftype property ()
    '(member :lhs-lambda :def :defm :split :unreduce  :syms/expr :lambda/expr
@@ -31,23 +31,34 @@
          remprop op 'properties;
          nil &
 
+ setbinfix op :symbol lisp-op :symbol :=
+  "Set already defined binfix OP to represent lisp LISP-OP."
+   ops -> {op1 -> {car op1 eq op && setf cadr op1 = lisp-op} .@ ops} .@ *binfix*;
+   (assign-properties);
+   nil &
+
  declaim-fun defbinfix {symbol &optional symbol priority &rest t :-> boolean} &
 
  defbinfix op lisp-op = op p = :later &rest prop :=
   "DEFBINFIX op [lisp-op [priority op [property]*]]"
    rmbinfix op;
-   let i = {ecase p;
+   let* i = {ecase p;
              :first      ? 0;
              :last       ? op-position '; ;
              :earlier    ? op-position 'in + 1;
              :later      ? op-position 'coerce;
              :before :as ? op-position (pop prop);
-             :after      ? op-position (pop prop) + 1};
+             :after      ? op-position (pop prop) + 1;
+             :same-as    ? {let* op1 = pop prop
+                                 prop1 = get op1 'properties;
+                              when prop (warn "defbinfix ~S properties ~S ignored." op prop);
+                              prop =. `(,@(caddr prop1) :keys ,@(cadddr prop1));
+                              op-position op1}};
      every {p -> etypecase p (property p)} prop;
      unless i (error "DEFBINFIX ~S ~S cannot find binfix op." op p);
      *binfix* =. append (subseq *binfix* 0 i)
-                       `(((,op ,lisp-op ,@prop) ,@{p == :as && *binfix* .! i}))
-                        (subseq *binfix* (if {p == :as} (1+ i) i));
+                       `(((,op ,lisp-op ,@prop) ,@{p in '(:as :same-as) && *binfix* .! i}))
+                        (subseq *binfix* (if {p in '(:as :same-as)} (1+ i) i));
      (assign-properties);
      t &
 

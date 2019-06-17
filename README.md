@@ -549,30 +549,32 @@ As it is clear from the example, the definitions are wrapped up in `progn`.
 More detailed definitions are also straightforward to specify:
 
     '{def parameter
-        *x* :fixnum = 1
-        *y* :fixnum = 2;
+        *y* :single-float = 1f0
+        *z* :single-float = 1f0;
 
       struct point "Point"
         :print-function {p s d ->
                            declare (ignore d)
-                           with-slots (x y z) p
-                             (format s "#<~$ ~$ ~$>" x y z)}
-        :constructor create-point (x y z = 0f0)
+                           with-slots x y z :of p
+                             format s "#<~$ ~$ ~$>" x y z}
+        :constructor create-point (x y = *y* z = *z*)
         x :single-float = 0f0
         y :single-float = 0f0
         z :single-float = 0f0
 
-      def f x :single-float :=
-        declare (inline)
-        sqrt x * sin x}
+      def point+= p :point q :point :=
+        p _'x += q _'x;
+        p _'y += q _'y;
+        p _'z += q _'z;
+        p}
 
 =>
 
     (progn
-     (declaim (type fixnum *x*)
-              (type fixnum *y*))
-     (defparameter *x* 1)
-     (defparameter *y* 2)
+     (declaim (type single-float *y*)
+              (type single-float *z*))
+     (defparameter *y* 1.0)
+     (defparameter *z* 1.0)
      (defstruct
          (point
           (:print-function
@@ -581,16 +583,18 @@ More detailed definitions are also straightforward to specify:
              (with-slots (x y z)
                  p
                (format s "#<~$ ~$ ~$>" x y z))))
-          (:constructor create-point (x y &optional (z 0.0))))
+          (:constructor create-point (x &optional (y *y*) (z *z*))))
        "Point"
        (x 0.0 :type single-float)
        (y 0.0 :type single-float)
        (z 0.0 :type single-float))
-     (defun f (x)
-       (declare (inline))
-       (declare (type single-float x))
-       (* (sqrt x) (sin x))))
-
+     (defun point+= (p q)
+       (declare (type point p)
+                (type point q))
+       (incf (slot-value p 'x) (slot-value q 'x))
+       (incf (slot-value p 'y) (slot-value q 'y))
+       (incf (slot-value p 'z) (slot-value q 'z))
+       p))
 
 `def class` syntax is like `defclass` without parens.  For this to work, class
 options (`:documentation` and `:metaclass`) have to be given <em>before</em>
@@ -1163,7 +1167,7 @@ straightforwardly written in BINFIX as
     {def class position () ();
     
          class x-y-position (position) 
-          x :initform 0 :initarg :x  
+          x :initform 0 :initarg :x
           y :initform 0 :initarg :y;
     
          class rho-theta-position (position) 
@@ -1175,10 +1179,10 @@ straightforwardly written in BINFIX as
           new :rho-theta-position &key :-
           ;; Copy the position information from old to new to make new 
           ;; be a rho-theta-position at the same position as old. 
-            let x = slot-value old 'x 
-                y = slot-value old 'y;
-              slot-value new 'rho .= sqrt {x * x + y * y};
-              slot-value new 'theta .= atan y x
+            let x = old _'x 
+                y = old _'y;
+              new _'rho .= sqrt {x * x + y * y};
+              new _'theta .= atan y x
 
     ;;; At this point an instance of the class x-y-position can be 
     ;;; changed to be an instance of the class rho-theta-position 
@@ -1587,7 +1591,8 @@ to the strongest-binding OP, with parens enclosing OP(s) of the same priority:
     ( *              *               :also-prefix    :unreduce )
     ( **             expt )
     ( .!.            bit             :rhs-args )
-    ( !              aref            :rhs-args )
+    ( !              aref            :rhs-args       :single
+      _              slot-value      :single )
     ( |;|            |;| )
     ------------------------------------------------------------------------------
     

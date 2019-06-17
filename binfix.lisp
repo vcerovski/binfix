@@ -514,7 +514,8 @@
      ((  *        *      :also-prefix :unreduce))
      (( **       expt))
      (( .!.      bit     :rhs-args));;------------------------ARRAY INDEXING
-     ((  !       aref    :rhs-args))
+     ((  !       aref    :rhs-args :single)
+      (  _       slot-value        :single))
      ((  ;        ;)));
  declaim (fixnum *no-of-bops*);
  defvar *no-of-bops* 0;
