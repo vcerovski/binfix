@@ -49,8 +49,8 @@
 
 (defvar *timing* 0)
 
-(set-macro-character #\{
-  (lambda (s ch) (declare (ignore ch))
+(defmacro binfix-reader ()
+ '(lambda (s ch) (declare (ignore ch))
     (let ((time (get-internal-real-time))
           (semicolon (get-macro-character #\;)))
       (unwind-protect
@@ -59,5 +59,12 @@
         (set-macro-character #\; semicolon)
         (incf *timing* (- (get-internal-real-time) time))))))
 
+(set-macro-character #\{ (binfix-reader))
 (set-macro-character #\} (get-macro-character #\) ))
 
+#+ecl
+(defmacro use (&rest phases)
+  "Helper macro for defining binfix interface in ECL."
+  `(eval-when ,(or phases '(:load-toplevel :compile-toplevel :execute))
+     (set-macro-character #\{ (binfix-reader))
+     (set-macro-character #\} (get-macro-character #\) nil))))

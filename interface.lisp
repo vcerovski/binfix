@@ -2,6 +2,8 @@
 
 (in-package :binfix)
 
+#+ecl(use)
+
 {deftype priority ()
    '(member :first :last :earlier :later :before :after :as :same-as) &
 

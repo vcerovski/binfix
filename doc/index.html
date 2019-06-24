@@ -104,15 +104,13 @@ downloading/installation/loading trivial:</p>
 <p>BINFIX is developed using
 <a href="https://en.wikipedia.org/wiki/Steel_Bank_Common_Lisp">SBCL</a>, and checked to
 work fine with <a href="https://en.wikipedia.org/wiki/CLISP">CLISP</a>,
-and <a href="https://en.wikipedia.org/wiki/Clozure_CL">Clozure CL</a>,
-while with <a href="https://en.wikipedia.org/wiki/Embeddable_Common_Lisp">ECL</a> passes
-tests when hand-loaded but does not go through the package system yet (tried
-with v16.1.2).</p>
+<a href="https://en.wikipedia.org/wiki/Clozure_CL">Clozure CL</a>,
+and <a href="https://en.wikipedia.org/wiki/Embeddable_Common_Lisp">ECL</a>.</p>
 
 <p>BINFIX shadows <code>!</code> and <code>symbol-macrol</code> in CLISP , <code>@</code> in Clozure CL and ECL, as
 well as <code>var</code> (<code>sb-debug:var</code>) in SBCL.</p>
 
-<p>The latest version is available at <a href="https://github.com/vcerovski/binfix">gihub</a>,
+<p>The latest version is available at <a href="https://github.com/vcerovski/binfix">github</a>,
 and can be obtained by</p>
 
 <pre><code>git clone https://github.com/vcerovski/binfix

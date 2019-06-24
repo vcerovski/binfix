@@ -86,15 +86,13 @@ After loading the package, the next step is to allow use of its symbols
 BINFIX is developed using
 [SBCL](https://en.wikipedia.org/wiki/Steel_Bank_Common_Lisp), and checked to
 work fine with [CLISP](https://en.wikipedia.org/wiki/CLISP),
-and [Clozure CL](https://en.wikipedia.org/wiki/Clozure_CL),
-while with [ECL](https://en.wikipedia.org/wiki/Embeddable_Common_Lisp) passes
-tests when hand-loaded but does not go through the package system yet (tried
-with v16.1.2).
+[Clozure CL](https://en.wikipedia.org/wiki/Clozure_CL),
+and [ECL](https://en.wikipedia.org/wiki/Embeddable_Common_Lisp).
 
 BINFIX shadows `!` and `symbol-macrol` in CLISP , `@` in Clozure CL and ECL, as
 well as `var` (`sb-debug:var`) in SBCL.
 
-The latest version is available at [gihub](https://github.com/vcerovski/binfix),
+The latest version is available at [github](https://github.com/vcerovski/binfix),
 and can be obtained by
 
     git clone https://github.com/vcerovski/binfix
