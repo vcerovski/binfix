@@ -426,8 +426,8 @@
       ( @    funcall    :rhs-args :left-assoc :also-postfix))
      (( :->  function   :lhs-lambda))
      (( ->   lambda     :lhs-lambda))
-     (( =..  multiple-value-bind  :syms/expr));;--------------MULTIPLE VALUES/DESTRUCTURING
-     (( ..=  destructuring-bind   :lambda/expr))
+     (( =..  multiple-value-bind  :syms/expr) ;;--------------MULTIPLE VALUES/DESTRUCTURING
+      ( ..=  destructuring-bind   :lambda/expr))
      ((values values    :prefix   :single)
       ( .x.   values    :unreduce :single))
      (( loop  loop      :prefix   :quote-rhs))
