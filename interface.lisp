@@ -2,13 +2,7 @@
 
 (in-package :binfix)
 
-{declaim-fun &rest name-type :==
-    loop for name = (pop name-type)
-         for type = (pop name-type)
-         while name collect `(ftype ,type ,name) into decl
-         finally (return `(declaim ,@decl)) &
-
- deftype priority ()
+{deftype priority ()
    '(member :first :last :earlier :later :before :after :as :same-as) &
 
  deftype property ()
@@ -35,9 +29,9 @@
   "Set already defined binfix OP to represent lisp LISP-OP."
    ops -> {op1 -> {car op1 eq op && setf cadr op1 = lisp-op} .@ ops} .@ *binfix*;
    (assign-properties);
-   nil &
+   nil
 
- declaim-fun defbinfix {symbol &optional symbol priority &rest t :-> boolean} &
+ declaim ({symbol &optional symbol priority &rest t :-> boolean} defbinfix) &
 
  defbinfix op lisp-op = op p = :later &rest prop :=
   "DEFBINFIX op [lisp-op [priority op [property]*]]"
