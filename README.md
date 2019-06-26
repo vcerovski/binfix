@@ -1,8 +1,9 @@
 <link href="markdown.css" rel="stylesheet" type="text/css"></link>
+[![Quicklisp dist](http://quickdocs.org/badge/binfix.svg)](http://quickdocs.org/binfix/)
 
 # BINFIX
 
-Viktor Cerovski, Feb 2019.
+Viktor Cerovski, Jun 2019.
 
 <a name="Introduction"></a>
 ## Introduction
