@@ -9,6 +9,6 @@ install:
     - curl https://raw.githubusercontent.com/luismbo/cl-travis/master/install.sh | bash
 
 script:
-    - cl -l binfix
-         -e '(uiop:quit
-               (if (asdf:test-system :binfix) 0 1))'
+    - cl -l fiveam
+         -l binfix
+         -e '(uiop:quit (if (asdf:test-system :binfix) 0 1))'
