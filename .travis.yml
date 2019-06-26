@@ -10,4 +10,5 @@ install:
 
 script:
     - cl -l binfix
-         -e '(uiop:quit (if (asdf:test-system :binfix) 0 1))'
+         -e '(uiop:quit
+               (if (asdf:test-system :binfix) 0 1))'
