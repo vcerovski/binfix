@@ -1,0 +1,13 @@
+language: lisp
+sudo: required
+
+env:
+  matrix:
+    - LISP=sbcl
+
+install:
+    - curl https://raw.githubusercontent.com/luismbo/cl-travis/master/install.sh | bash
+
+script:
+    - cl -l binfix
+         -e '(uiop:quit (if (asdf:test-system :binfix) 0 1))'
