@@ -5,6 +5,9 @@ env:
   matrix:
     - LISP=sbcl
     - LISP=ccl
+
+matrix:
+  allow_failures:
     - LISP=ecl
 
 install:
