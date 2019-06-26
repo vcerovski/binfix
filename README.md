@@ -4,6 +4,7 @@
 
 Viktor Cerovski, Jun 2019.
 
+[![Build Status](https://travis-ci.org/vcerovski/binfix.png)](https://travis-ci.org/vcerovski/binfix)
 [![Quicklisp dist](http://quickdocs.org/badge/binfix.svg)](http://quickdocs.org/binfix/)
 
 <a name="Introduction"></a>
