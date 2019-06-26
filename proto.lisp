@@ -44,8 +44,7 @@
   (if (char= #\; (peek-char nil s))
     (loop until (char= #\Newline (read-char s nil #\Newline t))
           finally (return (values)))
-    #+(or sbcl ccl)          (intern ";")
-    #+(or clisp ecl) (values (intern ";"))))
+    (values (intern ";"))))
 
 (defvar *timing* 0)
 
