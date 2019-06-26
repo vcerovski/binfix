@@ -1,9 +1,10 @@
 <link href="markdown.css" rel="stylesheet" type="text/css"></link>
-[![Quicklisp dist](http://quickdocs.org/badge/binfix.svg)](http://quickdocs.org/binfix/)
 
 # BINFIX
 
 Viktor Cerovski, Jun 2019.
+
+[![Quicklisp dist](http://quickdocs.org/badge/binfix.svg)](http://quickdocs.org/binfix/)
 
 <a name="Introduction"></a>
 ## Introduction
@@ -66,6 +67,7 @@ reference 1.0 version.
     * [Using binfix in packages, sbcl caveat](#packaging)
 * [Implementation](#Implementation)
     * [proto-BINFIX](#proto-BINFIX)
+    * [Problems with CLISP](#CLISP-problems)
 * [Appendix](#Appendix)
     * [Syntax highlighting](#Syntax-highlighting)
     * [Operation properties](#Operation properties)
@@ -84,14 +86,20 @@ After loading the package, the next step is to allow use of its symbols
 
     (use-package :binfix)
 
-BINFIX is developed using
-[SBCL](https://en.wikipedia.org/wiki/Steel_Bank_Common_Lisp), and checked to
-work fine with [CLISP](https://en.wikipedia.org/wiki/CLISP),
-[Clozure CL](https://en.wikipedia.org/wiki/Clozure_CL),
-and [ECL](https://en.wikipedia.org/wiki/Embeddable_Common_Lisp).
+System can be tested via
 
-BINFIX shadows `!` and `symbol-macrol` in CLISP , `@` in Clozure CL and ECL, as
-well as `var` (`sb-debug:var`) in SBCL.
+    (asdf:test-system :binfix)
+
+Supported LISP implementations are
+[SBCL](https://en.wikipedia.org/wiki/Steel_Bank_Common_Lisp) (also used for
+develpoment,) [Clozure CL](https://en.wikipedia.org/wiki/Clozure_CL), and
+[ECL](https://en.wikipedia.org/wiki/Embeddable_Common_Lisp).
+[ABCL](https://abcl.org/) works only with a patch (which I'll provide after
+some further testing,) while [CLISP](https://en.wikipedia.org/wiki/CLISP) as of
+this release [is not supported](#CLISP-problems).
+
+BINFIX shadows `@` in Clozure CL and ECL, as well as `var` (`sb-debug:var`) and
+`struct` (`sb-alien:struct`) in SBCL.
 
 The latest version is available at [github](https://github.com/vcerovski/binfix),
 and can be obtained by
@@ -1385,6 +1393,22 @@ helpers BACKTICK, COMA and COMA-AT are used. The reason is that `{`...`}` is
 invoked before them while the correct order would be after them.
 Examples of succesful combinations of backquoting and BINFIX are given
 [above](#Support for macros).
+
+<a name="CLISP-problems"></a>
+### Problems with CLISP
+
+The latest version of `clisp` I have tried is  `2.49.93+ (2018-02-18)`, which
+has two problems with BINFIX:
+
+   1. There seems to be a bug in `set-macro-character` (see
+      [here](https://github.com/rurban/clisp/issues/10).)  Workaround is
+      possible, but BINFIX still doesn't work (while other implementations
+      tried do.)
+
+   2. Test subsystem of the current version of BINFIX uses
+      [`fiveam`](https://github.com/sionescu/fiveam), which requires ASDF>=3.1,
+      which `clisp` does not seem to support.  Workaround is of course possible
+      pending solving problem 1.
 
 <a name="Appendix"></a>
 ## Appendix

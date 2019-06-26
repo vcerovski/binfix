@@ -75,6 +75,7 @@ reference 1.0 version.</p>
 <li><a href="#Implementation">Implementation</a>
 <ul>
 <li><a href="#proto-BINFIX">proto-BINFIX</a></li>
+<li><a href="#CLISP-problems">Problems with CLISP</a></li>
 </ul></li>
 <li><a href="#Appendix">Appendix</a>
 <ul>
@@ -101,14 +102,21 @@ downloading/installation/loading trivial:</p>
 <pre><code>(use-package :binfix)
 </code></pre>
 
-<p>BINFIX is developed using
-<a href="https://en.wikipedia.org/wiki/Steel_Bank_Common_Lisp">SBCL</a>, and checked to
-work fine with <a href="https://en.wikipedia.org/wiki/CLISP">CLISP</a>,
-<a href="https://en.wikipedia.org/wiki/Clozure_CL">Clozure CL</a>,
-and <a href="https://en.wikipedia.org/wiki/Embeddable_Common_Lisp">ECL</a>.</p>
+<p>System can be tested via </p>
 
-<p>BINFIX shadows <code>!</code> and <code>symbol-macrol</code> in CLISP , <code>@</code> in Clozure CL and ECL, as
-well as <code>var</code> (<code>sb-debug:var</code>) in SBCL.</p>
+<pre><code>(asdf:test-system :binfix)
+</code></pre>
+
+<p>Supported LISP implementations are
+<a href="https://en.wikipedia.org/wiki/Steel_Bank_Common_Lisp">SBCL</a> (also used for
+develpoment,) <a href="https://en.wikipedia.org/wiki/Clozure_CL">Clozure CL</a>, and
+<a href="https://en.wikipedia.org/wiki/Embeddable_Common_Lisp">ECL</a>.
+<a href="https://abcl.org/">ABCL</a> works only with a patch (which I'll provide after
+some further testing,) while <a href="https://en.wikipedia.org/wiki/CLISP">CLISP</a> as of
+this release <a href="#CLISP-problems">is not supported</a>.</p>
+
+<p>BINFIX shadows <code>@</code> in Clozure CL and ECL, as well as <code>var</code> (<code>sb-debug:var</code>) and
+<code>struct</code> (<code>sb-alien:struct</code>) in SBCL.</p>
 
 <p>The latest version is available at <a href="https://github.com/vcerovski/binfix">github</a>,
 and can be obtained by</p>
@@ -1555,6 +1563,24 @@ helpers BACKTICK, COMA and COMA-AT are used. The reason is that <code>{</code>..
 invoked before them while the correct order would be after them.
 Examples of succesful combinations of backquoting and BINFIX are given
 <a href="#Support for macros">above</a>.</p>
+
+<p><a name="CLISP-problems"></a></p>
+
+<h3>Problems with CLISP</h3>
+
+<p>The latest version of <code>clisp</code> I have tried is  <code>2.49.93+ (2018-02-18)</code>, which
+has two problems with BINFIX:</p>
+
+<ol>
+<li><p>There seems to be a bug in <code>set-macro-character</code> (see
+  <a href="https://github.com/rurban/clisp/issues/10">here</a>.)  Workaround is
+  possible, but BINFIX still doesn't work (while other implementations
+  tried do.)</p></li>
+<li><p>Test subsystem of the current version of BINFIX uses
+  <a href="https://github.com/sionescu/fiveam"><code>fiveam</code></a>, which requires ASDF>=3.1,
+  which <code>clisp</code> does not seem to support.  Workaround is of course possible
+  pending solving problem 1.</p></li>
+</ol>
 
 <p><a name="Appendix"></a></p>
 
