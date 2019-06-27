@@ -65,7 +65,7 @@ reference 1.0 version.
     * [values-bind](#values-bind)
     * [for](#for)
     * [Cartesian to polar coordinates](#Cartesian to polar coordinates)
-    * [Using binfix in packages, sbcl caveat](#packaging)
+    * [Using BINFIX in packages](#packaging)
 * [Implementation](#Implementation)
     * [proto-BINFIX](#proto-BINFIX)
     * [Problems with CLISP](#CLISP-problems)
@@ -91,13 +91,12 @@ System can be tested via
 
     (asdf:test-system :binfix)
 
-Supported LISP implementations are
-[SBCL](https://en.wikipedia.org/wiki/Steel_Bank_Common_Lisp) (also used for
-develpoment,) [Clozure CL](https://en.wikipedia.org/wiki/Clozure_CL), and
-[ECL](https://en.wikipedia.org/wiki/Embeddable_Common_Lisp).
-[ABCL](https://abcl.org/) works only with a patch (which I'll provide after
-some further testing,) while [CLISP](https://en.wikipedia.org/wiki/CLISP) as of
-this release [is not supported](#CLISP-problems).
+Supported LISP implementations are [SBCL](http://sbcl.org) (also used for
+develpoment,) [Clozure CL](https://ccl.clozure.com/), 
+[ECL](https://en.wikipedia.org/wiki/Embeddable_Common_Lisp) (tested with
+v15.3.7 and v16.1.3) and [ABCL](https://abcl.org/), while
+[CLISP](https://github.com/rurban/clisp) as of this release [is not
+supported](#CLISP-problems).
 
 BINFIX shadows `@` in Clozure CL and ECL, as well as `var` (`sb-debug:var`) and
 `struct` (`sb-alien:struct`) in SBCL.
@@ -1212,46 +1211,18 @@ straightforwardly written in BINFIX as
 where Steele's comments are left verbatim.
 
 <a name="packaging"></a>
-#### Using binfix in packages, SBCL caveat
+#### Using BINFIX in packages
 
 BINFIX can be included into packages by `defpackage`, with recomended `(:use
-:binfix)` option.
+:binfix)` option.  `sbcl`, `ecl` and `ccl`, however, intern certain symbols so
+that simple import does not work and thus use of these symbols by binfix may(!)
+lead to incorrect parsing.  Here is then the implementation-sensitive
+`defpackage` that creates `my-package` which properly imports all of BINFIX
+symbols:
 
-`sbcl`, however, interns symbols `struct` and `var` in its
-own packages that are *locked*, thus simple shadowing import does not work and
-in effect BINFIX `def struct` and `def var` do not work either.
-
-To circumvent this limitation, option `(:shadowing-import-from #:binfix #:struct #:var)`
-should be added to `defpackage`.
-
-Here is a minimal example:
-
-    $ sbcl
-    This is SBCL 1.3.14.debian, an implementation of ANSI Common Lisp.
-    More information about SBCL is available at <http://www.sbcl.org/>.
-    
-    SBCL is free software, provided as is, with absolutely no warranty.
-    It is mostly in the public domain; some portions are provided under
-    BSD-style licenses.  See the CREDITS and COPYING files in the
-    distribution for more information.
-    * (ql:quickload :binfix)
-    To load "binfix":
-      Load 1 ASDF system:
-        binfix
-    ; Loading "binfix"
-    
-    (:BINFIX)
-    * (defpackage :test (:use :cl :binfix)
-                  #+sbcl(:shadowing-import-from :binfix :struct :var))
-    
-    #<PACKAGE "TEST">
-    * (in-package :test)
-    
-    #<PACKAGE "TEST">
-    * '{def struct s a b c; var *a* = 1}
-    
-    (PROGN (DEFSTRUCT S A B C) (DEFVAR *A* 1))
-
+    (defpackage :my-package (:use :cl :binfix)
+       #+sbcl (:shadowing-import-from :binfix :struct :var)
+       #+(ccl ecl) (:shadowing-import-from :binfix :@))
 
 <a name="Implementation"></a>
 ## Implementation
