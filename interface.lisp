@@ -31,9 +31,10 @@
   "Set already defined binfix OP to represent lisp LISP-OP."
    ops -> {op1 -> {car op1 eq op && setf cadr op1 = lisp-op} .@ ops} .@ *binfix*;
    (assign-properties);
-   nil
+   nil &
 
- declaim ({symbol &optional symbol priority &rest t :-> boolean} defbinfix) &
+ #-abcl {declaim ({symbol &optional symbol priority &rest t :-> boolean} defbinfix)}
+ #-abcl &
 
  defbinfix op lisp-op = op p = :later &rest prop :=
   "DEFBINFIX op [lisp-op [priority op [property]*]]"
