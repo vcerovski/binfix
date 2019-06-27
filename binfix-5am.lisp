@@ -1,6 +1,8 @@
 (defpackage #:binfix/5am
   (:use #:cl #:binfix)
   #+sbcl (:shadowing-import-from #:binfix #:struct #:var)
+  #+ecl (:shadowing-import-from #:binfix #:@)
+  #+ccl (:shadowing-import-from #:binfix #:@)
   (:import-from #:fiveam
       #:def-suite #:in-suite #:test #:is #:is-true #:signals
       #:*on-error* #:*on-failure* #:run!)
@@ -90,6 +92,9 @@
            "'{'min @/ a b -> abs {a - b} @. a b}"
            '(reduce 'min (mapcar (lambda (a b) (abs (- a b))) a b))   ))
 
+  (B2 is (=       "{-> 1 @}"                             1   ))
+  (B2 is (equal  "'{-> 1 @}"  '(funcall (lambda () 1))       ))
+  (B2 is (=     "{x -> y -> z -> x * y + z @ 2 @ 3 @ 4}" 10  ))
 )
 
 (test let-forms
@@ -235,6 +240,9 @@
 
 (test parsing-errors
   (signals error (read-from-string "     '{a; b}       "))
+  (signals error (read-from-string "     '{a ->}       "))
+  (signals error (read-from-string "     '{f :=}       "))
+  (signals error (read-from-string "     '{:= f}       "))
   (signals error (read-from-string "  {1 min 3 max 2}  "))
   (signals error (read-from-string "   {1 <= 2 < 3}    "))
   (signals error (read-from-string "  '{a 1 =.. f x}   "))
