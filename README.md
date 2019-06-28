@@ -15,13 +15,13 @@ S-expressions of Common LISP ranging from simple arithmetic and logical
 forms to whole programs.
 
 It is in experimental phase, developed and tested by writing lots of code
-(more than 10 kLOC currently.)
+(more than 10 kLOC currently)
 
 There are a few important new features still to come.
 One of them, available from v0.16, is use of a single `;` symbol as a
-form-separating symbol in [implicit-progn](#LET ; progn example), [expression
-terminator](#SETF expr-termination) for SETFs, or as end of [LET binds
-symbol](#LET ; examples) or [local functions definition](#Local functions).
+form-separating symbol in [implicit-progn](#LET-impl-progn-example), [expression
+terminator](#SETF-expr-termination) for SETFs, or as end of [LET binds
+symbol](#LET-impl-progn-examples) or [local functions definition](#Local-functions).
 There is also `def`, for [defining things](#def), and the latest is
 writing standard LISP definitions [without outer parens](#progn-m).
 
@@ -33,14 +33,14 @@ reference 1.0 version.
 
 * [Installation](#Instalation)
 * [Examples](#Examples)
-    * [Arithmetic and logical expressions](#Arithmetic and logical expressions)
+    * [Arithmetic and logical expressions](#Arithmetic-and-logical-expressions)
     * [Consing](#Consing)
-    * [Lambdas, definitions and type annotations](#Lambdas, definitions and type annotations)
+    * [Lambdas, definitions and type annotations](#Lambdas-definitions-and-type-annotations)
         * [lambda](#lambda)
         * [Mappings](#Maps)
         * [defun](#defun)
         * [&optional](#&optional)
-        * [Local functions](#Local functions)
+        * [Local functions](#Local-functions)
         * [defmethod](#defmethod)
         * [defmacro](#defmacro)
         * [def](#def)
@@ -49,30 +49,30 @@ reference 1.0 version.
         * [Definitions and declarations without parens](#progn-m)
     * [LETs](#LETs)
     * [SETs](#SETs)
-    * [Implicit `progn`](#Implicit progn)
+    * [Implicit `progn`](#Implicit-progn)
     * [`$`plitter](#`$`plitter)
-    * [Multiple-choice forms](#Multiple-choice forms)
-    * [Destructuring, multiple values](#Destructuring, multiple values)
+    * [Multiple-choice forms](#Multiple-choice-forms)
+    * [Destructuring, multiple values](#Destructuring-multiple-values)
     * [Loops](#Loops)
-    * [Hash tables and association lists](#Hash tables and association lists)
+    * [Hash tables and association lists](#Hash-tables-and-association-lists)
 * [Indexing](#Indexing)
 * [Mappings](#Mappings)
 * [Working with bits](#Bits)
-* [Support for macros](#Support for macros)
-* [More involved examples](#More involved examples)
+* [Support for macros](#Support-for-macros)
+* [More involved examples](#More-involved-examples)
     * [ordinal](#ordinal)
     * [join](#join)
     * [values-bind](#values-bind)
     * [for](#for)
-    * [Cartesian to polar coordinates](#Cartesian to polar coordinates)
+    * [Cartesian to polar coordinates](#Cartesian-to-polar-coordinates)
     * [Using BINFIX in packages](#packaging)
 * [Implementation](#Implementation)
     * [proto-BINFIX](#proto-BINFIX)
     * [Problems with CLISP](#CLISP-problems)
 * [Appendix](#Appendix)
     * [Syntax highlighting](#Syntax-highlighting)
-    * [Operation properties](#Operation properties)
-    * [List of all operations](#List of all operations)
+    * [Operation properties](#Operation-properties)
+    * [List of all operations](#List-of-all-operations)
 
 -----------------------
 <a name="Instalation"></a>
@@ -136,7 +136,7 @@ BINFIX is a free-form notation (just like S-expr), i.e any number of empty
 spaces (including tabs and newlines) between tokens is treated the same as a
 single white space.
 
-<a name="Arithmetic and logical expressions"></a>
+<a name="Arithmetic-and-logical-expressions"></a>
 ### Arithmetic and logical expressions
 
 Classic math stuff:
@@ -200,7 +200,7 @@ with the familiar behaviour:
 => `t`
 
 
-<a name="Lambdas, definitions and type annotations"></a>
+<a name="Lambdas-definitions-and-type-annotations"></a>
 ### Lambdas, definitions and type annotations
 
 <a name="lambda"></a>
@@ -345,7 +345,7 @@ where, within *`<body expr>`*, boolean variables `supplied-y` and `supplied-z`
 are available (for the standard check whether respective values were provided
 in the call of `f`.)
 
-<a name="Local functions"></a>
+<a name="Local-functions"></a>
 #### Local functions
 
 Version of `fac` with a local recursive function `f`:
@@ -416,7 +416,7 @@ that can be either a keyword or an atom surrounded by parens (i.e `:around`,
 #### `defmacro`
 
 Macros are defined via `:==` operation, similar to the previous examples.
-See Sec. [Support for macros](#Support for macros).
+See Sec. [Support for macros](#Support-for-macros).
 
 <a name="types"></a>
 #### Type annotations, declarations and definitions
@@ -478,7 +478,7 @@ SBCL 1.1.17 function `sin` has declared type that can be written as
           (complex double-float))
       &optional))
 
-Function `fac` with a local function from [this example](#Local functions)
+Function `fac` with a local function from [this example](#Local-functions)
 can have its type declared as
 
     '{fac n :integer :=
@@ -607,7 +607,7 @@ More detailed definitions are also straightforward to specify:
 `def class` syntax is like `defclass` without parens.  For this to work, class
 options (`:documentation` and `:metaclass`) have to be given <em>before</em>
 description of slots, while `:default-initargs` comes last as usual, just
-unparenthesized (see [example](#Cartesian to polar coordinates).)
+unparenthesized (see [example](#Cartesian-to-polar-coordinates).)
 
 `def`ining of symbols follows the same syntax as `let` binding, which
 is covered next.
@@ -652,7 +652,7 @@ LET symbol-binding forms (`let`, `let*`, `symbol-macrolet`, etc) in BINFIX use
       (declare (type bit x))
       (+ x (* y z)))
 
-<a name="LET ; examples"></a>
+<a name="LET-impl-progn-examples"></a>
 A single `;` can be used as a terminator of bindings:
 
     '{let x :bit = 1
@@ -666,7 +666,7 @@ A single `;` can be used as a terminator of bindings:
       (declare (type bit x))
       (+ x (* y z)))
 
-<a name="LET ; progn example"></a>
+<a name="LET-impl-progn-example"></a>
 Finally, a single `;` can also be used to separate forms in implicit-progn,
 as in
 
@@ -683,7 +683,7 @@ as in
       (print "Let binds")
       (+ x (* y z)))
 
-<a name="LET associativity"></a>
+<a name="LET-associativity"></a>
 Nesting of `let`s without parens follows the right-associativity
 
     '{let a = f x;
@@ -736,7 +736,7 @@ expression,
     (psetf (aref a 0) (aref a 1)
            (aref a 1) (aref a 0))
 
-<a name="SETF expr-termination"></a>
+<a name="SETF-expr-termination"></a>
 Alternatively, it is possible to use a single `;` as an expression-termination
 symbol,
 
@@ -762,12 +762,12 @@ It is also possible to mix infix SETFs with other expressions:
               c d)
         (h a c)))
 
-<a name="Implicit progn"></a>
+<a name="Implicit-progn"></a>
 ### Implicit `progn`
 
 An implicit `progn` in BINFIX is achieved with a single `;` separating the
 forms forming the progn.  In all cases (`->`, `:=`, `:-` and LETs) the syntax
-is following that of the [LET example above](#LET ; progn example).
+is following that of the [LET example above](#LET-impl-progn-example).
 
 As expected, other `prog`s have to be explicitly given,
 
@@ -837,7 +837,7 @@ compared to the equivalent
 Another splitter is `?`, which can be used instead of `$` in the previous
 example, as well as described in the next section.
 
-<a name="Multiple-choice forms"></a>
+<a name="Multiple-choice-forms"></a>
 ### Multiple-choice forms (`cond`, `case`, ...)
 
 An alternative syntax to describe multiple-choice forms is to use `?` and `;`
@@ -849,7 +849,7 @@ An alternative syntax to describe multiple-choice forms is to use `?` and `;`
 
 See also [`ordinal` example below](#ordinal).
 
-<a name="Destructuring, multiple values"></a>
+<a name="Destructuring-multiple-values"></a>
 ### Destructuring, multiple values
 
 Multiple values (`values`) are represented by `.x.`, 
@@ -906,7 +906,7 @@ Loops can be also nested without writing parens:
           collect (loop for j = 2 to 4
                         collect (cons i j))) 
 
-<a name="Hash tables and association lists"></a>
+<a name="Hash-tables-and-association-lists"></a>
 #### Hash tables and association lists
 
 Hash tables are supported in binfix through OPs `~!` (`gethash`),
@@ -985,7 +985,7 @@ while bit-array version of the same OP with `.` before and after the name.
 For instance, `{a or. b}` transforms to `(logior a b)`, while
 `{a .or. b}` transforms to `(bit-ior a b)`.
 
-<a name="Support for macros"></a>
+<a name="Support-for-macros"></a>
 ### Support for macros
 
 If BINFIX terms _only_ are inserted under backquote, everything should work
@@ -1036,9 +1036,9 @@ or,
       (* (- #:g817 #:g818) (+ #:g817 #:g818)))
     t
 
-See more in [implementation details](#binfix macros)
+See more in [implementation details](#binfix-macros)
 
-<a name="More involved examples"></a>
+<a name="More-involved-examples"></a>
 ### More involved examples
 
 <a name="ordinal"></a>
@@ -1165,7 +1165,7 @@ Now
           do (setf (aref a i) (1+ i)))
     t
 
-<a name="Cartesian to polar coordinates"></a>
+<a name="Cartesian-to-polar-coordinates"></a>
 #### Cartesian to polar coordinates
 
 An example from <em>Common LISP the Language 2nd ed.</em> where cartesian
@@ -1357,14 +1357,14 @@ relation to other OPs priority values is relevant.  Defining new same-priority
 OPs should be done via `defbinfix` with `:as` option, which may change priority
 values of many other OPs.
 
-<a name="binfix macros"></a>
+<a name="binfix-macros"></a>
 Since shallow transformation into standard syntax is done by function `binfix`
 invoked recursively by the reader, `binfix` cannot be directly called for
 arbitrary macro transformation of BINFIX into BINFIX when standard macro
 helpers BACKTICK, COMA and COMA-AT are used. The reason is that `{`...`}` is
 invoked before them while the correct order would be after them.
 Examples of succesful combinations of backquoting and BINFIX are given
-[above](#Support for macros).
+[above](#Support-for-macros).
 
 <a name="CLISP-problems"></a>
 ### Problems with CLISP
@@ -1401,7 +1401,7 @@ Here are gui and terminal looks:
 ![terminal](https://github.com/vcerovski/binfix/doc/syntax-term.png)
 (theme: `herald`, font: `Terminus`)
 
-<a name="Operation properties"></a>
+<a name="Operation-properties"></a>
 ### Operation properties
 
 `:def` -- Operation (OP) is a definition requiring LHS to has a name and lambda
@@ -1461,7 +1461,7 @@ for :prefix :quote-rhs/:macro.
 `:single` -- OP requires to be the only OP in the current expr with its
 priority.  For example, parsing of: `{values a  b .x. c}` reports an ambiguity error.
 
-<a name="List of all operations"></a>
+<a name="List-of-all-operations"></a>
 ### List of all operations
 
 Command
