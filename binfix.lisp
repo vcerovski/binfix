@@ -162,7 +162,7 @@
       (decls e decls);
 
  sbind* e &optional binds s current decls :=
-   labels make-bind s e = `(,s ,(singleton (binfix (nreverse e))))
+   labels make-bind s e = `(,s ,(binfix (nreverse e)))
       cond {null e
               $ let* current = (nreverse current)
                      e = (pop current)
@@ -208,7 +208,7 @@
  mbind n ll d b :=
    ll ldecl* =.. (method-lambda-list ll)
      decl* body =.. (decls b ldecl*)
-       `(,n ,ll ,@decl* ,@d ,(singleton (binfix body)));
+       `(,n ,ll ,@decl* ,@d ,(binfix body));
 
  collect-d= d= e &optional expr lhs rhs lr last-d= :=
    cond {null e
@@ -315,7 +315,7 @@
      bind n ll d b =
        {ll ldecl* =.. (lambda-list (nreverse ll))
           decl* body =.. (decls (nreverse b) ldecl*)
-            `(,n ,ll ,@decl* ,@d ,(singleton (binfix body))) :. binds}
+            `(,n ,ll ,@decl* ,@d ,(binfix body)) :. binds}
     cond {null e
             $ if body
                 {decl* r =.. (decls (nreverse body))
@@ -523,7 +523,10 @@
  assign-properties :=
    let p = {*no-of-bops* =. 0}
       mapc {l -> {incf p;
-                  mapc {s -> {get (car s) 'properties .= p :. cdr s;
+                  mapc {s -> {let* bop = (pop s)
+                                   lop = (pop s)
+                                   prop = s
+                                {get bop 'properties .= `(,p,lop,prop)};
                               incf *no-of-bops*}}
                        l}}
            *binfix*;
@@ -541,17 +544,17 @@
             $ let q = (get (car e) 'properties)
                  if {q && {< (car q) p
                            || = (car q) p
-                              && not {   :single in cdr q
-                                      && :single in cdr (get last-o 'properties)
+                              && not {   :single in caddr q
+                                      && :single in caddr (get last-o 'properties)
                                       && not {car e == last-o}
                                       && error "BINFIX parsing ambiguity between ~S and ~S" last-o (car e)}
-                              && cddr q
+                              && caddr q
                               && null (intersection
                                         '(:rhs-args    :unreduce
                                           :lhs-lambda  :left-assoc
                                           :lambda/expr :split
                                           :syms/expr)
-                                        (cddr q))}}
+                                        (caddr q))}}
                    {find-op-in (cdr e) (car q) (car e) e }
                    {find-op-in (cdr e)  p      last-o o.r}}
          {t $ find-op-in (cdr e) p last-o o.r};
@@ -581,8 +584,8 @@
        (if {'; in e}
           (if {'; == car (last e)}
              (binfix+ (butlast e))
-             (mapcar #'singleton (unreduce e ';)))
-         `(,(singleton (binfix e))))
+             (unreduce e ';))
+         `(,(binfix e)))
 
      decl*-binfix+ rhs decls =
        {decl* body =.. (decls rhs decls)
@@ -594,7 +597,7 @@
 
      sbinds e &optional converted s current =
        {symbol-macrolet
-          convert = `(,(singleton (binfix (reverse current))),s,@converted)
+          convert = `(,(binfix (reverse current)),s,@converted)
             cond {null e      $ cddr $ reverse convert}
                  {cadr e =='= $ sbinds (cddr e) convert (car e)}
                  {t           $ sbinds (cdr e)  converted s {car e :. current}}}
@@ -618,14 +621,26 @@
                {rhs        $ e-binds (cdr e) binds           lhs {car e :. rhs}}
                {t          $ e-binds (cdr e) binds {car e :. lhs}          rhs}}
 
+     term e =
+       {
+         cond {atom e $ e}
+              {consp e && consp (cadr e) && symbolp (caadr e)
+                 $ let op-prop = (get (caadr e) 'properties)
+                     if {:term in caddr op-prop}
+                        {term $ {cadr op-prop :. car e :. binfix+ (cdadr e)} :. cddr e}
+                        {car e :. term (cdr e)}}
+              {t $ car e :. term (cdr e)}}
+
   if {atom e} e
     let rhs = (find-op-in e max-priority)
-      if (null rhs) e
-        let* lhs = (ldiff e rhs)
+      if (null rhs) (singleton (term e))
+        let* lhs = (term (ldiff e rhs))
+             rhs = (term rhs)
              op = (pop rhs)
              op-prop = (get op 'properties)
             priority = (pop op-prop)
              op-lisp = (pop op-prop)
+             op-prop = (pop op-prop)
            cond {op == '; $ error "BINFIX: bare ; in:~% ~{ ~A~}" e}
                 {null rhs $
                    if {:also-postfix in op-prop}
@@ -634,7 +649,7 @@
                                with l.h.s:~%~S" op op-lisp lhs)}
                 {:rhs-lbinds in op-prop $
                    binds-decls* expr =.. (lbinds rhs)
-                     singleton (binfix `(,@lhs (,op-lisp ,@binds-decls* ,@(binfix+ expr))))}
+                     binfix `(,@lhs (,op-lisp ,@binds-decls* ,@(binfix+ expr)))}
                 {:syms/expr  in op-prop $
                    vars decls =.. (vbinds lhs)
                       `(,op-lisp ,vars ,(car rhs)
@@ -658,20 +673,20 @@
                                          (singleton (if {:macro in op-prop}
                                                         (macroexpand-1 `(,op-lisp ,@rhs))
                                                        `(,op-lisp ,@rhs)))}
-                        {t $ progn-monad (singleton (binfix lhs)) ;; partial implementation.
-                                        `(,op-lisp ,(singleton (binfix rhs)))}}
+                        {t $ progn-monad (binfix lhs) ;; partial implementation.
+                                        `(,op-lisp ,(binfix rhs))}}
                 {:macro in op-prop $
                    if {:prefix in op-prop}
                       {singleton $ binfix $ `(,@lhs ,(singleton (macroexpand-1 `(,op-lisp ,@rhs))))}
                       (error "BINFIX macro implemented only for :prefix OPs")}
                 {:unreduce in op-prop && position op rhs $ ;;position necessary...
-                  let u = (mapcar #'singleton (unreduce rhs op `(,(binfix lhs),op-lisp)))
+                  let u = (unreduce rhs op `(,(binfix lhs),op-lisp))
                      cond {lhs $ u}
                           {:also-unary  in op-prop $ `(,op-lisp (,op-lisp ,(caddr u)) ,@(cdddr u))}
                           {:also-prefix in op-prop $ `(,op-lisp (,op-lisp,@(caddr u)) ,@(cdddr u))}
                           {t $ error "BINFIX: missing l.h.s. of ~S (~S)~@
                                       with r.h.s:~%~S" op op-lisp rhs}}
-                {null lhs $ cond{:also-unary  in op-prop $ `(,op-lisp ,(singleton (binfix rhs)))}
+                {null lhs $ cond{:also-unary  in op-prop $ `(,op-lisp ,(binfix rhs))}
                                 {:also-prefix in op-prop || :prefix in op-prop
                                     $ `(,op-lisp ,@(cond {:quote-rhs in op-prop $ rhs}
                                                          {'; in rhs $ binfix+ rhs}
@@ -687,21 +702,21 @@
                               ,@{ll decls =.. (method-lambda-list lhs)
                                   `(,ll ,@(doc*-decl*-binfix+ rhs decls))})}
                 {:left-assoc in op-prop && find op rhs $
-                   binfix `(,op-lisp ,(singleton (binfix  lhs)) ,@rhs)}
+                   binfix `(,op-lisp ,(binfix  lhs) ,@rhs)}
                 {:lambda/expr in op-prop $
                    llist decls =.. (lambda-list lhs)
                      `(,op-lisp ,llist ,(car rhs)
                                 ,@(decl*-binfix+ (cdr rhs) decls))}
                 {:split in op-prop $
-                   `(,(singleton (binfix lhs))
-                     ,(singleton (binfix rhs)))}
+                   `(,(binfix lhs)
+                     ,(binfix rhs))}
 
                 {:prefix in op-prop $
                    binfix `(,@lhs ,(cond {:quote-rhs in op-prop  $ `(,op,@rhs)}
                                          {'; in rhs              $ `(,op,@(binfix+ rhs))}
                                          {t $ binfix `(,op,@rhs)}))}
                 (t `(,op-lisp
-                     ,(if {:quote-lhs in op-prop} lhs (singleton (binfix lhs)))
+                     ,(if {:quote-lhs in op-prop} lhs (binfix lhs))
                      ,@(cond {null (cdr rhs) $ rhs}
                              {:rhs-args in op-prop $
                                 cond {find-op-in rhs (1+ priority)
