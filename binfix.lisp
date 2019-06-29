@@ -341,6 +341,7 @@
 
  defs-macro &rest defs :== defs defs;
 
+ hashget table key &rest opt :== `(gethash ,key ,table ,@opt);
  *binfix* =.
    `((( <&              prog1)
       ( <&..            multiple-value-prog1))
@@ -516,16 +517,19 @@
      (( .!.      bit     :rhs-args));;------------------------ARRAY INDEXING
      ((  !       aref    :rhs-args :single)
       (  _       slot-value        :single))
-     ((  ;        ;)));
+
+     ((  ;        ;))
+
+     ((index     aref    :term)
+      (index2    hashget :term)));
  declaim (fixnum *no-of-bops*);
  defvar *no-of-bops* 0;
 
  assign-properties :=
    let p = {*no-of-bops* =. 0}
       mapc {l -> {incf p;
-                  mapc {s -> {let* bop = (pop s)
-                                   lop = (pop s)
-                                   prop = s
+                  mapc {prop -> {let* bop = (pop prop)
+                                      lop = (pop prop)
                                 {get bop 'properties .= `(,p,lop,prop)};
                               incf *no-of-bops*}}
                        l}}
