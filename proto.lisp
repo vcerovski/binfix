@@ -50,14 +50,29 @@
 
 (defvar *timing* 0)
 
+(defun indexing (s ch)
+  (declare (ignore ch))
+  (let* ((indices (read-delimited-list #\] s t)))
+     (if (and (consp (car indices))
+              (eql (caar indices) 'index)
+              (null (cdr indices)))
+       `(index2 ,@(cdar indices))
+       `(index ,@indices))))
+
 (defmacro binfix-reader ()
  '(lambda (s ch) (declare (ignore ch))
     (let ((time (get-internal-real-time))
-          (semicolon (get-macro-character #\;)))
+          (\; (get-macro-character #\;))
+          (\[ (get-macro-character #\[))
+          (\] (get-macro-character #\])))
       (unwind-protect
         (progn (set-macro-character #\; #'semicolon)
-               (values (binfix (read-delimited-list #\} s t)))) ;;values b/c of clisp
-        (set-macro-character #\; semicolon)
+               (set-macro-character #\[ #'indexing)
+               (set-macro-character #\] (get-macro-character #\) ))
+               (values (binfix (read-delimited-list #\} s t))))
+        (set-macro-character #\; \;)
+        (set-macro-character #\[ \[)
+        (set-macro-character #\] \])
         (incf *timing* (- (get-internal-real-time) time))))))
 
 (set-macro-character #\{ (binfix-reader))

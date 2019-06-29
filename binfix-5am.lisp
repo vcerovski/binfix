@@ -238,6 +238,18 @@
                 (:method ((a t) (b t)) (list a b))))            ))
 )
 
+(test B-terms
+  (B2 is (equal " '{A[i]} "  '(aref a i)       )     "B-terms sanity check"    )
+  (B2 is (equal "'{(a)[i]}" '(aref (a) i)      ))
+  (B2 is (equal
+           "'{a[i] + b[i;j] / c[i;j] - a[f k]}"
+           '(+ (aref a i) (- (/ (aref b i j) (aref c i j)) (aref a (f k))))   ))
+  (B2 is (equal "'{a[1;2][2;3]}"  '(aref (aref a 1 2) 2 3)                    ))
+
+  (B2 is (equal "'{incf table[[key;0]]}"
+                 '(incf (binfix::hashget table key 0))))
+)
+
 (test parsing-errors
   (signals error (read-from-string "     '{a; b}       "))
   (signals error (read-from-string "     '{a ->}       "))

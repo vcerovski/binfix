@@ -626,8 +626,7 @@
                {t          $ e-binds (cdr e) binds {car e :. lhs}          rhs}}
 
      term e =
-       {
-         cond {atom e $ e}
+       {cond {atom e $ e}
               {consp e && consp (cadr e) && symbolp (caadr e)
                  $ let op-prop = (get (caadr e) 'properties)
                      if {:term in caddr op-prop}
