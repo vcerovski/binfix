@@ -546,8 +546,8 @@
     cond {null e $ o.r}
          {symbolp (car e)
             $ let q = (get (car e) 'properties)
-                 if {q && {< (car q) p
-                           || = (car q) p
+                 if {q && {car q < p
+                           || car q == p
                               && not {   :single in caddr q
                                       && :single in caddr (get last-o 'properties)
                                       && not {car e == last-o}
@@ -641,10 +641,7 @@
         let* lhs = (term (ldiff e rhs))
              rhs = (term rhs)
              op = (pop rhs)
-             op-prop = (get op 'properties)
-            priority = (pop op-prop)
-             op-lisp = (pop op-prop)
-             op-prop = (pop op-prop)
+           priority op-lisp op-prop ..= (get op 'properties)
            cond {op == '; $ error "BINFIX: bare ; in:~% ~{ ~A~}" e}
                 {null rhs $
                    if {:also-postfix in op-prop}
