@@ -14,8 +14,8 @@ BINFIX (blend from "Binary Infix") is a poweful infix syntax notation for
 S-expressions of Common LISP ranging from simple arithmetic and logical
 forms to whole programs.
 
-It is in experimental phase, developed and tested by writing lots of code
-(more than 10 kLOC currently)
+**NEW FEATURE**: _B-terms_, allowing [indexing](#Indexing)-like operations
+using square brackets.
 
 There are a few important new features still to come.
 One of them, available from v0.16, is use of a single `;` symbol as a
@@ -32,6 +32,7 @@ reference 1.0 version.
 ## Content
 
 * [Installation](#Instalation)
+* [B-expression](#B-expression)
 * [Examples](#Examples)
     * [Arithmetic and logical expressions](#Arithmetic-and-logical-expressions)
     * [Consing](#Consing)
@@ -55,7 +56,7 @@ reference 1.0 version.
     * [Destructuring, multiple values](#Destructuring-multiple-values)
     * [Loops](#Loops)
     * [Hash tables and association lists](#Hash-tables-and-association-lists)
-* [Indexing](#Indexing)
+* [Indexing (**New features**)](#Indexing)
 * [Mappings](#Mappings)
 * [Working with bits](#Bits)
 * [Support for macros](#Support-for-macros)
@@ -72,6 +73,7 @@ reference 1.0 version.
 * [Appendix](#Appendix)
     * [Syntax highlighting](#Syntax-highlighting)
     * [Operation properties](#Operation-properties)
+    * [Unused symbols](#Unused-symbols)
     * [List of all operations](#List-of-all-operations)
 
 -----------------------
@@ -119,22 +121,33 @@ by adding
 
 to `.vimrc`.
 
-<a name="Examples"></a>
-## Examples
-
-Generally, quoting a BINFIX expression in REPL will produce the corresponding
-S-expression.
-
-For easier comparison of input and output forms in following examples, LISP
-printer is first `setq` (operation `=.`) to lowercase output with
-
-    {*print-case* =. :downcase}
-
-=> `:downcase`
+<a name="B-expression"></a>
+## B-expression
+BINFIX rewrites a _B-expression_ (B-expr) into an S-expression,
+written using curly brackets `{`...`}`, and may contain, in addition to
+symbols, constants, S-exprs and B-exprs, also _B-operations_ (B-ops) and
+_B-terms_.  Bops are just symbols that BINFIX recognizes and prioritizes
+according to each Bop's precedence (priority).  In addition to priority,
+each Bop may have properties, which further specify how to handle Bop's
+left- and right-hand side.  B-term is a B-op that works from within B-expr
+to allow indexing-like operations.
 
 BINFIX is a free-form notation (just like S-expr), i.e any number of empty
 spaces (including tabs and newlines) between tokens is treated the same as a
 single white space.
+
+Generally, quoting a BINFIX expression in REPL will produce the corresponding
+S-expression.
+
+<a name="Examples"></a>
+## Examples
+
+For easier comparison of input and output forms in following examples, LISP
+printer is first `setq` (Bop `=.`) to lowercase output with
+
+    {*print-case* =. :downcase}
+
+=> `:downcase`
 
 <a name="Arithmetic-and-logical-expressions"></a>
 ### Arithmetic and logical expressions
@@ -910,7 +923,7 @@ Loops can be also nested without writing parens:
 #### Hash tables and association lists
 
 Hash tables are supported in binfix through OPs `~!` (`gethash`),
-`~~` (`remhash`) and `@~` (`maphash`).
+`~~` (`remhash`) and `@~` (`maphash`).  See also [indexing](#Indexing).
 
 Association lists are accessible via `!~~` (`assoc`) and `~~!` (`rassoc`).
 
@@ -934,17 +947,39 @@ as summarized in the following table,
   <tr><td> <code>.@.</code></td> <td><code>multiple-value-call</code></td></tr>
 </table>
 
-They all have the same priority and are right-associative, and, since
-they bind weaker than `->`, are easy to string together with lambdas,
-as in a map-reduce expr.
+They all have the same priority and are right-associative.  Since they bind
+weaker than `->`, they are easy to string together with lambdas, as in a
+map-reduce expr.
 
 `{'max @/ x y -> abs{x - y} @. a b}`
 
 <a name="Indexing"></a>
-### Indexing
+### Indexing (**New features**)
 
-The following table summarizes BINFIX OPs for indexing, from
-the weakest to the strongest binding OP:
+Indexing can be done using square brackets, `[`...`]`, by default set to
+`aref`,
+
+    '{a[i;j] += b[i;k] * c[k;j]}
+
+=>
+
+    (incf (aref a i j) (* (aref b i k) (aref c k j)))
+
+or using double-square brackets, `[[`...`]]`, by default set to indexing of
+hash table,
+
+    '{ table[[key; default]] }
+
+=>
+
+    (binfix::hashget table key default)
+
+which macroexpands into
+
+    (gethash key table default)
+
+The following table summarizes indexing BOPs, from
+the weakest to the strongest binding:
 
 <table>
   <tr><td><code>th-cdr</code></td>  <td><code>nthcdr</code></td>   </tr>
@@ -976,6 +1011,10 @@ operations with indices, like
 `{a !! i + j; 1- k;}`
 
 etc.  In the same relation stand `.!.` and `.!!.`
+
+Indexing of arrays is by default supported by the new square-brackets BINFIX
+reader, so the above two examples can be written as `{a[i + j]}` and
+`{a[i + j; 1- k]}`, respectively.
 
 <a name="Bits"></a>
 ### Working with bits
@@ -1404,72 +1443,131 @@ Here are gui and terminal looks:
 <a name="Operation-properties"></a>
 ### Operation properties
 
-`:def` -- Operation (OP) is a definition requiring LHS to has a name and lambda
-list.
+<table> <col style="width:7em">
+<tr><th>Property</th><th>Description</th></tr>
+<tr><td><code>:def
+</code></td> <td> Operation (OP) is a definition requiring LHS to has a name
+                  and lambda list.
+</td></tr>
 
-`:defm` -- OP is a definition requiring LHS to have a name followed by
-unparenthesized method lambda list.
+<tr><td><code>:defm
+</code></td><td> OP is a definition requiring LHS to have a name followed by
+                 unparenthesized method lambda list.
+<td></tr>
 
-`:lhs-lambda` -- OP has lambda list as its LHS.
+<tr><td><code>:lhs-lambda
+</code></td><td> OP has lambda list as its LHS.
+</td></tr>
 
-`:rhs-lbinds` -- OP has let-binds at the beginning of its RHS,<br>
-[*symbol* [*keyword*] **`=`** *expr*]\* *declaration*\*
+<tr><td><code>:rhs-lbinds
+</code></td><td> OP has let-binds at the beginning of its RHS,<br>
+                 [<em>symbol</em> [<em>keyword</em>]* <code>=</code>
+                 <em>expr</em>]* <em>declaration</em>* </td></tr>
 
-`:rhs-fbinds` -- OP has flet-binds at the beginning of its LHS, including
-optional declarations.
+<tr><td><code>:rhs-fbinds
+</code></td><td> OP has flet-binds at the beginning of its LHS, including
+                 optional declarations.
+</td></tr>
 
-`:rhs-sbinds` -- OP has symbol-binds as its RHS. They are let-binds without
-annotations or declarations.
+<tr><td><code>:rhs-sbinds
+</code></td><td> OP has symbol-binds as its RHS. They are let-binds without
+                 annotations or declarations.
+</td></tr>
 
-`:rhs-ebinds` -- OP has expr-binds at the beginning of its RHS.
+<tr><td><code>:rhs-ebinds
+</code></td><td> OP has expr-binds at the beginning of its RHS.
+</td></tr>
 
-`:unreduce` -- All appearances of OP at the current level should be unreduced,
-i.e replaced with a single call with multiple arguments.
+<tr><td><code>:unreduce
+</code></td><td> All appearances of OP at the current level should be
+                 unreduced, i.e replaced with a single call with multiple
+                 arguments.
+</td></tr>
 
-`:left-assoc` -- OP is left--associative (OPs are right-associative by default.)
+<tr><td><code>:left-assoc
+</code></td><td> OP is left--associative (OPs are right-associative by
+                 default.)
+</td></tr>
 
-`:prefix` -- OP is prefix with RHS being its arguments, given as one or more
-atoms/S-expr or a single `;` separated B-expr.
+<tr><td><code>:prefix
+</code></td><td> OP is prefix with RHS being its arguments, given as one or more
+                 atoms/S-expr or a single `;` separated B-expr.
+</td></tr>
 
-`:also-prefix` -- OP can be used as prefix when LHS is missing.
+<tr><td><code>:also-prefix
+</code></td><td> OP can be used as prefix when LHS is missing.
+</td></tr>
 
-`:also-unary` -- OP can be used as unary when LHS is missing.
+<tr><td><code>:also-unary
+</code></td><td> OP can be used as unary when LHS is missing.
+</td></tr>
 
-`:also-postfix` -- OP can be used as postfix when RHS is missing.
+<tr><td><code>:also-postfix
+</code></td><td> OP can be used as postfix when RHS is missing.
+</td></tr>
 
-`:lambda/expr` -- OP takes lambda-list at LHS and an expression at RHS, followed by body.
+<tr><td><code>:lambda/expr
+</code></td><td> OP takes lambda-list at LHS and an expression at RHS, followed
+                 by body.
+</td></tr>
 
-`:syms/expr` -- OP takes a list of symbols as LHS (each with an optional
-[keyword-type](#types) annotation,) an expression as RHS followed
-by optional declarations and a BINFIX-expression.
+<tr><td><code>:syms/expr
+</code></td><td> OP takes a list of symbols as LHS (each with an optional
+                 [keyword-type](#types) annotation,) an expression as RHS
+                 followed by optional declarations and a BINFIX-expression.
+</td></tr>
 
-`:split` -- OP splits the expr at this point.
+<tr><td><code>:split
+</code></td><td> OP splits the expr at this point.
+</td></tr>
 
-`:rhs-args` -- OP takes LHS as 1st and RHS as remaining arguments.
+<tr><td><code>:rhs-args
+</code></td><td> OP takes LHS as 1st and RHS as remaining arguments.
+</td></tr>
 
-`:quote-lhs` -- OP quotes LHS.
+<tr><td><code>:quote-lhs
+</code></td><td> OP quotes LHS.
+</td></tr>
 
-`:quote-rhs` -- OP quotes RHS.
+<tr><td><code>:quote-rhs
+</code></td><td> OP quotes RHS.
+</td></tr>
 
-`:macro` -- OP is a macro.
+<tr><td><code>:macro
+</code></td><td> OP is a macro.
+</td></tr>
 
+<tr><td><code>:progn
+</code></td><td> OP is in a progn-monad ([example](#progn-m)).  Currently
+                 implemented for :prefix :quote-rhs/:macro.
+</td></tr>
 
-`:progn` -- OP is in a progn-monad ([example](#progn-m)).  Currently implemented
-for :prefix :quote-rhs/:macro.
+<tr><td><code>:single
+</code></td><td> OP requires to be the only OP in the current expr with its
+                 priority.  For example, reading <code>{values a  b .x. c}</code>
+                 reports an ambiguity error.
+</td></tr>
 
+<tr><td><code>:term
+</code></td><td> OP is a B-term. For example, Bop <code>binfix::index</code>
+                 makes<br> <code>{a (binfix::index i (1+ j))}</code> become
+                 <code>(aref a i (1+ j))</code>.
+</td></tr>
+</table>
 
-`:single` -- OP requires to be the only OP in the current expr with its
-priority.  For example, parsing of: `{values a  b .x. c}` reports an ambiguity error.
+<a name="Unused-symbols"></a>
+### Unused symbols
+
+BINFIX does not use `~`, `%` and `^`.  The symbol `?` will also be unused.
+The current plan is that these four will be left for user-defined Bops.
+
 
 <a name="List-of-all-operations"></a>
 ### List of all operations
 
-Command
-
-    (lsbinfix)
-
-prints the table of all BINFIX OPs and their properties from the weakest-
-to the strongest-binding OP, with parens enclosing OP(s) of the same priority:
+Command `(lsbinfix)` prints the table of all BINFIX OPs and their properties
+from the weakest- to the strongest-binding OP, with parens enclosing OP(s) of
+the same priority:
 
       BINFIX         LISP            Properties
     ==============================================================================
@@ -1548,8 +1646,8 @@ to the strongest-binding OP, with parens enclosing OP(s) of the same priority:
       @              funcall         :rhs-args       :left-assoc     :also-postfix )
     ( :->            function        :lhs-lambda )
     ( ->             lambda          :lhs-lambda )
-    ( =..            multiple-value-bind             :syms/expr )
-    ( ..=            destructuring-bind              :lambda/expr )
+    ( =..            multiple-value-bind             :syms/expr
+      ..=            destructuring-bind              :lambda/expr )
     ( values         values          :prefix         :single
       .x.            values          :unreduce       :single )
     ( loop           loop            :prefix         :quote-rhs )
@@ -1632,7 +1730,9 @@ to the strongest-binding OP, with parens enclosing OP(s) of the same priority:
     ( !              aref            :rhs-args       :single
       _              slot-value      :single )
     ( |;|            |;| )
+    ( binfix::index  aref            :term
+      binfix::index2 binfix::hashget :term )
     ------------------------------------------------------------------------------
-    
+
 => `nil`
 

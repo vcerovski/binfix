@@ -4,25 +4,25 @@
 
 <p>Viktor Cerovski, Jun 2019.</p>
 
-<p><a href="https://travis-ci.org/vcerovski/binfix"><img src="https://travis-ci.org/vcerovski/binfix.png" alt="Build Status" /></a>
-<a href="http://quickdocs.org/binfix/"><img src="http://quickdocs.org/badge/binfix.svg" alt="Quicklisp dist" /></a></p>
+<p><a href="https://travis-ci.org/vcerovski/binfix"><img src="https://travis-ci.org/vcerovski/binfix.png" alt="Build Status" title="" /></a>
+<a href="http://quickdocs.org/binfix/"><img src="http://quickdocs.org/badge/binfix.svg" alt="Quicklisp dist" title="" /></a></p>
 
 <p><a name="Introduction"></a></p>
 
 <h2>Introduction</h2>
 
-<p>BINFIX (blend from &ldquo;Binary Infix&rdquo;) is a poweful infix syntax notation for
+<p>BINFIX (blend from "Binary Infix") is a poweful infix syntax notation for
 S-expressions of Common LISP ranging from simple arithmetic and logical
 forms to whole programs.</p>
 
-<p>It is in experimental phase, developed and tested by writing lots of code
-(more than 10 kLOC currently.)</p>
+<p><strong>NEW FEATURE</strong>: <em>B-terms</em>, allowing <a href="#Indexing">indexing</a>-like operations
+using square brackets.</p>
 
 <p>There are a few important new features still to come.
 One of them, available from v0.16, is use of a single <code>;</code> symbol as a
-form-separating symbol in <a href="#LET%20;%20progn%20example">implicit-progn</a>, <a href="#SETF%20expr-termination">expression
-terminator</a> for SETFs, or as end of <a href="#LET%20;%20examples">LET binds
-symbol</a> or <a href="#Local%20functions">local functions definition</a>.
+form-separating symbol in <a href="#LET-impl-progn-example">implicit-progn</a>, <a href="#SETF-expr-termination">expression
+terminator</a> for SETFs, or as end of <a href="#LET-impl-progn-examples">LET binds
+symbol</a> or <a href="#Local-functions">local functions definition</a>.
 There is also <code>def</code>, for <a href="#def">defining things</a>, and the latest is
 writing standard LISP definitions <a href="#progn-m">without outer parens</a>.</p>
 
@@ -35,69 +35,60 @@ reference 1.0 version.</p>
 
 <ul>
 <li><a href="#Instalation">Installation</a></li>
+<li><a href="#B-expression">B-expression</a></li>
 <li><a href="#Examples">Examples</a>
-
 <ul>
-<li><a href="#Arithmetic%20and%20logical%20expressions">Arithmetic and logical expressions</a></li>
+<li><a href="#Arithmetic-and-logical-expressions">Arithmetic and logical expressions</a></li>
 <li><a href="#Consing">Consing</a></li>
-<li><a href="#Lambdas,%20definitions%20and%20type%20annotations">Lambdas, definitions and type annotations</a>
-
+<li><a href="#Lambdas-definitions-and-type-annotations">Lambdas, definitions and type annotations</a>
 <ul>
 <li><a href="#lambda">lambda</a></li>
 <li><a href="#Maps">Mappings</a></li>
 <li><a href="#defun">defun</a></li>
 <li><a href="#&amp;optional">&amp;optional</a></li>
-<li><a href="#Local%20functions">Local functions</a></li>
+<li><a href="#Local-functions">Local functions</a></li>
 <li><a href="#defmethod">defmethod</a></li>
 <li><a href="#defmacro">defmacro</a></li>
 <li><a href="#def">def</a></li>
 <li><a href="#types">Type annotations, declarations and definitions</a></li>
 <li><a href="#funtypes">Funtion types</a></li>
 <li><a href="#progn-m">Definitions and declarations without parens</a></li>
-</ul>
-</li>
+</ul></li>
 <li><a href="#LETs">LETs</a></li>
 <li><a href="#SETs">SETs</a></li>
-<li><a href="#Implicit%20progn">Implicit <code>progn</code></a></li>
-<li><a href="#`$`plitter"><code>$</code>plitter</a></li>
-<li><a href="#Multiple-choice%20forms">Multiple-choice forms</a></li>
-<li><a href="#Destructuring,%20multiple%20values">Destructuring, multiple values</a></li>
+<li><a href="#Implicit-progn">Implicit <code>progn</code></a></li>
+<li><a href="#<code>$</code>plitter"><code>$</code>plitter</a></li>
+<li><a href="#Multiple-choice-forms">Multiple-choice forms</a></li>
+<li><a href="#Destructuring-multiple-values">Destructuring, multiple values</a></li>
 <li><a href="#Loops">Loops</a></li>
-<li><a href="#Hash%20tables%20and%20association%20lists">Hash tables and association lists</a></li>
-</ul>
-</li>
-<li><a href="#Indexing">Indexing</a></li>
+<li><a href="#Hash-tables-and-association-lists">Hash tables and association lists</a></li>
+</ul></li>
+<li><a href="#Indexing">Indexing (<strong>New features</strong>)</a></li>
 <li><a href="#Mappings">Mappings</a></li>
 <li><a href="#Bits">Working with bits</a></li>
-<li><a href="#Support%20for%20macros">Support for macros</a></li>
-<li><a href="#More%20involved%20examples">More involved examples</a>
-
+<li><a href="#Support-for-macros">Support for macros</a></li>
+<li><a href="#More-involved-examples">More involved examples</a>
 <ul>
 <li><a href="#ordinal">ordinal</a></li>
 <li><a href="#join">join</a></li>
 <li><a href="#values-bind">values-bind</a></li>
 <li><a href="#for">for</a></li>
-<li><a href="#Cartesian%20to%20polar%20coordinates">Cartesian to polar coordinates</a></li>
+<li><a href="#Cartesian-to-polar-coordinates">Cartesian to polar coordinates</a></li>
 <li><a href="#packaging">Using BINFIX in packages</a></li>
-</ul>
-</li>
+</ul></li>
 <li><a href="#Implementation">Implementation</a>
-
 <ul>
 <li><a href="#proto-BINFIX">proto-BINFIX</a></li>
 <li><a href="#CLISP-problems">Problems with CLISP</a></li>
-</ul>
-</li>
+</ul></li>
 <li><a href="#Appendix">Appendix</a>
-
 <ul>
 <li><a href="#Syntax-highlighting">Syntax highlighting</a></li>
-<li><a href="#Operation%20properties">Operation properties</a></li>
-<li><a href="#List%20of%20all%20operations">List of all operations</a></li>
+<li><a href="#Operation-properties">Operation properties</a></li>
+<li><a href="#Unused-symbols">Unused symbols</a></li>
+<li><a href="#List-of-all-operations">List of all operations</a></li>
+</ul></li>
 </ul>
-</li>
-</ul>
-
 
 <hr />
 
@@ -122,7 +113,7 @@ downloading/installation/loading trivial:</p>
 </code></pre>
 
 <p>Supported LISP implementations are <a href="http://sbcl.org">SBCL</a> (also used for
-develpoment,) <a href="https://ccl.clozure.com/">Clozure CL</a>,
+develpoment,) <a href="https://ccl.clozure.com/">Clozure CL</a>, 
 <a href="https://en.wikipedia.org/wiki/Embeddable_Common_Lisp">ECL</a> (tested with
 v15.3.7 and v16.1.3) and <a href="https://abcl.org/">ABCL</a>, while
 <a href="https://github.com/rurban/clisp">CLISP</a> as of this release <a href="#CLISP-problems">is not
@@ -139,7 +130,7 @@ and can be obtained by</p>
 
 <p>There is also a syntax-highlighting file for <code>vim</code> editor, <code>binfix.vim</code>.
 Its installation consists of copying it into vimrc/syntax folder, which is
-on Linux located at <code>~/.vim/syntax</code> (should be created if it doesn&rsquo;t exist.)</p>
+on Linux located at <code>~/.vim/syntax</code> (should be created if it doesn't exist.)</p>
 
 <p>Once installed, after loading a LISP file, LISP+BINFIX syntax highlighting
 can be activated by <code>:set syntax=binfix</code>.  Loading can be done automatically
@@ -151,26 +142,39 @@ au BufNewFile,BufRead *.lisp,*.cl set syntax=binfix
 
 <p>to <code>.vimrc</code>.</p>
 
-<p><a name="Examples"></a></p>
+<p><a name="B-expression"></a></p>
 
-<h2>Examples</h2>
+<h2>B-expression</h2>
+
+<p>BINFIX rewrites a <em>B-expression</em> (B-expr) into an S-expression,
+written using curly brackets <code>{</code>...<code>}</code>, and may contain, in addition to
+symbols, constants, S-exprs and B-exprs, also <em>B-operations</em> (B-ops) and
+<em>B-terms</em>.  Bops are just symbols that BINFIX recognizes and prioritizes
+according to each Bop's precedence (priority).  In addition to priority,
+each Bop may have properties, which further specify how to handle Bop's
+left- and right-hand side.  B-term is a B-op that works from within B-expr
+to allow indexing-like operations.</p>
+
+<p>BINFIX is a free-form notation (just like S-expr), i.e any number of empty
+spaces (including tabs and newlines) between tokens is treated the same as a
+single white space.</p>
 
 <p>Generally, quoting a BINFIX expression in REPL will produce the corresponding
 S-expression.</p>
 
+<p><a name="Examples"></a></p>
+
+<h2>Examples</h2>
+
 <p>For easier comparison of input and output forms in following examples, LISP
-printer is first <code>setq</code> (operation <code>=.</code>) to lowercase output with</p>
+printer is first <code>setq</code> (Bop <code>=.</code>) to lowercase output with</p>
 
 <pre><code>{*print-case* =. :downcase}
 </code></pre>
 
 <p>=> <code>:downcase</code></p>
 
-<p>BINFIX is a free-form notation (just like S-expr), i.e any number of empty
-spaces (including tabs and newlines) between tokens is treated the same as a
-single white space.</p>
-
-<p><a name="Arithmetic and logical expressions"></a></p>
+<p><a name="Arithmetic-and-logical-expressions"></a></p>
 
 <h3>Arithmetic and logical expressions</h3>
 
@@ -247,7 +251,7 @@ produce the same result. The inner brackets, however, can be removed:</p>
 
 <p>=> <code>t</code></p>
 
-<p><a name="Lambdas, definitions and type annotations"></a></p>
+<p><a name="Lambdas-definitions-and-type-annotations"></a></p>
 
 <h3>Lambdas, definitions and type annotations</h3>
 
@@ -301,7 +305,7 @@ produce the same result. The inner brackets, however, can be removed:</p>
 <p>Indeed, <code>@</code> is left-associative, standing for <code>funcall</code>.</p>
 
 <p>More complicated types can be also explicitely given after an
-argument,</p>
+argument, </p>
 
 <pre><code>'{x :|or symbol number| -&gt; x :. x}
 </code></pre>
@@ -342,7 +346,7 @@ argument,</p>
 <pre><code>(reduce #'max (mapcar (lambda (x y) (abs (- x y))) a b))
 </code></pre>
 
-<p>and other maps have their <code>@</code>&rsquo;s as well.</p>
+<p>and other maps have their <code>@</code>'s as well.</p>
 
 <p><a name="defun"></a></p>
 
@@ -362,7 +366,7 @@ argument,</p>
       (* n (f (1- n)))))
 </code></pre>
 
-<p>Function documentation, local declarations, local bindings
+<p>Function documentation, local declarations, local bindings 
 and comments have a straightforward syntax:</p>
 
 <pre><code>'{g x := "Auxilary fn."
@@ -380,7 +384,7 @@ and comments have a straightforward syntax:</p>
     (/ x*x (1+ x*x))))
 </code></pre>
 
-<p><a name="&optional"></a></p>
+<p><a name="&amp;optional"></a></p>
 
 <h4><code>&amp;optional</code> is optional</h4>
 
@@ -417,7 +421,7 @@ after the assignment.</p>
 are available (for the standard check whether respective values were provided
 in the call of <code>f</code>.)</p>
 
-<p><a name="Local functions"></a></p>
+<p><a name="Local-functions"></a></p>
 
 <h4>Local functions</h4>
 
@@ -447,7 +451,6 @@ There is also yet another way to write the definition of `fac`, as
         f n m := {if n = 0; m; f (1- n) {n * m}}
        f n 1}
 -->
-
 
 <p>All three above definitions of <code>fac</code> are transformed by <code>binfix</code> to</p>
 
@@ -479,7 +482,6 @@ There is also yet another way to write the definition of `fac`, as
                           n * f(1- n)}}
 -->
 
-
 <p>both produce</p>
 
 <pre><code>(defmethod f ((n integer))
@@ -499,7 +501,7 @@ that can be either a keyword or an atom surrounded by parens (i.e <code>:around<
 <h4><code>defmacro</code></h4>
 
 <p>Macros are defined via <code>:==</code> operation, similar to the previous examples.
-See Sec. <a href="#Support%20for%20macros">Support for macros</a>.</p>
+See Sec. <a href="#Support-for-macros">Support for macros</a>.</p>
 
 <p><a name="types"></a></p>
 
@@ -510,7 +512,7 @@ symbols in binds and lambda-lists by an (optional) keyword representing
 the type (for instance <code>:fixnum</code>, <code>:my-class</code>, <code>:|simple-array single-float|</code>,
 <code>:|or symbol number|</code>, <code>:|{symbol or number}|</code>, etc.)</p>
 
-<p>OPs that represent LISP forms which allow declaration(s), in BINFIX can
+<p>OPs that represent LISP forms which allow declaration(s), in BINFIX can 
 have in addition to the standard <code>(declare ...)</code> form also unparenthesized
 variant:</p>
 
@@ -569,7 +571,7 @@ SBCL 1.1.17 function <code>sin</code> has declared type that can be written as</
   &amp;optional))
 </code></pre>
 
-<p>Function <code>fac</code> with a local function from <a href="#Local%20functions">this example</a>
+<p>Function <code>fac</code> with a local function from <a href="#Local-functions">this example</a>
 can have its type declared as</p>
 
 <pre><code>'{fac n :integer :=
@@ -708,7 +710,7 @@ to facilitate their easy writing:</p>
 <p><code>def class</code> syntax is like <code>defclass</code> without parens.  For this to work, class
 options (<code>:documentation</code> and <code>:metaclass</code>) have to be given <em>before</em>
 description of slots, while <code>:default-initargs</code> comes last as usual, just
-unparenthesized (see <a href="#Cartesian%20to%20polar%20coordinates">example</a>.)</p>
+unparenthesized (see <a href="#Cartesian-to-polar-coordinates">example</a>.)</p>
 
 <p><code>def</code>ining of symbols follows the same syntax as <code>let</code> binding, which
 is covered next.</p>
@@ -726,7 +728,7 @@ as in</p>
   defvar c 2}
 </code></pre>
 
-<p>=></p>
+<p>=> </p>
 
 <pre><code>(progn
  (declaim (fixnum a b c))
@@ -759,7 +761,7 @@ as in</p>
   (+ x (* y z)))
 </code></pre>
 
-<p><a name="LET ; examples"></a>
+<p><a name="LET-impl-progn-examples"></a>
 A single <code>;</code> can be used as a terminator of bindings:</p>
 
 <pre><code>'{let x :bit = 1
@@ -775,7 +777,7 @@ A single <code>;</code> can be used as a terminator of bindings:</p>
   (+ x (* y z)))
 </code></pre>
 
-<p><a name="LET ; progn example"></a>
+<p><a name="LET-impl-progn-example"></a>
 Finally, a single <code>;</code> can also be used to separate forms in implicit-progn,
 as in</p>
 
@@ -794,7 +796,7 @@ as in</p>
   (+ x (* y z)))
 </code></pre>
 
-<p><a name="LET associativity"></a>
+<p><a name="LET-associativity"></a>
 Nesting of <code>let</code>s without parens follows the right-associativity</p>
 
 <pre><code>'{let a = f x;
@@ -855,7 +857,7 @@ expression,</p>
        (aref a 1) (aref a 0))
 </code></pre>
 
-<p><a name="SETF expr-termination"></a>
+<p><a name="SETF-expr-termination"></a>
 Alternatively, it is possible to use a single <code>;</code> as an expression-termination
 symbol,</p>
 
@@ -885,13 +887,13 @@ symbol,</p>
     (h a c)))
 </code></pre>
 
-<p><a name="Implicit progn"></a></p>
+<p><a name="Implicit-progn"></a></p>
 
 <h3>Implicit <code>progn</code></h3>
 
 <p>An implicit <code>progn</code> in BINFIX is achieved with a single <code>;</code> separating the
 forms forming the progn.  In all cases (<code>-&gt;</code>, <code>:=</code>, <code>:-</code> and LETs) the syntax
-is following that of the <a href="#LET%20;%20progn%20example">LET example above</a>.</p>
+is following that of the <a href="#LET-impl-progn-example">LET example above</a>.</p>
 
 <p>As expected, other <code>prog</code>s have to be explicitly given,</p>
 
@@ -932,7 +934,7 @@ is following that of the <a href="#LET%20;%20progn%20example">LET example above<
 
 <p>while <code>multiple-value-prog1</code> is given by <code>&lt;&amp;..</code>.</p>
 
-<p><a name="`$`plitter"></a></p>
+<p><a name="<code>$</code>plitter"></a></p>
 
 <h3><code>$</code>plitter</h3>
 
@@ -944,7 +946,7 @@ effectivelly splitting the list in two parts.</p>
 
 <p>=> <code>(f (g (h x y z)))</code></p>
 
-<p>So its effect here is similar to <code>$</code> in Haskell.
+<p>So its effect here is similar to <code>$</code> in Haskell. 
 Or perphaps:</p>
 
 <pre><code>'{declare $ optimize (speed 1) (safety 1)}
@@ -971,9 +973,9 @@ Or perphaps:</p>
 <p>Another splitter is <code>?</code>, which can be used instead of <code>$</code> in the previous
 example, as well as described in the next section.</p>
 
-<p><a name="Multiple-choice forms"></a></p>
+<p><a name="Multiple-choice-forms"></a></p>
 
-<h3>Multiple-choice forms (<code>cond</code>, <code>case</code>, &hellip;)</h3>
+<h3>Multiple-choice forms (<code>cond</code>, <code>case</code>, ...)</h3>
 
 <p>An alternative syntax to describe multiple-choice forms is to use <code>?</code> and <code>;</code></p>
 
@@ -985,11 +987,11 @@ example, as well as described in the next section.</p>
 
 <p>See also <a href="#ordinal"><code>ordinal</code> example below</a>.</p>
 
-<p><a name="Destructuring, multiple values"></a></p>
+<p><a name="Destructuring-multiple-values"></a></p>
 
 <h3>Destructuring, multiple values</h3>
 
-<p>Multiple values (<code>values</code>) are represented by <code>.x.</code>,
+<p>Multiple values (<code>values</code>) are represented by <code>.x.</code>, 
 <code>multiple-value-bind</code> by <code>=..</code> , and <code>destructuring-bind</code> by <code>..=</code></p>
 
 <pre><code>'{a (b) c ..= (f x) a + 1 .x. b + 2 .x. c + 3}
@@ -1051,15 +1053,15 @@ example, as well as described in the next section.</p>
 
 <pre><code>(loop for i = 1 to 3
       collect (loop for j = 2 to 4
-                    collect (cons i j))) 
+                    collect (cons i j)))
 </code></pre>
 
-<p><a name="Hash tables and association lists"></a></p>
+<p><a name="Hash-tables-and-association-lists"></a></p>
 
 <h4>Hash tables and association lists</h4>
 
 <p>Hash tables are supported in binfix through OPs <code>~!</code> (<code>gethash</code>),
-<code>~~</code> (<code>remhash</code>) and <code>@~</code> (<code>maphash</code>).</p>
+<code>~~</code> (<code>remhash</code>) and <code>@~</code> (<code>maphash</code>).  See also <a href="#Indexing">indexing</a>.</p>
 
 <p>Association lists are accessible via <code>!~~</code> (<code>assoc</code>) and <code>~~!</code> (<code>rassoc</code>).</p>
 
@@ -1084,19 +1086,45 @@ as summarized in the following table,</p>
   <tr><td> <code>.@.</code></td> <td><code>multiple-value-call</code></td></tr>
 </table>
 
-
-<p>They all have the same priority and are right-associative, and, since
-they bind weaker than <code>-&gt;</code>, are easy to string together with lambdas,
-as in a map-reduce expr.</p>
+<p>They all have the same priority and are right-associative.  Since they bind
+weaker than <code>-&gt;</code>, they are easy to string together with lambdas, as in a
+map-reduce expr.</p>
 
 <p><code>{'max @/ x y -&gt; abs{x - y} @. a b}</code></p>
 
 <p><a name="Indexing"></a></p>
 
-<h3>Indexing</h3>
+<h3>Indexing (<strong>New features</strong>)</h3>
 
-<p>The following table summarizes BINFIX OPs for indexing, from
-the weakest to the strongest binding OP:</p>
+<p>Indexing can be done using square brackets, <code>[</code>...<code>]</code>, by default set to
+<code>aref</code>,</p>
+
+<pre><code>'{a[i;j] += b[i;k] * c[k;j]}
+</code></pre>
+
+<p>=></p>
+
+<pre><code>(incf (aref a i j) (* (aref b i k) (aref c k j)))
+</code></pre>
+
+<p>or using double-square brackets, <code>[[</code>...<code>]]</code>, by default set to indexing of
+hash table,</p>
+
+<pre><code>'{ table[[key; default]] }
+</code></pre>
+
+<p>=></p>
+
+<pre><code>(binfix::hashget table key default)
+</code></pre>
+
+<p>which macroexpands into</p>
+
+<pre><code>(gethash key table default)
+</code></pre>
+
+<p>The following table summarizes indexing BOPs, from
+the weakest to the strongest binding:</p>
 
 <table>
   <tr><td><code>th-cdr</code></td>  <td><code>nthcdr</code></td>   </tr>
@@ -1118,7 +1146,6 @@ the weakest to the strongest binding OP:</p>
   <tr><td><code>!</code></td>       <td><code>aref</code></td>     </tr>
 </table>
 
-
 <p><code>!..</code> and <code>th-value</code> are mere synonyms and thus of the same priority, as are
 <code>.!</code> <code>!.</code> and <code>!!.</code>, while <code>!!</code>
 is a weaker binding <code>!</code>, allowing easier writting of expr. with arithmetic
@@ -1130,6 +1157,10 @@ operations with indices, like</p>
 
 <p>etc.  In the same relation stand <code>.!.</code> and <code>.!!.</code></p>
 
+<p>Indexing of arrays is by default supported by the new square-brackets BINFIX
+reader, so the above two examples can be written as <code>{a[i + j]}</code> and
+<code>{a[i + j; 1- k]}</code>, respectively.</p>
+
 <p><a name="Bits"></a></p>
 
 <h3>Working with bits</h3>
@@ -1139,12 +1170,12 @@ while bit-array version of the same OP with <code>.</code> before and after the 
 For instance, <code>{a or. b}</code> transforms to <code>(logior a b)</code>, while
 <code>{a .or. b}</code> transforms to <code>(bit-ior a b)</code>.</p>
 
-<p><a name="Support for macros"></a></p>
+<p><a name="Support-for-macros"></a></p>
 
 <h3>Support for macros</h3>
 
 <p>If BINFIX terms <em>only</em> are inserted under backquote, everything should work
-fine,</p>
+fine, </p>
 
 <pre><code>'{let t1 = 'x
       t2 = '{x + x}
@@ -1159,7 +1190,7 @@ fine,</p>
 
 <p>Replacing, however, BINFIX operations inside a backquoted BINFIX will <em>not</em>
 work.  This is currently not considered as a problem because direct call of
-<code>binfix</code> will cover some important cases of macro transformations in a
+<code>binfix</code> will cover some important cases of macro transformations in a 
 straightforward manner:</p>
 
 <pre><code>{m x y op = '/ type = :double-float :==
@@ -1198,9 +1229,9 @@ t
 t
 </code></pre>
 
-<p>See more in <a href="#binfix%20macros">implementation details</a></p>
+<p>See more in <a href="#binfix-macros">implementation details</a></p>
 
-<p><a name="More involved examples"></a></p>
+<p><a name="More-involved-examples"></a></p>
 
 <h3>More involved examples</h3>
 
@@ -1221,7 +1252,7 @@ t
         format () "~D~a" i suf}
 </code></pre>
 
-<p>It can be also written in a more &ldquo;lispy&rdquo; way without parens as</p>
+<p>It can be also written in a more "lispy" way without parens as</p>
 
 <pre><code>{ordinal1 i :integer :=
    let* a = i mod 10
@@ -1345,7 +1376,7 @@ following example of a procedural for-loop macro</p>
 t
 </code></pre>
 
-<p><a name="Cartesian to polar coordinates"></a></p>
+<p><a name="Cartesian-to-polar-coordinates"></a></p>
 
 <h4>Cartesian to polar coordinates</h4>
 
@@ -1390,7 +1421,7 @@ straightforwardly written in BINFIX as</p>
 }
 </code></pre>
 
-<p>where Steele&rsquo;s comments are left verbatim.</p>
+<p>where Steele's comments are left verbatim.</p>
 
 <p><a name="packaging"></a></p>
 
@@ -1412,7 +1443,7 @@ symbols:</p>
 
 <h2>Implementation</h2>
 
-<p>BINFIX expression is written as a list enclosed in curly brackets <code>{</code> &hellip; <code>}</code>
+<p>BINFIX expression is written as a list enclosed in curly brackets <code>{</code> ... <code>}</code>
 handled through LISP reader, so the usual syntax rules of LISP apply, e.g <code>a+b</code>
 is a single symbol, while <code>a + b</code> is three symbols.  Lisp reader after
 tokenization calls the function <code>binfix</code> which does shallow transformation of
@@ -1535,7 +1566,7 @@ numerical values and thus with no two operations of the same priority.</p>
 
 <p>Lhs and rhs of proto-BINFIX expressions refer to other proto-BINFIX
 expressions (since v0.22.3), which in particular means that there is
-no implicit-progn in proto-BINFIX let&rsquo;s and def&rsquo;s.</p>
+no implicit-progn in proto-BINFIX let's and def's.</p>
 
 <p>Since v0.20, symbol of a BINFIX operation has a list of properties stored into
 the symbol property <code>binfix::properties</code>, which includes a numerically given
@@ -1545,14 +1576,14 @@ relation to other OPs priority values is relevant.  Defining new same-priority
 OPs should be done via <code>defbinfix</code> with <code>:as</code> option, which may change priority
 values of many other OPs.</p>
 
-<p><a name="binfix macros"></a>
+<p><a name="binfix-macros"></a>
 Since shallow transformation into standard syntax is done by function <code>binfix</code>
 invoked recursively by the reader, <code>binfix</code> cannot be directly called for
 arbitrary macro transformation of BINFIX into BINFIX when standard macro
-helpers BACKTICK, COMA and COMA-AT are used. The reason is that <code>{</code>&hellip;<code>}</code> is
+helpers BACKTICK, COMA and COMA-AT are used. The reason is that <code>{</code>...<code>}</code> is
 invoked before them while the correct order would be after them.
 Examples of succesful combinations of backquoting and BINFIX are given
-<a href="#Support%20for%20macros">above</a>.</p>
+<a href="#Support-for-macros">above</a>.</p>
 
 <p><a name="CLISP-problems"></a></p>
 
@@ -1564,14 +1595,13 @@ has two problems with BINFIX:</p>
 <ol>
 <li><p>There seems to be a bug in <code>set-macro-character</code> (see
   <a href="https://github.com/rurban/clisp/issues/10">here</a>.)  Workaround is
-  possible, but BINFIX still doesn&rsquo;t work (while other implementations
+  possible, but BINFIX still doesn't work (while other implementations
   tried do.)</p></li>
 <li><p>Test subsystem of the current version of BINFIX uses
   <a href="https://github.com/sionescu/fiveam"><code>fiveam</code></a>, which requires ASDF>=3.1,
   which <code>clisp</code> does not seem to support.  Workaround is of course possible
   pending solving problem 1.</p></li>
 </ol>
-
 
 <p><a name="Appendix"></a></p>
 
@@ -1582,87 +1612,147 @@ has two problems with BINFIX:</p>
 <h3>Syntax highlighting</h3>
 
 <p>Provided <code>binfix.vim</code> file covers <code>vim</code> editor with a syntax-highlighting
-extension, which is based and dependends on <code>lisp.vim</code> that comes
+extension, which is based and dependends on <code>lisp.vim</code> that comes 
 bundled with <code>vim</code>.</p>
 
 <p>Here are gui and terminal looks:</p>
 
-<p><img src="syntax-gui.png" alt="gui" />
+<p><img src="syntax-gui.png" alt="gui" title="" />
 (theme: <code>solarized</code>, font: <code>Inconsolata Medium</code>)</p>
 
-<p><img src="syntax-term.png" alt="terminal" />
+<p><img src="syntax-term.png" alt="terminal" title="" />
 (theme: <code>herald</code>, font: <code>Terminus</code>)</p>
 
-<p><a name="Operation properties"></a></p>
+<p><a name="Operation-properties"></a></p>
 
 <h3>Operation properties</h3>
 
-<p><code>:def</code> &ndash; Operation (OP) is a definition requiring LHS to has a name and lambda
-list.</p>
+<table> <col style="width:7em">
+<tr><th>Property</th><th>Description</th></tr>
+<tr><td><code>:def
+</code></td> <td> Operation (OP) is a definition requiring LHS to has a name
+                  and lambda list.
+</td></tr>
 
-<p><code>:defm</code> &ndash; OP is a definition requiring LHS to have a name followed by
-unparenthesized method lambda list.</p>
+<tr><td><code>:defm
+</code></td><td> OP is a definition requiring LHS to have a name followed by
+                 unparenthesized method lambda list.
+<td></tr>
 
-<p><code>:lhs-lambda</code> &ndash; OP has lambda list as its LHS.</p>
+<tr><td><code>:lhs-lambda
+</code></td><td> OP has lambda list as its LHS.
+</td></tr>
 
-<p><code>:rhs-lbinds</code> &ndash; OP has let-binds at the beginning of its RHS,<br>
-[<em>symbol</em> [<em>keyword</em>] <strong><code>=</code></strong> <em>expr</em>]* <em>declaration</em>*</p>
+<tr><td><code>:rhs-lbinds
+</code></td><td> OP has let-binds at the beginning of its RHS,<br>
+                 [<em>symbol</em> [<em>keyword</em>]* <code>=</code>
+                 <em>expr</em>]* <em>declaration</em>* </td></tr>
 
-<p><code>:rhs-fbinds</code> &ndash; OP has flet-binds at the beginning of its LHS, including
-optional declarations.</p>
+<tr><td><code>:rhs-fbinds
+</code></td><td> OP has flet-binds at the beginning of its LHS, including
+                 optional declarations.
+</td></tr>
 
-<p><code>:rhs-sbinds</code> &ndash; OP has symbol-binds as its RHS. They are let-binds without
-annotations or declarations.</p>
+<tr><td><code>:rhs-sbinds
+</code></td><td> OP has symbol-binds as its RHS. They are let-binds without
+                 annotations or declarations.
+</td></tr>
 
-<p><code>:rhs-ebinds</code> &ndash; OP has expr-binds at the beginning of its RHS.</p>
+<tr><td><code>:rhs-ebinds
+</code></td><td> OP has expr-binds at the beginning of its RHS.
+</td></tr>
 
-<p><code>:unreduce</code> &ndash; All appearances of OP at the current level should be unreduced,
-i.e replaced with a single call with multiple arguments.</p>
+<tr><td><code>:unreduce
+</code></td><td> All appearances of OP at the current level should be
+                 unreduced, i.e replaced with a single call with multiple
+                 arguments.
+</td></tr>
 
-<p><code>:left-assoc</code> &ndash; OP is left&ndash;associative (OPs are right-associative by default.)</p>
+<tr><td><code>:left-assoc
+</code></td><td> OP is left--associative (OPs are right-associative by
+                 default.)
+</td></tr>
 
-<p><code>:prefix</code> &ndash; OP is prefix with RHS being its arguments, given as one or more
-atoms/S-expr or a single <code>;</code> separated B-expr.</p>
+<tr><td><code>:prefix
+</code></td><td> OP is prefix with RHS being its arguments, given as one or more
+                 atoms/S-expr or a single `;` separated B-expr.
+</td></tr>
 
-<p><code>:also-prefix</code> &ndash; OP can be used as prefix when LHS is missing.</p>
+<tr><td><code>:also-prefix
+</code></td><td> OP can be used as prefix when LHS is missing.
+</td></tr>
 
-<p><code>:also-unary</code> &ndash; OP can be used as unary when LHS is missing.</p>
+<tr><td><code>:also-unary
+</code></td><td> OP can be used as unary when LHS is missing.
+</td></tr>
 
-<p><code>:also-postfix</code> &ndash; OP can be used as postfix when RHS is missing.</p>
+<tr><td><code>:also-postfix
+</code></td><td> OP can be used as postfix when RHS is missing.
+</td></tr>
 
-<p><code>:lambda/expr</code> &ndash; OP takes lambda-list at LHS and an expression at RHS, followed by body.</p>
+<tr><td><code>:lambda/expr
+</code></td><td> OP takes lambda-list at LHS and an expression at RHS, followed
+                 by body.
+</td></tr>
 
-<p><code>:syms/expr</code> &ndash; OP takes a list of symbols as LHS (each with an optional
-<a href="#types">keyword-type</a> annotation,) an expression as RHS followed
-by optional declarations and a BINFIX-expression.</p>
+<tr><td><code>:syms/expr
+</code></td><td> OP takes a list of symbols as LHS (each with an optional
+                 [keyword-type](#types) annotation,) an expression as RHS
+                 followed by optional declarations and a BINFIX-expression.
+</td></tr>
 
-<p><code>:split</code> &ndash; OP splits the expr at this point.</p>
+<tr><td><code>:split
+</code></td><td> OP splits the expr at this point.
+</td></tr>
 
-<p><code>:rhs-args</code> &ndash; OP takes LHS as 1st and RHS as remaining arguments.</p>
+<tr><td><code>:rhs-args
+</code></td><td> OP takes LHS as 1st and RHS as remaining arguments.
+</td></tr>
 
-<p><code>:quote-lhs</code> &ndash; OP quotes LHS.</p>
+<tr><td><code>:quote-lhs
+</code></td><td> OP quotes LHS.
+</td></tr>
 
-<p><code>:quote-rhs</code> &ndash; OP quotes RHS.</p>
+<tr><td><code>:quote-rhs
+</code></td><td> OP quotes RHS.
+</td></tr>
 
-<p><code>:macro</code> &ndash; OP is a macro.</p>
+<tr><td><code>:macro
+</code></td><td> OP is a macro.
+</td></tr>
 
-<p><code>:progn</code> &ndash; OP is in a progn-monad (<a href="#progn-m">example</a>).  Currently implemented
-for :prefix :quote-rhs/:macro.</p>
+<tr><td><code>:progn
+</code></td><td> OP is in a progn-monad ([example](#progn-m)).  Currently
+                 implemented for :prefix :quote-rhs/:macro.
+</td></tr>
 
-<p><code>:single</code> &ndash; OP requires to be the only OP in the current expr with its
-priority.  For example, parsing of: <code>{values a  b .x. c}</code> reports an ambiguity error.</p>
+<tr><td><code>:single
+</code></td><td> OP requires to be the only OP in the current expr with its
+                 priority.  For example, reading <code>{values a  b .x. c}</code>
+                 reports an ambiguity error.
+</td></tr>
 
-<p><a name="List of all operations"></a></p>
+<tr><td><code>:term
+</code></td><td> OP is a B-term. For example, Bop <code>binfix::index</code>
+                 makes<br> <code>{a (binfix::index i (1+ j))}</code> become
+                 <code>(aref a i (1+ j))</code>.
+</td></tr>
+</table>
+
+<p><a name="Unused-symbols"></a></p>
+
+<h3>Unused symbols</h3>
+
+<p>BINFIX does not use <code>~</code>, <code>%</code> and <code>^</code>.  The symbol <code>?</code> will also be unused.
+The current plan is that these four will be left for user-defined Bops.</p>
+
+<p><a name="List-of-all-operations"></a></p>
 
 <h3>List of all operations</h3>
 
-<p>Command</p>
-
-<pre><code>(lsbinfix)
-</code></pre>
-
-<p>prints the table of all BINFIX OPs and their properties from the weakest-
-to the strongest-binding OP, with parens enclosing OP(s) of the same priority:</p>
+<p>Command <code>(lsbinfix)</code> prints the table of all BINFIX OPs and their properties
+from the weakest- to the strongest-binding OP, with parens enclosing OP(s) of
+the same priority:</p>
 
 <pre><code>  BINFIX         LISP            Properties
 ==============================================================================
@@ -1741,8 +1831,8 @@ to the strongest-binding OP, with parens enclosing OP(s) of the same priority:</
   @              funcall         :rhs-args       :left-assoc     :also-postfix )
 ( :-&gt;            function        :lhs-lambda )
 ( -&gt;             lambda          :lhs-lambda )
-( =..            multiple-value-bind             :syms/expr )
-( ..=            destructuring-bind              :lambda/expr )
+( =..            multiple-value-bind             :syms/expr
+  ..=            destructuring-bind              :lambda/expr )
 ( values         values          :prefix         :single
   .x.            values          :unreduce       :single )
 ( loop           loop            :prefix         :quote-rhs )
@@ -1825,6 +1915,8 @@ to the strongest-binding OP, with parens enclosing OP(s) of the same priority:</
 ( !              aref            :rhs-args       :single
   _              slot-value      :single )
 ( |;|            |;| )
+( binfix::index  aref            :term
+  binfix::index2 binfix::hashget :term )
 ------------------------------------------------------------------------------
 </code></pre>
 
