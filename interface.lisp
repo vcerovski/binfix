@@ -51,7 +51,7 @@
                               when prop (warn "defbinfix ~S properties ~S ignored." op prop);
                               prop =. `(,@(caddr prop1) :keys ,@(cadddr prop1));
                               op-position op1}};
-     every {p -> etypecase p (property p)} prop;
+     every {p -> {etypecase p; property p}} prop;
      unless i (error "DEFBINFIX ~S ~S cannot find binfix op." op p);
      *binfix* =. append (subseq *binfix* 0 i)
                        `(((,op ,lisp-op ,@prop) ,@{p in '(:as :same-as) && *binfix* .! i}))
