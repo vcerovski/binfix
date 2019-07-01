@@ -16,14 +16,19 @@
 
 (defmacro B1 (test B-expr &rest rest)
   (declare (symbol test) (string B-expr))
-  "Reading and evaluating BINFIX string B-EXPR in a one-argument TEST"
+  "Reading and evaluating string B-EXPR in a one-argument TEST"
   `(,test (eval (read-from-string ,B-expr)) ,@rest))
 
 (defmacro B2 (test (pred B-expr S-expr &rest rest1) &rest rest2)
   (declare (symbol test pred) (string B-expr))
-  "Reading and evaluating BINFIX string B-EXPR in a two-argument TEST PRED.
+  "Reading and evaluating string B-EXPR in a two-argument TEST PRED.
    Note that B-EXPR is the 1st and S-EXPR the 2nd argument."
   `(,test (,pred ,S-expr (eval (read-from-string ,B-expr)) ,@rest1) ,@rest2))
+
+(defmacro Berror (B-expr &rest rest)
+  (declare (string B-expr))
+  "Check that reading (w/o evaluation) of string B-EXPR signals error"
+  `(signals error (read-from-string ,B-expr) ,@rest))
 
 (test S-expressions
   (B2 is (equal "'{a $ b}" '(a b))                   "S-expr ops sanity check."            )
@@ -61,6 +66,7 @@
   (B2 is (equal  "'{a + b - c + d}    " '(+ a (- b c) d)           ))
   (B2 is (equal  "'{- a * b}          " '(- (* a b))               ))
   (B2 is (equal  "'{a + b * c}        " '(+ a (* b c))             ))
+  (B2 is (equal  "'{a + 1- b * c}     " '(+ a (* (1- b) c))        ))
   (B2 is (equal  "'{a * b / c * d + 1}" '(+ (/ (* a b) (* c d)) 1) ))
   (B2 is (equal  "'{a - g b - c - f d}" '(- a (g b) c (f d))       ))
 )
@@ -78,15 +84,14 @@
                             (type number y))
                    (+ x y))  ))
   (B1 is-true "
-        '{ x -> y -> z -> x * y + z  @ 2 @ 3 @ 4} ==
-        '{{x -> y -> z -> x * y + z} @ 2 @ 3 @ 4} ==
+       {'{ x -> y -> z -> x * y + z  @ 2 @ 3 @ 4} equal
         '(funcall
            (funcall
              (funcall
                (lambda (x) (lambda (y) (lambda (z) (+ (* x y) z))))
                2)
              3)
-           4)"  )
+           4)}"  )
 
   (B2 is (equal
            "'{'min @/ a b -> abs {a - b} @. a b}"
@@ -120,6 +125,18 @@
             " '(flet ((f (x) (+ x x))
                       (g (x) (* y y)))
                  (f (g x)))             ))
+)
+
+(test prefix
+  (B2 is (equal  "'{progn a}"          '(progn a)              ))
+  (B2 is (equal  "'{progn (a)}"        '(progn (a))            ))
+  (B2 is (equal  "'{progn a b}"        '(progn (a b))          ))
+  (B2 is (equal  "'{progn a; b}"       '(progn a b)            ))
+  (B2 is (equal  "'{progn (a); b}"     '(progn (a) b)          ))
+  (B2 is (equal  "'{progn (a); (b)}"   '(progn (a) (b))        ))
+  (B2 is (equal  "'{progn a + b}"      '(progn (+ a b))        ))
+  (B2 is (equal  "'{f progn a + b}"    '(f (progn (+ a b)))    ))
+  (B2 is (equal  "'{x / progn a + b}"  '(/ x (progn (+ a b)))  ))
 )
 
 (test sets/binds
@@ -251,14 +268,20 @@
 )
 
 (test parsing-errors
-  (signals error (read-from-string "     '{a; b}       "))
-  (signals error (read-from-string "     '{a ->}       "))
-  (signals error (read-from-string "     '{f :=}       "))
-  (signals error (read-from-string "     '{:= f}       "))
-  (signals error (read-from-string "  {1 min 3 max 2}  "))
-  (signals error (read-from-string "   {1 <= 2 < 3}    "))
-  (signals error (read-from-string "  '{a 1 =.. f x}   "))
-  (signals error (read-from-string " '{def atruct x y} "))
+  (Berror  "      {a; b}       ")
+  (Berror  "      {a ->}       ")
+  (Berror  "      {f :=}       ")
+  (Berror  "      {f :-}       ")
+  (Berror  "      {f :==}      ")
+  (Berror  "      {f :type=}   ")
+  (Berror  "      {:= f}       ")
+  (Berror  "      {:- f}       ")
+  (Berror  "     {:== f}       ")
+  (Berror  "  {:type= f}       ")
+  (Berror  "  {1 min 3 max 2}  ")
+  (Berror  "   {1 <= 2 < 3}    ")
+  (Berror  "   {a 1 =.. f x}   ")
+  (Berror  "  {def atruct x y} ")
 )
 
 (defun run-tests ()
