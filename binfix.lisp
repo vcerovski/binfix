@@ -210,18 +210,24 @@
      decl* body =.. (decls b ldecl*)
        `(,n ,ll ,@decl* ,@d ,(binfix body));
 
- collect-d= d= e &optional expr lhs rhs lr last-d= :=
-   cond {null e
-           $ cdr $ nreverse $ `(,lhs ,@(nreverse (cdr rhs)) ,@(nreverse expr)) :. lr}
-        {car e == d=
-           $ if last-d=
-               (collect-d= d= (cdr e) () (nreverse (butlast expr)) () {{lhs :. last expr} :. lr} t)
-               (collect-d= d= (cdr e) () (nreverse expr) () {{lhs :. nreverse (cdr rhs)} :. lr} t)}
-        {car e == ';
-           $ collect-d= d= (cdr e) () lhs `(; ,@expr ,@rhs) lr}
-        {null (cdr e)
-           $ collect-d= d= '(;)    {car e :. expr} lhs rhs lr last-d=}
-        {t $ collect-d= d= (cdr e) {car e :. expr} lhs rhs lr last-d=};
+ unreduce-rhs op e &optional cdr-p form0 forms := ;; better version of collect-d=, returns also leading expr.
+   labels
+     last-semi e &optional last =
+       (cond {null e      $ last}
+             {car e == '; $ last-semi (cdr e) e}
+             {t           $ last-semi (cdr e) last})
+     pair-forms forms &optional pairs =
+       (if (null forms) (nreverse pairs)
+          (pair-forms (cddr forms) {{car forms :. cadr forms} :. pairs}))
+   let rhs = {op in e}
+     (if (null rhs)
+        {pair-forms {nreverse $ e :. forms} .x. form0}
+        {let* lhs = (ldiff e rhs)
+              lhs-r = (last-semi lhs)
+              lhs-l = (ldiff lhs lhs-r)
+           (if cdr-p
+              (unreduce-rhs op (cdr rhs) t form0 {cdr lhs-r :. lhs-l :. forms})
+              (unreduce-rhs op (cdr rhs) t {lhs-r && lhs-l} {if lhs-r (cdr lhs-r) lhs-l :. forms}))});
 
  def-generic b &optional params entries :=
    cond {null b
@@ -243,7 +249,7 @@
            $ `(,@(method-lambda-list params)
                ,@(nreverse entries)
                ,@(mapcar {mdef -> mbind :method (car mdef) () (cdr mdef)}
-                         (collect-d= :- b))) .x. ()}
+                         (unreduce-rhs :- b))) .x. ()}
       ;;{car b == '; ;; doen't work because ; is consumed at this point.
       ;;   $ `(,@(method-lambda-list params) ,@(nreverse entries)) .x. cdr b}
         {t $ error "BINFIX def generic has a trailing ~S" (ldiff b {'; in b})};
@@ -375,6 +381,14 @@
       ;; global declarations
       ( declaim                   declaim                   :progn :prefix :quote-rhs )
       ( proclaim                  proclaim                  :progn :prefix :quote-rhs ))
+     (( cond       cond          :rhs-implicit-progn => :prefix)  ;; does not require => to have priority; :rhs-implicit-progn must be first prop.
+      ( case       case          :rhs-implicit-progn => :prefix)  ;;   ... same ...
+      (ccase      ccase          :rhs-implicit-progn => :prefix)  ;;   ... same ...
+      (ecase      ecase          :rhs-implicit-progn => :prefix)  ;;   ... same ...
+      ( typecase   typecase      :rhs-implicit-progn => :prefix)  ;;   ... same ...
+      (ctypecase  ctypecase      :rhs-implicit-progn => :prefix)  ;;   ... same ...
+      (etypecase  etypecase      :rhs-implicit-progn => :prefix)  ;;   ... same ...
+     )
 
      (( let             let             :rhs-lbinds);;-------LET constructs
       ( let*            let*            :rhs-lbinds)
@@ -383,26 +397,22 @@
       ( prog            prog            :rhs-lbinds))
      (( macrolet        macrolet        :rhs-fbinds)
       ( flet            flet            :rhs-fbinds)
-      ( labels          labels          :rhs-fbinds))
+      ( labels          labels          :rhs-fbinds)
+     )
      (( :==             defmacro        :def)
       ( :=              defun           :def)
       ( :-              defmethod       :defm)
       ( :type=          deftype         :def))
+
      (( block    block     :prefix);;------------------------PREFIX FORMS
       ( tagbody  tagbody   :prefix)
       ( catch    catch     :prefix)
       ( prog1    prog1     :prefix)
       ( prog2    prog2     :prefix)
-      ( progn    progn     :prefix)
-      ( cond     cond      :prefix);;------------------------COND/CASE FORMS
-      ( case     case      :prefix)
-      ( ccase    ccase     :prefix)
-      ( ecase    ecase     :prefix)
-      ( typecase typecase  :prefix)
-      (etypecase etypecase :prefix)
-      (ctypecase ctypecase :prefix))
+      ( progn    progn     :prefix))
+
      ((  ?   ()         :split));;----------------------------$pliters
-     ((  $   ()         :split))
+
      (( =... multiple-value-setq   :quote-lhs)) ;;------------ASSIGNMENT 
      (( .=   setf)
       ( +=   incf)
@@ -414,6 +424,9 @@
       (psetq psetq :rhs-sbinds))
      (( setf setf  :rhs-ebinds)
       (psetf psetf :rhs-ebinds))
+
+     ((  $   ()         :split))
+
      ((.@    mapc       :rhs-args) ;;-------------------------MAPPING
       (..@   mapl       :rhs-args)
       ( @/   reduce     :rhs-args)
@@ -577,6 +590,8 @@
          (join (unit form1) (unit form2)))
        (unit form1);
 
+ implicit-progn e := cddr $ binfix `(progn () ; ,@e);
+
  binfix e &optional (max-priority *no-of-bops*) :=
    labels
      unreduce e op &optional args arg =
@@ -679,6 +694,12 @@
                    if {:prefix in op-prop}
                       {singleton $ binfix $ `(,@lhs ,(singleton (macroexpand-1 `(,op-lisp ,@rhs))))}
                       (error "BINFIX macro implemented only for :prefix OPs")}
+                {:rhs-implicit-progn == car op-prop && cadr op-prop in rhs $ ;; looks ahead to allow other variants of the same op
+                   {rhs-split rhs-head =.. (unreduce-rhs (cadr op-prop) rhs)
+                      binfix `(,@lhs
+                               (,op-lisp ,@{let h = (binfix rhs-head) h && list h}
+                                ,@(mapcar {spl -> binfix (car spl) :. implicit-progn (cdr spl)}
+                                          rhs-split)))}}
                 {:unreduce in op-prop && position op rhs $ ;;position necessary...
                   let u = (unreduce rhs op `(,(binfix lhs),op-lisp))
                      cond {lhs $ u}

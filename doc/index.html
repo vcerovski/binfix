@@ -2,7 +2,7 @@
 
 <h1>BINFIX</h1>
 
-<p>Viktor Cerovski, Jun 2019.</p>
+<p>Viktor Cerovski, July 2019.</p>
 
 <p><a href="https://travis-ci.org/vcerovski/binfix"><img src="https://travis-ci.org/vcerovski/binfix.png" alt="Build Status" title="" /></a>
 <a href="http://quickdocs.org/binfix/"><img src="http://quickdocs.org/badge/binfix.svg" alt="Quicklisp dist" title="" /></a></p>
@@ -15,8 +15,9 @@
 S-expressions of Common LISP ranging from simple arithmetic and logical
 forms to whole programs.</p>
 
-<p><strong>NEW FEATURE</strong>: <em>B-terms</em>, allowing <a href="#Indexing">indexing</a>-like operations
-using square brackets.</p>
+<p><strong>NEW FEATURE</strong> (July 2019): Introduced <code>=&gt;</code> for writing <a href="#Multiple-choice-forms"><code>cond</code> forms</a>,
+use of <code>?</code> is <em>depreciated</em>.
+<strong>NEW FEATURE</strong> (Jun 2019): <em>B-terms</em>, allowing <a href="#Indexing">indexing</a>-like operations</p>
 
 <p>There are a few important new features still to come.
 One of them, available from v0.16, is use of a single <code>;</code> symbol as a
@@ -58,7 +59,7 @@ reference 1.0 version.</p>
 <li><a href="#SETs">SETs</a></li>
 <li><a href="#Implicit-progn">Implicit <code>progn</code></a></li>
 <li><a href="#<code>$</code>plitter"><code>$</code>plitter</a></li>
-<li><a href="#Multiple-choice-forms">Multiple-choice forms</a></li>
+<li><a href="#Multiple-choice-forms">Multiple-choice forms (<strong>new feature</strong>)</a></li>
 <li><a href="#Destructuring-multiple-values">Destructuring, multiple values</a></li>
 <li><a href="#Loops">Loops</a></li>
 <li><a href="#Hash-tables-and-association-lists">Hash tables and association lists</a></li>
@@ -975,7 +976,7 @@ example, as well as described in the next section.</p>
 
 <p><a name="Multiple-choice-forms"></a></p>
 
-<h3>Multiple-choice forms (<code>cond</code>, <code>case</code>, ...)</h3>
+<h3>Multiple-choice forms (<code>cond</code>, <code>case</code>, ...) (<strong>new feature</strong>)</h3>
 
 <p>An alternative syntax to describe multiple-choice forms is to use <code>?</code> and <code>;</code></p>
 
@@ -983,6 +984,50 @@ example, as well as described in the next section.</p>
       q x ? g x;
       r x ? h x;
         t ? x}
+</code></pre>
+
+<p>Use of <code>?</code> is <strong>depreciated</strong> and will be removed in the future.
+Prefered way to write such a form is to use <code>=&gt;</code> instead:</p>
+
+<pre><code>{cond p x =&gt; f x;
+      q x =&gt; g x;
+      r x =&gt; h x;
+        t =&gt; x}
+</code></pre>
+
+<p>Similarly, <code>case</code>-like forms accept a B-expr before <code>=&gt;</code>-clauses,</p>
+
+<pre><code>{ecase f x;
+   0 1 2 =&gt; #\a;
+   3 4   =&gt; #\b;
+   6     =&gt; #\c}
+</code></pre>
+
+<p>where in simple cases <code>=&gt;</code> can be ommited</p>
+
+<pre><code>'{case f a; 1 a; 2 b; 3 c}
+</code></pre>
+
+<p>=></p>
+
+<pre><code>(case (f a) (1 a) (2 b) (3 c))
+</code></pre>
+
+<p>Writing of implicit-progn in each clause is also supported in a straightforward
+way</p>
+
+<pre><code>{ecase f x;
+   0 1 2 =&gt; print "a"; g #\a;
+   3 4   =&gt; print "b"; g #\b;
+   6     =&gt; print "c"; h #\c}
+</code></pre>
+
+<p>=></p>
+
+<pre><code>(ecase (f x)
+  ((0 1 2) (print "a") (g #\a))
+  ((3 4)   (print "b") (g #\b))
+  (6       (print "c") (h #\c)))
 </code></pre>
 
 <p>See also <a href="#ordinal"><code>ordinal</code> example below</a>.</p>
@@ -1245,10 +1290,10 @@ t
    let* a = i mod 10
         b = i mod 100
       suf = {cond
-               a = b = 1 || a = 1 &amp;&amp; 21 &lt;= b &lt;= 91 ? "st";
-               a = b = 2 || a = 2 &amp;&amp; 22 &lt;= b &lt;= 92 ? "nd";
-               a = b = 3 || a = 3 &amp;&amp; 23 &lt;= b &lt;= 93 ? "rd";
-                                                t  ? "th"}
+               a = b = 1 || a = 1 &amp;&amp; 21 &lt;= b &lt;= 91 =&gt; "st";
+               a = b = 2 || a = 2 &amp;&amp; 22 &lt;= b &lt;= 92 =&gt; "nd";
+               a = b = 3 || a = 3 &amp;&amp; 23 &lt;= b &lt;= 93 =&gt; "rd";
+                                                t  =&gt; "th"}
         format () "~D~a" i suf}
 </code></pre>
 
@@ -1258,10 +1303,10 @@ t
    let* a = i mod 10
         b = i mod 100
       suf = {cond
-               = a b 1 or = a 1 and &lt;= b 21 91 ? "st";
-               = a b 2 or = a 2 and &lt;= b 22 92 ? "nd";
-               = a b 3 or = a 3 and &lt;= b 23 93 ? "rd";
-                                            t  ? "th"}
+               = a b 1 or = a 1 and &lt;= b 21 91 =&gt; "st";
+               = a b 2 or = a 2 and &lt;= b 22 92 =&gt; "nd";
+               = a b 3 or = a 3 and &lt;= b 23 93 =&gt; "rd";
+                                            t  =&gt; "th"}
         format () "~D~a" i suf}
 </code></pre>
 
@@ -1436,7 +1481,7 @@ symbols:</p>
 
 <pre><code>(defpackage :my-package (:use :cl :binfix)
    #+sbcl (:shadowing-import-from :binfix :struct :var)
-   #+(ccl ecl) (:shadowing-import-from :binfix :@))
+   #+(ccl ecl) (:shadowing-import-from :binfix :@ :=&gt;))
 </code></pre>
 
 <p><a name="Implementation"></a></p>
@@ -1617,17 +1662,17 @@ bundled with <code>vim</code>.</p>
 
 <p>Here are gui and terminal looks:</p>
 
-<p><img src="syntax-gui.png" alt="gui" title="" />
+<p><img src="https://github.com/vcerovski/binfix/doc/syntax-gui.png" alt="gui" title="" />
 (theme: <code>solarized</code>, font: <code>Inconsolata Medium</code>)</p>
 
-<p><img src="syntax-term.png" alt="terminal" title="" />
+<p><img src="https://github.com/vcerovski/binfix/doc/syntax-term.png" alt="terminal" title="" />
 (theme: <code>herald</code>, font: <code>Terminus</code>)</p>
 
 <p><a name="Operation-properties"></a></p>
 
 <h3>Operation properties</h3>
 
-<table> <col style="width:7em">
+<table> <col style="width:8em">
 <tr><th>Property</th><th>Description</th></tr>
 <tr><td><code>:def
 </code></td> <td> Operation (OP) is a definition requiring LHS to has a name
@@ -1722,8 +1767,9 @@ bundled with <code>vim</code>.</p>
 </td></tr>
 
 <tr><td><code>:progn
-</code></td><td> OP is in a progn-monad ([example](#progn-m)).  Currently
-                 implemented for :prefix :quote-rhs/:macro.
+</code></td><td> OP is in a progn-monad <a link=#progn-m>example</a>.  Currently
+                 implemented in combination with <code>:prefix</code>,
+                 <code>:quote-rhs</code>/<code>:macro</code> properties.
 </td></tr>
 
 <tr><td><code>:single
@@ -1735,7 +1781,11 @@ bundled with <code>vim</code>.</p>
 <tr><td><code>:term
 </code></td><td> OP is a B-term. For example, Bop <code>binfix::index</code>
                  makes<br> <code>{a (binfix::index i (1+ j))}</code> become
-                 <code>(aref a i (1+ j))</code>.
+                 <code>(aref a i (1+ j))</code> (<b>new feature</b>)
+</td></tr>
+<tr><td><code>:rhs-implicit-progn <i>symbol</i>
+</code></td><td> OP splits the rhs in block of Bexpr separated by
+                 <code><i>symbol</i></code> and <code>;</code> (<b>new feature</b>)
 </td></tr>
 </table>
 
@@ -1743,8 +1793,9 @@ bundled with <code>vim</code>.</p>
 
 <h3>Unused symbols</h3>
 
-<p>BINFIX does not use <code>~</code>, <code>%</code> and <code>^</code>.  The symbol <code>?</code> will also be unused.
-The current plan is that these four will be left for user-defined Bops.</p>
+<p>BINFIX does not use symbols <code>~</code>, <code>%</code> and <code>^</code>.  The use of splitter <code>?</code> as a Bop
+is <strong>depreciated</strong> and will be removed.  The current plan is that these four
+will be left for user-defined Bops.</p>
 
 <p><a name="List-of-all-operations"></a></p>
 
@@ -1780,6 +1831,13 @@ the same priority:</p>
   define-modify-macro            define-modify-macro             :progn          :prefix         :quote-rhs
   declaim        declaim         :progn          :prefix         :quote-rhs
   proclaim       proclaim        :progn          :prefix         :quote-rhs )
+( cond           cond            :rhs-implicit-progn             =&gt;              :prefix
+  case           case            :rhs-implicit-progn             =&gt;              :prefix
+  ccase          ccase           :rhs-implicit-progn             =&gt;              :prefix
+  ecase          ecase           :rhs-implicit-progn             =&gt;              :prefix
+  typecase       typecase        :rhs-implicit-progn             =&gt;              :prefix
+  ctypecase      ctypecase       :rhs-implicit-progn             =&gt;              :prefix
+  etypecase      etypecase       :rhs-implicit-progn             =&gt;              :prefix )
 ( let            let             :rhs-lbinds
   let*           let*            :rhs-lbinds
   symbol-macrolet                symbol-macrolet :rhs-lbinds
@@ -1797,16 +1855,7 @@ the same priority:</p>
   catch          catch           :prefix
   prog1          prog1           :prefix
   prog2          prog2           :prefix
-  progn          progn           :prefix
-  cond           cond            :prefix
-  case           case            :prefix
-  ccase          ccase           :prefix
-  ecase          ecase           :prefix
-  typecase       typecase        :prefix
-  etypecase      etypecase       :prefix
-  ctypecase      ctypecase       :prefix )
-( ?              nil             :split )
-( $              nil             :split )
+  progn          progn           :prefix )
 ( =...           multiple-value-setq             :quote-lhs )
 ( .=             setf
   +=             incf
@@ -1818,6 +1867,7 @@ the same priority:</p>
   psetq          psetq           :rhs-sbinds )
 ( setf           setf            :rhs-ebinds
   psetf          psetf           :rhs-ebinds )
+( $              nil             :split )
 ( .@             mapc            :rhs-args
   ..@            mapl            :rhs-args
   @/             reduce          :rhs-args

@@ -1,8 +1,8 @@
 (defpackage #:binfix/5am
   (:use #:cl #:binfix)
   #+sbcl (:shadowing-import-from #:binfix #:struct #:var)
-  #+ecl (:shadowing-import-from #:binfix #:@)
-  #+ccl (:shadowing-import-from #:binfix #:@)
+  #+ecl (:shadowing-import-from #:binfix #:@ #:=>)
+  #+ccl (:shadowing-import-from #:binfix #:@ #:=>)
   (:import-from #:fiveam
       #:def-suite #:in-suite #:test #:is #:is-true #:signals
       #:*on-error* #:*on-failure* #:run!)
@@ -138,6 +138,7 @@
   (B2 is (equal  "'{progn a + b}"      '(progn (+ a b))        ))
   (B2 is (equal  "'{f progn a + b}"    '(f (progn (+ a b)))    ))
   (B2 is (equal  "'{x / progn a + b}"  '(/ x (progn (+ a b)))  ))
+  (B1 is-true    " {t == block b; return-from b t} "            )
 )
 
 (test also-prefix
@@ -236,6 +237,32 @@
                  (setf (car x) (f x)
                        (cdr x) (mapcar (lambda (y) (g y)) x)))
                xs)  ))
+  (B2 is (equal
+           "'{cond (a) => (f); 1; g => 22; (f) => nil}"
+            '(cond ((a) (f) 1) (g 22) ((f) nil))         ))
+  (B2 is (equal "
+            '{cond x > 1 => x;
+                   x < 1 => print 1;
+                            sin x;
+                   b => let y = g y;
+                          x + y ** 3;
+                   t => a}
+          " '(cond ((> x 1) x)
+                   ((< x 1) (print 1)
+                            (sin x))
+                   (b (let ((y (g y)))
+                         (+ x (expt y 3))))
+                   (t a))                          ))
+  (B2 is (equal "'{ecase f x;
+                    0 1 2 => print 'a; g a;
+                    3 4   => print 'b; g b;
+                    6     => print 'c; h c}
+                "'(ecase (f x)
+                    ((0 1 2) (print 'a) (g a))
+                    ((3 4)   (print 'b) (g b))
+                    (6       (print 'c) (h c)))     ))
+  (B2 is (equal "'{case f a; 1 a; 2 b; 3 c}"
+                 '(case (f a) (1 a) (2 b) (3 c))   ))
 )
 
 (test definitions

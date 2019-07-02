@@ -2,7 +2,7 @@
 
 # BINFIX
 
-Viktor Cerovski, Jun 2019.
+Viktor Cerovski, July 2019.
 
 [![Build Status](https://travis-ci.org/vcerovski/binfix.png)](https://travis-ci.org/vcerovski/binfix)
 [![Quicklisp dist](http://quickdocs.org/badge/binfix.svg)](http://quickdocs.org/binfix/)
@@ -14,8 +14,9 @@ BINFIX (blend from "Binary Infix") is a poweful infix syntax notation for
 S-expressions of Common LISP ranging from simple arithmetic and logical
 forms to whole programs.
 
-**NEW FEATURE**: _B-terms_, allowing [indexing](#Indexing)-like operations
-using square brackets.
+**NEW FEATURE** (July 2019): Introduced `=>` for writing [`cond` forms](#Multiple-choice-forms),
+use of `?` is *depreciated*.
+**NEW FEATURE** (Jun 2019): _B-terms_, allowing [indexing](#Indexing)-like operations
 
 There are a few important new features still to come.
 One of them, available from v0.16, is use of a single `;` symbol as a
@@ -52,7 +53,7 @@ reference 1.0 version.
     * [SETs](#SETs)
     * [Implicit `progn`](#Implicit-progn)
     * [`$`plitter](#`$`plitter)
-    * [Multiple-choice forms](#Multiple-choice-forms)
+    * [Multiple-choice forms (**new feature**)](#Multiple-choice-forms)
     * [Destructuring, multiple values](#Destructuring-multiple-values)
     * [Loops](#Loops)
     * [Hash tables and association lists](#Hash-tables-and-association-lists)
@@ -851,7 +852,7 @@ Another splitter is `?`, which can be used instead of `$` in the previous
 example, as well as described in the next section.
 
 <a name="Multiple-choice-forms"></a>
-### Multiple-choice forms (`cond`, `case`, ...)
+### Multiple-choice forms (`cond`, `case`, ...) (**new feature**)
 
 An alternative syntax to describe multiple-choice forms is to use `?` and `;`
 
@@ -859,6 +860,44 @@ An alternative syntax to describe multiple-choice forms is to use `?` and `;`
           q x ? g x;
           r x ? h x;
             t ? x}
+
+Use of `?` is **depreciated** and will be removed in the future.
+Prefered way to write such a form is to use `=>` instead:
+
+    {cond p x => f x;
+          q x => g x;
+          r x => h x;
+            t => x}
+
+Similarly, `case`-like forms accept a B-expr before `=>`-clauses,
+
+    {ecase f x;
+       0 1 2 => #\a;
+       3 4   => #\b;
+       6     => #\c}
+
+where in simple cases `=>` can be ommited
+
+    '{case f a; 1 a; 2 b; 3 c}
+
+=>
+
+    (case (f a) (1 a) (2 b) (3 c))
+
+Writing of implicit-progn in each clause is also supported in a straightforward
+way
+
+    {ecase f x;
+       0 1 2 => print "a"; g #\a;
+       3 4   => print "b"; g #\b;
+       6     => print "c"; h #\c}
+
+=>
+
+    (ecase (f x)
+      ((0 1 2) (print "a") (g #\a))
+      ((3 4)   (print "b") (g #\b))
+      (6       (print "c") (h #\c)))
 
 See also [`ordinal` example below](#ordinal).
 
@@ -1089,10 +1128,10 @@ Converting an integer into ordinal string in English can be defined as
        let* a = i mod 10
             b = i mod 100
           suf = {cond
-                   a = b = 1 || a = 1 && 21 <= b <= 91 ? "st";
-                   a = b = 2 || a = 2 && 22 <= b <= 92 ? "nd";
-                   a = b = 3 || a = 3 && 23 <= b <= 93 ? "rd";
-                                                    t  ? "th"}
+                   a = b = 1 || a = 1 && 21 <= b <= 91 => "st";
+                   a = b = 2 || a = 2 && 22 <= b <= 92 => "nd";
+                   a = b = 3 || a = 3 && 23 <= b <= 93 => "rd";
+                                                    t  => "th"}
             format () "~D~a" i suf}
 
 It can be also written in a more "lispy" way without parens as
@@ -1101,10 +1140,10 @@ It can be also written in a more "lispy" way without parens as
        let* a = i mod 10
             b = i mod 100
           suf = {cond
-                   = a b 1 or = a 1 and <= b 21 91 ? "st";
-                   = a b 2 or = a 2 and <= b 22 92 ? "nd";
-                   = a b 3 or = a 3 and <= b 23 93 ? "rd";
-                                                t  ? "th"}
+                   = a b 1 or = a 1 and <= b 21 91 => "st";
+                   = a b 2 or = a 2 and <= b 22 92 => "nd";
+                   = a b 3 or = a 3 and <= b 23 93 => "rd";
+                                                t  => "th"}
             format () "~D~a" i suf}
 
 which can be tried using `@.` (`mapcar`)
@@ -1261,7 +1300,7 @@ symbols:
 
     (defpackage :my-package (:use :cl :binfix)
        #+sbcl (:shadowing-import-from :binfix :struct :var)
-       #+(ccl ecl) (:shadowing-import-from :binfix :@))
+       #+(ccl ecl) (:shadowing-import-from :binfix :@ :=>))
 
 <a name="Implementation"></a>
 ## Implementation
@@ -1434,16 +1473,16 @@ bundled with `vim`.
 
 Here are gui and terminal looks:
 
-![gui](https://github.com/vcerovski/binfix/doc/syntax-gui.png)
+![gui](syntax-gui.png)
 (theme: `solarized`, font: `Inconsolata Medium`)
 
-![terminal](https://github.com/vcerovski/binfix/doc/syntax-term.png)
+![terminal](syntax-term.png)
 (theme: `herald`, font: `Terminus`)
 
 <a name="Operation-properties"></a>
 ### Operation properties
 
-<table> <col style="width:7em">
+<table> <col style="width:8em">
 <tr><th>Property</th><th>Description</th></tr>
 <tr><td><code>:def
 </code></td> <td> Operation (OP) is a definition requiring LHS to has a name
@@ -1538,8 +1577,9 @@ Here are gui and terminal looks:
 </td></tr>
 
 <tr><td><code>:progn
-</code></td><td> OP is in a progn-monad ([example](#progn-m)).  Currently
-                 implemented for :prefix :quote-rhs/:macro.
+</code></td><td> OP is in a progn-monad <a link=#progn-m>example</a>.  Currently
+                 implemented in combination with <code>:prefix</code>,
+                 <code>:quote-rhs</code>/<code>:macro</code> properties.
 </td></tr>
 
 <tr><td><code>:single
@@ -1551,15 +1591,20 @@ Here are gui and terminal looks:
 <tr><td><code>:term
 </code></td><td> OP is a B-term. For example, Bop <code>binfix::index</code>
                  makes<br> <code>{a (binfix::index i (1+ j))}</code> become
-                 <code>(aref a i (1+ j))</code>.
+                 <code>(aref a i (1+ j))</code> (<b>new feature</b>)
+</td></tr>
+<tr><td><code>:rhs-implicit-progn <i>symbol</i>
+</code></td><td> OP splits the rhs in block of Bexpr separated by
+                 <code><i>symbol</i></code> and <code>;</code> (<b>new feature</b>)
 </td></tr>
 </table>
 
 <a name="Unused-symbols"></a>
 ### Unused symbols
 
-BINFIX does not use `~`, `%` and `^`.  The symbol `?` will also be unused.
-The current plan is that these four will be left for user-defined Bops.
+BINFIX does not use symbols `~`, `%` and `^`.  The use of splitter `?` as a Bop
+is **depreciated** and will be removed.  The current plan is that these four
+will be left for user-defined Bops.
 
 
 <a name="List-of-all-operations"></a>
@@ -1595,6 +1640,13 @@ the same priority:
       define-modify-macro            define-modify-macro             :progn          :prefix         :quote-rhs
       declaim        declaim         :progn          :prefix         :quote-rhs
       proclaim       proclaim        :progn          :prefix         :quote-rhs )
+    ( cond           cond            :rhs-implicit-progn             =>              :prefix
+      case           case            :rhs-implicit-progn             =>              :prefix
+      ccase          ccase           :rhs-implicit-progn             =>              :prefix
+      ecase          ecase           :rhs-implicit-progn             =>              :prefix
+      typecase       typecase        :rhs-implicit-progn             =>              :prefix
+      ctypecase      ctypecase       :rhs-implicit-progn             =>              :prefix
+      etypecase      etypecase       :rhs-implicit-progn             =>              :prefix )
     ( let            let             :rhs-lbinds
       let*           let*            :rhs-lbinds
       symbol-macrolet                symbol-macrolet :rhs-lbinds
@@ -1612,16 +1664,7 @@ the same priority:
       catch          catch           :prefix
       prog1          prog1           :prefix
       prog2          prog2           :prefix
-      progn          progn           :prefix
-      cond           cond            :prefix
-      case           case            :prefix
-      ccase          ccase           :prefix
-      ecase          ecase           :prefix
-      typecase       typecase        :prefix
-      etypecase      etypecase       :prefix
-      ctypecase      ctypecase       :prefix )
-    ( ?              nil             :split )
-    ( $              nil             :split )
+      progn          progn           :prefix )
     ( =...           multiple-value-setq             :quote-lhs )
     ( .=             setf
       +=             incf
@@ -1633,6 +1676,7 @@ the same priority:
       psetq          psetq           :rhs-sbinds )
     ( setf           setf            :rhs-ebinds
       psetf          psetf           :rhs-ebinds )
+    ( $              nil             :split )
     ( .@             mapc            :rhs-args
       ..@            mapl            :rhs-args
       @/             reduce          :rhs-args
