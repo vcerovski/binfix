@@ -63,6 +63,7 @@
   (B2 is (equal  "'{1 + 2}            " '(+ 1 2)                   ) "Arithmetics sanity check.")
   (B2 is ( =     " {1 / 2}            "  1/2                       ))
   (B2 is (equal  "'{a - b - c - d}    " '(- a b c d)               ))
+  (B2 is (equal  "'{- a - b - c - d}  " '(- (- a) b c d)           ))
   (B2 is (equal  "'{a + b - c + d}    " '(+ a (- b c) d)           ))
   (B2 is (equal  "'{- a * b}          " '(- (* a b))               ))
   (B2 is (equal  "'{a + b * c}        " '(+ a (* b c))             ))
@@ -137,6 +138,23 @@
   (B2 is (equal  "'{progn a + b}"      '(progn (+ a b))        ))
   (B2 is (equal  "'{f progn a + b}"    '(f (progn (+ a b)))    ))
   (B2 is (equal  "'{x / progn a + b}"  '(/ x (progn (+ a b)))  ))
+)
+
+(test also-prefix
+  (B2 is (equal  "'{min f x y; g y x; h x}"           '(min (f x y) (g y x) (h x))          ))
+  (B2 is (equal  "'{or a and b; p; c and d; pred q}"  '(or (and a b) p (and c d) (pred q))  ))
+)
+
+(test also-unary
+  (B2 is (=      " { - 1 } "          -1              ))
+  (B2 is (=      " {- $ 1} "          -1              ))
+  (B2 is (=      " {- $ / $ 2} "      -1/2            ))
+  (B2 is (equal  "'{- $ a + b - c}" '(- {a + b - c})  ))
+  (B2 is (equal  "'{- $ a * b - c}" '(- {a * b - c})  ))
+  (B2 is (equal  "'{x > 0 $  - $ sqrt x}"
+                  '((> x 0) (- (sqrt x)))             ))
+  (B2 is (equal  "'{.not. $ a .xor. b}"
+                  '(bit-not (bit-xor a b))            ))
 )
 
 (test sets/binds
@@ -269,6 +287,11 @@
 
 (test parsing-errors
   (Berror  "      {a; b}       ")
+  (Berror  "      {a &}        ")
+  (Berror  "      {a $}        ")
+  (Berror  "      {$ a}        ")
+  (Berror  "   {progn $ a}     ")
+  (Berror  "    {min $ a}      ")
   (Berror  "      {a ->}       ")
   (Berror  "      {f :=}       ")
   (Berror  "      {f :-}       ")

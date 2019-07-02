@@ -707,9 +707,14 @@
                    llist decls =.. (lambda-list lhs)
                      `(,op-lisp ,llist ,(car rhs)
                                 ,@(decl*-binfix+ (cdr rhs) decls))}
+
                 {:split in op-prop $
-                   `(,(binfix lhs)
-                     ,(binfix rhs))}
+                   cond {cdr lhs || null (get (car lhs) 'properties)
+                           $ `(,(binfix lhs) ,(binfix rhs))}
+                        {:also-unary in third (get (car lhs) 'properties) ;; needed for handling {- $ ...}
+                           $ (binfix `(,@lhs ,(binfix rhs)))}
+                        {t $ error "BINFIX: missing l.h.s of ~S~@
+                                    with r.h.s:~%~S" (car lhs) rhs}}
 
                 {:prefix in op-prop $
                    binfix `(,@lhs ,(cond {:quote-rhs in op-prop  $ `(,op,@rhs)}
