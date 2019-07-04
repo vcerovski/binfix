@@ -167,6 +167,13 @@
            "'{*print-case* =. :downcase}"
             '(setq *print-case* :downcase)  ))
 
+  (B2 is (equal "'{x -> a =. x}"     '(lambda (x) (setq a x))                      ))
+  (B2 is (equal "'{x -> a _'x .= x}" '(lambda (x) (setf (slot-value a 'x) x))      ))
+  (B2 is (equal "'{x -> s-x a .= x}" '(lambda (x) (setf (s-x a) x))                ))
+
+  (B2 is (equal "'{i -> a[i] += d; b[i] += d .@ ind}"
+                 '(mapc (lambda (i) (incf (aref a i) d) (incf (aref b i) d)) ind)  ))
+
   (B2 is (equal"
             '{let x :bit = 1
                 x}"

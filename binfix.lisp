@@ -411,14 +411,8 @@
       ( prog2    prog2     :prefix)
       ( progn    progn     :prefix))
 
-     ((  ?   ()         :split));;----------------------------$pliters
+     ((  ?   ()         :split))   ;; DEPRECIATED
 
-     (( =... multiple-value-setq   :quote-lhs)) ;;------------ASSIGNMENT 
-     (( .=   setf)
-      ( +=   incf)
-      ( -=   decf)
-      (  =.  setq)
-      ( .=.  set));; DEPRECIATED
      (( setq setq  :rhs-sbinds)
       ( set  set   :rhs-sbinds)
       (psetq psetq :rhs-sbinds))
@@ -445,6 +439,13 @@
      ((values values    :prefix   :single)
       ( .x.   values    :unreduce :single))
      (( loop  loop      :prefix   :quote-rhs))
+
+     (( =... multiple-value-setq   :quote-lhs)  ;;------------ASSIGNMENT 
+      ( .=   setf)
+      ( +=   incf)
+      ( -=   decf)
+      (  =.  setq)
+      ( .=.  set));; DEPRECIATED
      (( ||       or     :unreduce);;-------------------------LOGICAL OPS
       ( or       or     :unreduce :also-prefix))
      (( &&       and    :unreduce)

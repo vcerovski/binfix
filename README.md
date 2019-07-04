@@ -10,7 +10,7 @@ Viktor Cerovski, July 2019.
 <a name="Introduction"></a>
 ## Introduction
 
-BINFIX (blend from "Binary Infix") is a poweful infix syntax notation for
+BINFIX (blend from "Binary Infix") is a powerful infix syntax notation for
 S-expressions of Common LISP ranging from simple arithmetic and logical
 forms to whole programs.
 
@@ -32,7 +32,7 @@ reference 1.0 version.
 -----------------------
 ## Content
 
-* [Installation](#Instalation)
+* [Installation](#Installation)
 * [B-expression](#B-expression)
 * [Examples](#Examples)
     * [Arithmetic and logical expressions](#Arithmetic-and-logical-expressions)
@@ -78,8 +78,8 @@ reference 1.0 version.
     * [List of all operations](#List-of-all-operations)
 
 -----------------------
-<a name="Instalation"></a>
-## Instalation
+<a name="Installation"></a>
+## Installation
 
 [Quicklisp](https://www.quicklisp.org/) makes the
 downloading/installation/loading trivial:
@@ -95,7 +95,7 @@ System can be tested via
     (asdf:test-system :binfix)
 
 Supported LISP implementations are [SBCL](http://sbcl.org) (also used for
-develpoment,) [Clozure CL](https://ccl.clozure.com/), 
+development,) [Clozure CL](https://ccl.clozure.com/), 
 [ECL](https://en.wikipedia.org/wiki/Embeddable_Common_Lisp) (tested with
 v15.3.7 and v16.1.3) and [ABCL](https://abcl.org/), while
 [CLISP](https://github.com/rurban/clisp) as of this release [is not
@@ -203,7 +203,7 @@ Operation `:.` stands for `cons`. For instance,
 
 => `(-2 0 1 2 3 4 5 6 7 8 9)`
 
-with the familiar behaviour:
+with the familiar behavior:
 
     {1 :. 2 :. 3 equal '(1 2 . 3)}
 
@@ -258,7 +258,7 @@ Quoting reveals the expanded S-expr
 
 Indeed, `@` is left-associative, standing for `funcall`.
 
-More complicated types can be also explicitely given after an
+More complicated types can be also explicitly given after an
 argument, 
 
     '{x :|or symbol number| -> x :. x}
@@ -329,7 +329,7 @@ and comments have a straightforward syntax:
 <a name="&optional"></a>
 #### `&optional` is optional
 
-Explicitely tail-recursive version of `f`
+Explicitly tail-recursive version of `f`
 
     '{fac n m = 1 :=
        declare (integer m n)
@@ -344,7 +344,7 @@ Explicitely tail-recursive version of `f`
           m
           (fac (- n 1) (* n m))))
 
-As you may by now expect, the following is also permited
+As you may by now expect, the following is also permitted
 
     {fac n :integer m :integer = 1 :=
       if {n <= 0} m
@@ -440,7 +440,7 @@ symbols in binds and lambda-lists by an (optional) keyword representing
 the type (for instance `:fixnum`, `:my-class`, `:|simple-array single-float|`,
 `:|or symbol number|`, `:|{symbol or number}|`, etc.)
 
-OPs that represent LISP forms which allow declaration(s), in BINFIX can 
+Bops that represent LISP forms which allow declaration(s), in BINFIX can 
 have in addition to the standard `(declare ...)` form also unparenthesized
 variant:
 
@@ -627,7 +627,7 @@ unparenthesized (see [example](#Cartesian-to-polar-coordinates).)
 is covered next.
 
 <a name="progn-m"></a>
-#### Definitions and delcarations without parens
+#### Definitions and declarations without parens
 
 BINFIX allows writing of standard LISP definition forms without outer parens,
 as in
@@ -719,7 +719,7 @@ Note the three levels of parens gone.
 <a name="SETs"></a>
 ### SETs
 
-In addition to `=.`, `=...` and `.=` OPs representing, respectively, a single
+In addition to `=.`, `=...` and `.=`, Bops representing, respectively, a single
 `setq`, `multiple-value-setq` and `setf` assignment, multiple assignments via
 SETs can be done using `=`,
 
@@ -776,6 +776,46 @@ It is also possible to mix infix SETFs with other expressions:
               c d)
         (h a c)))
 
+`setf` and `setq` can be also represented via `.=` and `=.` Bops,
+and the main difference is in priority---the latter can be embedded
+within lambdas without parens. For instance, both
+
+    '{a -> {setf car a = 0} .@ list}
+
+and
+
+    '{a -> car a .= 0 .@ list}
+
+=>
+
+    (mapc (lambda (a) (setf (car a) 0)) list)
+
+In the case of implicit-progn within lambda,
+
+    '{a b -> {setf car a = car b;
+                   car b = 0}
+          .@ l1 l2}
+
+=>
+
+    (mapc (lambda (a b)
+            (setf (car a) (car b)
+                  (car b) 0))
+          l1 l2)
+
+while
+
+    '{a b -> car a .= car b;
+             car b .= 0
+          .@ l1 l2}
+
+=>
+
+    (mapc (lambda (a b)
+            (setf (car a) (car b))
+            (setf (car b) 0))
+          l1 l2)
+
 <a name="Implicit-progn"></a>
 ### Implicit `progn`
 
@@ -805,7 +845,7 @@ Since BINFIX is a free-form notation, the following one-liner also works:
 
     '{x -> prog2 format t "Calculating... "; f{x * x}; format t "done.~%"}
 
-Binfix `<&` stands for `prog1`,
+Bop `<&` stands for `prog1`,
 
     '{x -> {f {x * x} <&
             format t "Calculation done.~%"}}
@@ -820,14 +860,14 @@ while `multiple-value-prog1` is given by `<&..`.
 ### `$`plitter
 
 Infix `$` is a vanishing OP, leaving only its arguments,
-effectivelly splitting the list in two parts.
+effectively splitting the list in two parts.
 
     '{f $ g $ h x y z}
 
 => `(f (g (h x y z)))`
 
 So its effect here is similar to `$` in Haskell. 
-Or perphaps:
+Or perhaps:
 
     '{declare $ optimize (speed 1) (safety 1)}
 
@@ -862,7 +902,7 @@ An alternative syntax to describe multiple-choice forms is to use `?` and `;`
             t ? x}
 
 Use of `?` is **depreciated** and will be removed in the future.
-Prefered way to write such a form is to use `=>` instead:
+Preferred way to write such a form is to use `=>` instead:
 
     {cond p x => f x;
           q x => g x;
@@ -876,7 +916,7 @@ Similarly, `case`-like forms accept a B-expr before `=>`-clauses,
        3 4   => #\b;
        6     => #\c}
 
-where in simple cases `=>` can be ommited
+where in simple cases `=>` can be omitted
 
     '{case f a; 1 a; 2 b; 3 c}
 
@@ -961,8 +1001,8 @@ Loops can be also nested without writing parens:
 <a name="Hash-tables-and-association-lists"></a>
 #### Hash tables and association lists
 
-Hash tables are supported in binfix through OPs `~!` (`gethash`),
-`~~` (`remhash`) and `@~` (`maphash`).  See also [indexing](#Indexing).
+Hash tables are supported via `~!` (`gethash`),
+`~~` (`remhash`) and `@~` (`maphash`) Bops.  See also [indexing](#Indexing).
 
 Association lists are accessible via `!~~` (`assoc`) and `~~!` (`rassoc`).
 
@@ -1017,7 +1057,7 @@ which macroexpands into
 
     (gethash key table default)
 
-The following table summarizes indexing BOPs, from
+The following table summarizes indexing Bops, from
 the weakest to the strongest binding:
 
 <table>
@@ -1042,7 +1082,7 @@ the weakest to the strongest binding:
 
 `!..` and `th-value` are mere synonyms and thus of the same priority, as are
 `.!` `!.` and `!!.`, while `!!`
-is a weaker binding `!`, allowing easier writting of expr. with arithmetic
+is a weaker binding `!`, allowing easier writing of expr. with arithmetic
 operations with indices, like
 
 `{a !! i + j}`
@@ -1180,7 +1220,8 @@ Evaluation of the above returns `t` and prints the following
     (member 2 (join 'x (join '(1 2 3) (join '((a)) (* -1 2)))))
     => (2 3 (a) -2)
 
-Another way to write `join` in BINFIX is as a single `defgeneric` definition, using `def generic`,
+Another way to write `join` is as a single `defgeneric` definition, using `def
+generic`,
 
     {def generic join a b;
        "Generic join."
@@ -1246,7 +1287,7 @@ Now
 <a name="Cartesian-to-polar-coordinates"></a>
 #### Cartesian to polar coordinates
 
-An example from <em>Common LISP the Language 2nd ed.</em> where cartesian
+An example from <em>Common LISP the Language 2nd ed.</em> where Cartesian
 coordinates are converted into polar coordinates via change of class can be
 straightforwardly written in BINFIX as
 
@@ -1291,7 +1332,7 @@ where Steele's comments are left verbatim.
 <a name="packaging"></a>
 #### Using BINFIX in packages
 
-BINFIX can be included into packages by `defpackage`, with recomended `(:use
+BINFIX can be included into packages by `defpackage`, with recommended `(:use
 :binfix)` option.  `sbcl`, `ecl` and `ccl`, however, intern certain symbols so
 that simple import does not work and thus use of these symbols by binfix may(!)
 lead to incorrect parsing.  Here is then the implementation-sensitive
@@ -1318,7 +1359,7 @@ processes each one.
 <a name="proto-BINFIX"></a>
 ### proto-BINFIX
 
-Bootstraping is done beginning with proto-BINFIX,
+Bootstrapping is done beginning with proto-BINFIX,
 
     (defparameter *binfix*
       '((|;|    infix     (progn))
@@ -1366,7 +1407,7 @@ Bootstraping is done beginning with proto-BINFIX,
 which captures the basics of BINFIX.
 
 Since v0.15, BINFIX interns a symbol consisting of a single `;` char not
-followed by `;` char, while two or more consequtive `;` are interpreted
+followed by `;` char, while two or more consecutive `;` are interpreted
 as a usual LISP comment.  This behavior is limited to BINFIX
 expressions only, while outside of them the standard LISP rules apply.
 
@@ -1411,7 +1452,7 @@ The next bootstrap phase defines macros `def`, `def-lambda`, `let=`,
 which wraps up proto-BINFIX.
 
 Since v0.15, BINFIX interns a symbol consisting of a single `;` char not
-followed by `;` char, while two or more consequtive `;` are interpreted
+followed by `;` char, while two or more consecutive `;` are interpreted
 as starting a comment.  This behavior is limited to BINFIX
 expressions only, while outside of them the standard LISP rules apply.
 
@@ -1420,10 +1461,10 @@ lambda lists and `let`s, a longer list of OPs with properties, redefined
 `binfix` to its full capability, and, finally, several interface functions for
 dealing with OPs (`lsbinfix`, `defbinfix` and `rmbinfix`).
 
-Priorities of operations in proto-BINIFIX are given only relatively, with no
+Priorities of operations in proto-BINFIX are given only relatively, with no
 numerical values and thus with no two operations of the same priority.
 
-Lhs and rhs of proto-BINFIX expressions refer to other proto-BINFIX
+LHS and RHS of proto-BINFIX expressions refer to other proto-BINFIX
 expressions (since v0.22.3), which in particular means that there is
 no implicit-progn in proto-BINFIX let's and def's.
 
@@ -1431,8 +1472,8 @@ Since v0.20, symbol of a BINFIX operation has a list of properties stored into
 the symbol property `binfix::properties`, which includes a numerically given
 priority of the OP (which also considerably speeds up parsing.) The actual
 value of number representing priority is supposed to be immaterial since only
-relation to other OPs priority values is relevant.  Defining new same-priority
-OPs should be done via `defbinfix` with `:as` option, which may change priority
+relation to other Bops priority values is relevant.  Defining new same-priority
+Bops should be done via `defbinfix` with `:as` option, which may change priority
 values of many other OPs.
 
 <a name="binfix-macros"></a>
@@ -1441,7 +1482,7 @@ invoked recursively by the reader, `binfix` cannot be directly called for
 arbitrary macro transformation of BINFIX into BINFIX when standard macro
 helpers BACKTICK, COMA and COMA-AT are used. The reason is that `{`...`}` is
 invoked before them while the correct order would be after them.
-Examples of succesful combinations of backquoting and BINFIX are given
+Examples of successful combinations of backquoting and BINFIX are given
 [above](#Support-for-macros).
 
 <a name="CLISP-problems"></a>
@@ -1468,10 +1509,10 @@ has two problems with BINFIX:
 ### Syntax highlighting
 
 Provided `binfix.vim` file covers `vim` editor with a syntax-highlighting
-extension, which is based and dependends on `lisp.vim` that comes 
+extension, which is based and depends on `lisp.vim` that comes 
 bundled with `vim`.
 
-Here are gui and terminal looks:
+Here are GUI and terminal looks:
 
 ![gui](syntax-gui.png)
 (theme: `solarized`, font: `Inconsolata Medium`)
@@ -1591,11 +1632,12 @@ Here are gui and terminal looks:
 <tr><td><code>:term
 </code></td><td> OP is a B-term. For example, Bop <code>binfix::index</code>
                  makes<br> <code>{a (binfix::index i (1+ j))}</code> become
-                 <code>(aref a i (1+ j))</code> (<b>new feature</b>)
+                 <code>(aref a i (1+ j))</code> (<strong>new feature</strong>)
 </td></tr>
 <tr><td><code>:rhs-implicit-progn <i>symbol</i>
-</code></td><td> OP splits the rhs in block of Bexpr separated by
-                 <code><i>symbol</i></code> and <code>;</code> (<b>new feature</b>)
+</code></td><td> OP splits the RHS in block of Bexpr separated by
+                 <code><i>symbol</i></code> and <code>;</code>
+                 (<strong>new feature</strong>)
 </td></tr>
 </table>
 
@@ -1610,8 +1652,8 @@ will be left for user-defined Bops.
 <a name="List-of-all-operations"></a>
 ### List of all operations
 
-Command `(lsbinfix)` prints the table of all BINFIX OPs and their properties
-from the weakest- to the strongest-binding OP, with parens enclosing OP(s) of
+Command `(lsbinfix)` prints the table of all Bops and their properties
+from the weakest- to the strongest-binding Bop, with parens enclosing Bop(s) of
 the same priority:
 
       BINFIX         LISP            Properties
