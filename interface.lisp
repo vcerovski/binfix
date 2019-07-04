@@ -2,7 +2,7 @@
 
 (in-package :binfix)
 
-#+ecl(use)
+#+ecl(use-binfix)
 
 {deftype priority ()
    '(member :first :last :earlier :later :before :after :as :same-as) &
@@ -49,7 +49,7 @@
              :same-as    ? {let* op1 = pop prop
                                  prop1 = get op1 'properties;
                               when prop (warn "defbinfix ~S properties ~S ignored." op prop);
-                              prop =. `(,@(caddr prop1) :keys ,@(cadddr prop1));
+                              prop =. caddr prop1;
                               op-position op1}};
      every {p -> {etypecase p; property p}} prop;
      unless i (error "DEFBINFIX ~S ~S cannot find binfix op." op p);

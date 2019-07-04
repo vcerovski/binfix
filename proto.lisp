@@ -79,8 +79,8 @@
 (set-macro-character #\} (get-macro-character #\) ))
 
 #+ecl
-(defmacro use (&rest phases)
+(defmacro use-binfix ()
   "Helper macro for defining binfix interface in ECL."
-  `(eval-when ,(or phases '(:load-toplevel :compile-toplevel :execute))
+  `(eval-when (:load-toplevel :compile-toplevel :execute)
      (set-macro-character #\{ (binfix-reader))
      (set-macro-character #\} (get-macro-character #\) nil))))

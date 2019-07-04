@@ -10,8 +10,8 @@
                           () :eof}
      cond {symbolp S && not (keywordp S) $ S}
           {listp S $ case (car S)
-                       {'lambda   $ `(function ,@(cdr S))}
-                       {'function $ `(ftype (function ,@(cdr S)))}
+                       { lambda   $ `(function ,@(cdr S))}
+                       { function $ `(ftype (function ,@(cdr S)))}
                        { t        $ S }}
           {t       $ error "Incorrect BINFIX keyword-type specifier ~S" k};
 
@@ -544,8 +544,8 @@
       mapc {l -> {incf p;
                   mapc {prop -> {let* bop = (pop prop)
                                       lop = (pop prop)
-                                {get bop 'properties .= `(,p,lop,prop)};
-                              incf *no-of-bops*}}
+                                   {get bop 'properties .= `(,p,lop,prop)};
+                                 incf *no-of-bops*}}
                        l}}
            *binfix*;
 
@@ -585,11 +585,9 @@
 
      join form1 form2 = `(progn ,@(cdr form1) ,@(cdr form2))
 
-     if form2
-       (if (null form1)
-         (unit form2)
-         (join (unit form1) (unit form2)))
-       (unit form1);
+     cond {null form2 $ form1}
+          {null form1 $ form2}
+          {t $ join (unit form1) (unit form2)};
 
  implicit-progn e := cddr $ binfix `(progn () ; ,@e);
 
