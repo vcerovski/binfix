@@ -711,7 +711,8 @@
                                 {:also-prefix in op-prop || :prefix in op-prop
                                     $ `(,op-lisp ,@(cond {:quote-rhs in op-prop $ rhs}
                                                          {'; in rhs $ binfix+ rhs}
-                                                         { t        $ list (binfix rhs)}))}
+                                                         {cdr rhs   $ binfix rhs}
+                                                         { t        $ rhs}))}
                                 {t $ error "BINFIX: missing l.h.s. of ~S (~S)~@
                                             with r.h.s:~%~S" op op-lisp rhs}}
                 {:def in op-prop $ ll decls =.. (lambda-list (cdr lhs))

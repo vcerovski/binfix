@@ -130,14 +130,18 @@
 
 (test prefix
   (B2 is (equal  "'{progn a}"          '(progn a)              ))
+  (B2 is (equal  "'{progn a;}"         '(progn a)              ))
   (B2 is (equal  "'{progn (a)}"        '(progn (a))            ))
-  (B2 is (equal  "'{progn a b}"        '(progn (a b))          ))
-  (B2 is (equal  "'{progn a; b}"       '(progn a b)            ))
+  (B2 is (equal  "'{progn (a);}"       '(progn (a))            ))
+  (B2 is (equal  "'{values a b}"       '(values a b)           ))
+  (B2 is (equal  "'{values a; b}"      '(values a b)           ))
+  (B2 is (equal  "'{progn a; b;}"      '(progn a b)            ))
   (B2 is (equal  "'{progn (a); b}"     '(progn (a) b)          ))
   (B2 is (equal  "'{progn (a); (b)}"   '(progn (a) (b))        ))
-  (B2 is (equal  "'{progn a + b}"      '(progn (+ a b))        ))
-  (B2 is (equal  "'{f progn a + b}"    '(f (progn (+ a b)))    ))
-  (B2 is (equal  "'{x / progn a + b}"  '(/ x (progn (+ a b)))  ))
+  (B2 is (equal  "'{progn f a; f b}"   '(progn (f a) (f b))    ))
+  (B2 is (equal  "'{f progn a b}"      '(f (progn a b))        ))
+  (B2 is (equal  "'{f progn f a; b}"   '(f (progn (f a) b))    ))
+  (B2 is (equal  "'{x / progn f a; b}" '(/ x (progn (f a) b))  ))
   (B1 is-true    " {t == block b; return-from b t} "            )
 )
 
