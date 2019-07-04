@@ -14,8 +14,8 @@ BINFIX (blend from "Binary Infix") is a powerful infix syntax notation for
 S-expressions of Common LISP ranging from simple arithmetic and logical
 forms to whole programs.
 
-**NEW FEATURE** (July 2019): Introduced `=>` for writing [`cond` forms](#Multiple-choice-forms),
-use of `?` is *depreciated*.
+**NEW FEATURES** (July 2019): Introduced `=>` for writing [`cond` forms](#Multiple-choice-forms),
+use of `?` is *depreciated*.  Introduced [`with-slots`](#with-slots).
 **NEW FEATURE** (Jun 2019): _B-terms_, allowing [indexing](#Indexing)-like operations
 
 There are a few important new features still to come.
@@ -568,6 +568,7 @@ to facilitate their easy writing:
 
 As it is clear from the example, the definitions are wrapped up in `progn`.
 
+<a name="with-slots"></a>
 More detailed definitions are also straightforward to specify:
 
     '{def parameter
@@ -577,7 +578,7 @@ More detailed definitions are also straightforward to specify:
       struct point "Point"
         :print-function {p s d ->
                            declare (ignore d)
-                           with-slots x y z :of p
+                           with-slots x y z :_ p
                              format s "#<~$ ~$ ~$>" x y z}
         :constructor create-point (x y = *y* z = *z*)
         x :single-float = 0f0
@@ -588,7 +589,15 @@ More detailed definitions are also straightforward to specify:
         p _'x += q _'x;
         p _'y += q _'y;
         p _'z += q _'z;
-        p}
+        p
+
+      def point-= p :point q :point :=
+        with-slots x y z :_ p
+          with-slots dx = x dy = y dz = z :_ q
+            x -= dx;
+            y -= dy;
+            z -= dz;
+            p}
 
 =>
 
@@ -616,7 +625,19 @@ More detailed definitions are also straightforward to specify:
        (incf (slot-value p 'x) (slot-value q 'x))
        (incf (slot-value p 'y) (slot-value q 'y))
        (incf (slot-value p 'z) (slot-value q 'z))
-       p))
+       p)
+     (defun point-= (p q)
+       (declare (type point p)
+                (type point q))
+       (with-slots (x y z)
+           p
+         (with-slots ((dx x) (dy y) (dz z))
+             q
+           (decf x dx)
+           (decf y dy)
+           (decf z dz)
+           p))))
+
 
 `def class` syntax is like `defclass` without parens.  For this to work, class
 options (`:documentation` and `:metaclass`) have to be given <em>before</em>
@@ -1514,10 +1535,10 @@ bundled with `vim`.
 
 Here are GUI and terminal looks:
 
-![gui](syntax-gui.png)
+![gui](httpd://github.com/vcerovski/syntax-gui.png)
 (theme: `solarized`, font: `Inconsolata Medium`)
 
-![terminal](syntax-term.png)
+![terminal](httpd://github.com/vcerovski/syntax-term.png)
 (theme: `herald`, font: `Terminus`)
 
 <a name="Operation-properties"></a>

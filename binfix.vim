@@ -41,11 +41,11 @@ syn match lispAtomBarSymbol	!'|..\{-}|!		contains=lispAtomMark
 
 syn region lispAtomList		contained	matchgroup=Special start="{"	skip="|.\{-}|" matchgroup=Special end="}"	contains=@lispAtomCluster,lispString,lispEscapeSpecial
 
-syntax iskeyword 38,42,43,45,47-58,60-62,64-90,97-122,!,~,@,.,|,$,?,;
+syntax iskeyword 38,42,43,45,47-58,60-62,64-90,97-122,!,~,@,.,|,$,?,;,_
 syn keyword lispFunc	def
 syn keyword lispKey  		struct	var	parameter	constant	symbol-macro
 syn keyword lispKey  	declare
-syn keyword lispFunc	:=	:==	:-	:->	:type=
+syn keyword lispFunc	:=	:==	:-	:->	:type=  =>      _       :_
 syn keyword lispFunc	<<	**	in	:.	==	===	=s=	=c=
 syn keyword lispFunc	-=	+=	.=	.=.	=.	=..	..=	=...
 syn keyword lispFunc	.x.	\|\|	&&	&	<&	<&..	;	?	$

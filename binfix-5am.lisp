@@ -234,6 +234,33 @@
                 (multiple-value-bind (p q) (f l)
                   (declare (int q))
                   (h a x l r p q)))))  ))
+
+  (B2 is (equal "'{with-slots a b :_ s  f a b}"
+                 '(with-slots (a b) s (f a b))    ))
+  (B2 is (equal "'{with-slots a :t1 b :t2 :_ s  f a b}"
+                 '(with-slots (a b) s (declare (type t2 b) (type t1 a)) (f a b))    ))
+  (B2 is (equal "
+           '{with-slots a1 = a b1 = b :_ s1
+             with-slots a2 = a b2 = b :_ s2
+               f a1 b2;
+               g b1 a2}
+          "'(with-slots ((a1 a) (b1 b)) s1
+              (with-slots ((a2 a) (b2 b)) s2
+                (f a1 b2)
+                (g b1 a2)))   ))
+  (B2 is (equal "
+            '{with-slots a1 :t1 = a b1 :t2 = b :_ s1
+              with-slots a2 :t1 = a b2 :t2 = b :_ s2
+                f a1 b2;
+                g b1 a2}
+           "'(with-slots ((a1 a) (b1 b)) s1
+               (declare (type t2 b1)
+                        (type t1 a1))
+               (with-slots ((a2 a) (b2 b)) s2
+                 (declare (type t2 b2)
+                          (type t1 a2))
+                 (f a1 b2)
+                 (g b1 a2)))   ))
 )
 
 (test implicit-progn

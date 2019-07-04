@@ -310,6 +310,24 @@
        decls e =.. (decls r (declare* decls))
           `(,binds ,@(nreverse decls)) .x. e;
 
+ slots+ e &optional slots decls :=
+   cond {null e $ error "BINFIX: Empty body of slots ~S." (nreverse slots)}
+        {car e == :_
+           $ {cadr e .x. cddr e .x. nreverse slots .x. nreverse decls}}
+        {cadr e == '= ;; s = s'
+           $ slots+ (cdddr e) {`(,(car e),(caddr e)) :. slots} decls}
+        {keywordp (cadr e) && not {cadr e == :_} ;; so type "_" cannot be specified as :_ here!
+           $ if {caddr e == '=}  ;; s type = s'
+                (slots+ (cddddr e) {`(,(car e),(cadddr e)) :. slots} {type-keyword-type (car e) (cadr e) :. decls})
+                (slots+ (cddr e) {car e :. slots} {type-keyword-type (car e) (cadr e) :. decls})}
+        {t $ slots+ (cdr e) {car e :. slots} decls};
+
+ slots e :=
+   let *decls* = '(declare)
+     s r slots decls =.. (slots+ e)
+       decls e =.. (decls r (declare* decls))
+          `(,slots ,s ,@(nreverse decls)) .x. e;
+
  fbinds e &optional binds name llist body :=
    symbol-macrolet
      finish =
@@ -394,8 +412,9 @@
       ( let*            let*            :rhs-lbinds)
       ( symbol-macrolet symbol-macrolet :rhs-lbinds)
       ( prog*           prog*           :rhs-lbinds)
-      ( prog            prog            :rhs-lbinds))
-     (( macrolet        macrolet        :rhs-fbinds)
+      ( prog            prog            :rhs-lbinds)
+      ( with-slots      with-slots      :rhs-slots )
+      ( macrolet        macrolet        :rhs-fbinds)
       ( flet            flet            :rhs-fbinds)
       ( labels          labels          :rhs-fbinds)
      )
@@ -664,6 +683,9 @@
                 {:rhs-lbinds in op-prop $
                    binds-decls* expr =.. (lbinds rhs)
                      binfix `(,@lhs (,op-lisp ,@binds-decls* ,@(binfix+ expr)))}
+                {:rhs-slots in op-prop $
+                   slots-s-decls* expr =.. (slots rhs)
+                     binfix `(,@lhs (,op-lisp ,@slots-s-decls* ,@(binfix+ expr)))}
                 {:syms/expr  in op-prop $
                    vars decls =.. (vbinds lhs)
                       `(,op-lisp ,vars ,(car rhs)
