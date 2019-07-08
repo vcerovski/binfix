@@ -146,6 +146,15 @@
             '(multiple-value-bind (a b) (floor a b)
                (declare (type int a) (type int b))
                (+ a b))   ))
+
+  (B2 is (equal "'{let (a b) = '(1 2); list a b}"
+                 '(destructuring-bind (a b) '(1 2) (list a b))      ))
+  (B2 is (equal "'{let (a b) = '(1 2) list a b}"
+                 '(destructuring-bind (a b) '(1 2) (list a b))      ))
+  (B2 is (equal "'{let (a = 2 b = 2) = f x; list a b}"
+                 '(destructuring-bind (&optional (a 2) (b 2)) (f x)
+                     (list a b))                                    ))
+
   (Berror "'{let a b = floor a b  a + b}")
   (Berror "'{let a b   floor a b  a + b}")
   (Berror "'{let a b   floor a b; a + b}")

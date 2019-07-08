@@ -197,6 +197,17 @@
            $ mvbind (cddr e) `(,(car e),@syms) {type-keyword-type (car e) (cadr e) :. decls}}
         {t $ mvbind (cdr e) `(,(car e),@syms) decls};
 
+ dbind e &optional llist :=
+   cond {cadr e == '=
+           $ let* r = {'; in cddr e}
+                  llist = (if llist {nreverse $ car e :. llist}
+                                    (car e))
+                  e = (cddr e)
+               {llist decls =.. (lambda-list llist)
+                  if r {llist .x. binfix (ldiff e r) .x. decls .x. cdr r}
+                       {llist .x.          (car e)   .x. decls .x. cdr e}}}
+        {t $ dbind (cdr e) {car e :. llist}};
+
  def-sbind* binds :==
    `(sbind* (cdr (if {car (last,binds) == ';}
                         ,binds
@@ -695,7 +706,13 @@
                        (error "BINFIX: missing r.h.s. of ~S (~S)~@
                                with l.h.s:~%~S" op op-lisp lhs)}
                 {:rhs-lbinds in op-prop $
-                   cond {cadr rhs == '= || keywordp (cadr rhs) && caddr rhs == '=
+                   cond {consp (car rhs) && cadr rhs == '=
+                           $ llist e decls r =.. (dbind rhs)
+                               {decls expr =.. (decls r (declare* decls))
+                                 (binfix `(,@lhs (destructuring-bind ,llist ,e
+                                                   ,@(nreverse decls)
+                                                   ,@(binfix+ expr))))}}
+                        {cadr rhs == '= || keywordp (cadr rhs) && caddr rhs == '=
                            $ binds-decls* expr =.. (lbinds rhs)
                                binfix `(,@lhs (,op-lisp ,@binds-decls* ,@(binfix+ expr)))}
                         {t $ syms e decls r =.. (mvbind rhs)
