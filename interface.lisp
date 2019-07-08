@@ -27,7 +27,7 @@
          remprop op 'properties;
          nil &
 
- setbinfix op :symbol lisp-op :symbol :=
+ setbinfix op :symbol lisp-op :symbol :==
   "Set already defined binfix OP to represent lisp LISP-OP."
    ops -> {op1 -> {car op1 eq op && setf cadr op1 = lisp-op} .@ ops} .@ *binfix*;
    (assign-properties);

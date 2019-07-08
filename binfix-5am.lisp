@@ -4,7 +4,7 @@
   #+ecl (:shadowing-import-from #:binfix #:@ #:=>)
   #+ccl (:shadowing-import-from #:binfix #:@ #:=>)
   (:import-from #:fiveam
-      #:def-suite #:in-suite #:test #:is #:is-true #:signals
+      #:def-suite #:in-suite #:test #:is #:is-true #:is-false #:signals
       #:*on-error* #:*on-failure* #:run!)
   (:export #:run-tests)
 )
@@ -405,9 +405,14 @@
 )
 
 (test interface
-  (B1 is-true   "(defbinfix % mod :after +))"       )
-  (B2 is (equal "'{a % b}"     '   (mod a b)       ))
-  (B2 is (equal "'{a % b + c}" '(+ (mod a b) c)    ))
+  (B1 is-true "(defbinfix % mod :after +))")
+  (B2 is (equal "'{a % b}" '(mod a b)))
+  (B2 is (equal "'{a % b + c}" '(+ (mod a b) c)))
+  (B1 is-false "(setbinfix % my-mod)")
+  (B2 is (equal "'{a % b + c}" '(+ (my-mod a b) c)))
+  (B1 is-false "(setbinfix binfix::index my-ref)")
+  (B2 is (equal "'{a[i % j]}"  '(my-ref a (my-mod i j))))
+  (B1 is-false "(setbinfix binfix::index aref)") ;; needs to be restored for other tests to work
 )
 
 (defun run-tests ()
