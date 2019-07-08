@@ -59,7 +59,7 @@
              :after      => op-position (pop prop) + 1;
              :same-as    => let* op1 = pop prop
                                  prop1 = get op1 'properties;
-                              when prop (warn "defbinfix ~S properties ~S ignored." op prop);
+                              when prop (warn "defbinfix ~S properties ~S ignored." Bop prop);
                               prop =. caddr prop1;
                               op-position op1};
      every {p -> {etypecase p; property p}} prop;
