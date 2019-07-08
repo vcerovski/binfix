@@ -404,7 +404,14 @@
   (Berror  "  {def atruct x y} ")
 )
 
+(test interface
+  (B1 is-true   "(defbinfix % mod :after +))"       )
+  (B2 is (equal "'{a % b}"     '   (mod a b)       ))
+  (B2 is (equal "'{a % b + c}" '(+ (mod a b) c)    ))
+)
+
 (defun run-tests ()
+ "Returns t if all tests pass, otherwise nil"
   (setq *on-error* nil
         *on-failure* nil)
   (run! 'binfix-tests))

@@ -36,21 +36,21 @@
  #-abcl {declaim ({symbol &optional symbol priority &rest t :-> boolean} defbinfix)}
  #-abcl &
 
- defbinfix op lisp-op = op p = :later &rest prop :=
+ defbinfix op lisp-op = op p = :later &rest prop :==
   "DEFBINFIX op [lisp-op [priority op [property]*]]"
    rmbinfix op;
    let* i = {ecase p;
-             :first      ? 0;
-             :last       ? op-position '; ;
-             :earlier    ? op-position 'in + 1;
-             :later      ? op-position 'coerce;
-             :before :as ? op-position (pop prop);
-             :after      ? op-position (pop prop) + 1;
-             :same-as    ? {let* op1 = pop prop
+             :first      => 0;
+             :last       => op-position '; ;
+             :earlier    => op-position 'in + 1;
+             :later      => op-position 'coerce;
+             :before :as => op-position (pop prop);
+             :after      => op-position (pop prop) + 1;
+             :same-as    => let* op1 = pop prop
                                  prop1 = get op1 'properties;
                               when prop (warn "defbinfix ~S properties ~S ignored." op prop);
                               prop =. caddr prop1;
-                              op-position op1}};
+                              op-position op1};
      every {p -> {etypecase p; property p}} prop;
      unless i (error "DEFBINFIX ~S ~S cannot find binfix op." op p);
      *binfix* =. append (subseq *binfix* 0 i)
