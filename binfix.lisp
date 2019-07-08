@@ -189,13 +189,13 @@
    cond {null e $ errorm "Incomplete LET.  Missing = ?"}
         {car e == '=
            $ if (null syms) (errorm "No symbols to bind in LET.")
-               let end = {'; in e}
-                 if (null end) (errorm "Incomplete LET. Missing ; ?")
-                   {nreverse syms .x. binfix (ldiff (cdr e) end) .x. decls .x. cdr end}}
+               let r = {'; in cdr e}
+                 if (null r) (errorm "Incomplete LET. Missing ; ?")
+                   {nreverse syms .x. binfix (ldiff (cdr e) r) .x. decls .x. cdr r}}
         {car e == '; $ errorm "Missing body of LET."}
         {keywordp (cadr e)
-           $ mvbind (cddr e) `(,(car e),@syms) {type-keyword-type (car e) (cadr e) :. decls}}
-        {t $ mvbind (cdr e) `(,(car e),@syms) decls};
+           $ mvbind (cddr e) {car e :. syms} {type-keyword-type (car e) (cadr e) :. decls}}
+        {t $ mvbind (cdr e) {car e :. syms} decls};
 
  dbind e &optional llist :=
    cond {cadr e == '=
