@@ -183,6 +183,20 @@
                        binds s {car e :. current}
                        decls};
 
+ mvbind e &optional syms decls :=
+   labels errorm m = (error (format nil "BINFIX: ~A~~% Read ~~{ ~~A~~}~% Remain ~~{ ~~A~~}" m)
+                            (nreverse syms) e)
+   cond {null e $ errorm "Incomplete LET.  Missing = ?"}
+        {car e == '=
+           $ if (null syms) (errorm "No symbols to bind in LET.")
+               let end = {'; in e}
+                 if (null end) (errorm "Incomplete LET. Missing ; ?")
+                   {nreverse syms .x. binfix (ldiff (cdr e) end) .x. decls .x. cdr end}}
+        {car e == '; $ errorm "Missing body of LET."}
+        {keywordp (cadr e)
+           $ mvbind (cddr e) `(,(car e),@syms) {type-keyword-type (car e) (cadr e) :. decls}}
+        {t $ mvbind (cdr e) `(,(car e),@syms) decls};
+
  def-sbind* binds :==
    `(sbind* (cdr (if {car (last,binds) == ';}
                         ,binds
@@ -681,8 +695,14 @@
                        (error "BINFIX: missing r.h.s. of ~S (~S)~@
                                with l.h.s:~%~S" op op-lisp lhs)}
                 {:rhs-lbinds in op-prop $
-                   binds-decls* expr =.. (lbinds rhs)
-                     binfix `(,@lhs (,op-lisp ,@binds-decls* ,@(binfix+ expr)))}
+                   cond {cadr rhs == '= || keywordp (cadr rhs) && caddr rhs == '=
+                           $ binds-decls* expr =.. (lbinds rhs)
+                               binfix `(,@lhs (,op-lisp ,@binds-decls* ,@(binfix+ expr)))}
+                        {t $ syms e decls r =.. (mvbind rhs)
+                               {decls expr =.. (decls r (declare* decls))
+                                 (binfix `(,@lhs (multiple-value-bind ,syms ,e
+                                                   ,@(nreverse decls)
+                                                   ,@(binfix+ expr))))}}}
                 {:rhs-slots in op-prop $
                    slots-s-decls* expr =.. (slots rhs)
                      binfix `(,@lhs (,op-lisp ,@slots-s-decls* ,@(binfix+ expr)))}

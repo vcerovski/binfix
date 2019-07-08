@@ -132,6 +132,25 @@
                  (f (g x)))             ))
 )
 
+(test multiple-let
+  (B2 is (equal
+           "'{let a b = floor a b; a + b}"
+            '(multiple-value-bind (a b) (floor a b) (+ a b))   ))
+  (B2 is (equal
+           "'{let a :int b = floor a b; a + b}"
+            '(multiple-value-bind (a b) (floor a b)
+               (declare (type int a))
+               (+ a b))   ))
+  (B2 is (equal
+           "'{let a :int b :int = floor a b; a + b}"
+            '(multiple-value-bind (a b) (floor a b)
+               (declare (type int a) (type int b))
+               (+ a b))   ))
+  (Berror "'{let a b = floor a b  a + b}")
+  (Berror "'{let a b   floor a b  a + b}")
+  (Berror "'{let a b   floor a b; a + b}")
+)
+
 (test prefix
   (B2 is (equal  "'{progn a}"          '(progn a)              ))
   (B2 is (equal  "'{progn a;}"         '(progn a)              ))
