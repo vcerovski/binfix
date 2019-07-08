@@ -81,6 +81,7 @@ reference 1.0 version.</p>
 <li><a href="#Cartesian-to-polar-coordinates">Cartesian to polar coordinates</a></li>
 <li><a href="#packaging">Using BINFIX in packages</a></li>
 </ul></li>
+<li><a href="#Interface">Controlling Bops (<strong>new feature</strong>)</a></li>
 <li><a href="#Implementation">Implementation</a>
 <ul>
 <li><a href="#proto-BINFIX">proto-BINFIX</a></li>
@@ -1265,6 +1266,8 @@ default set to indexing of hash table,</p>
 <pre><code>(gethash key table default)
 </code></pre>
 
+<p>What square-brackets represent can be changed <a href="#setbinfix">using <code>setbinfix</code></a>.</p>
+
 <p>The following table summarizes indexing Bops, from
 the weakest to the strongest binding:</p>
 
@@ -1582,6 +1585,48 @@ symbols:</p>
    #+(ccl ecl) (:shadowing-import-from :binfix :@ :=&gt;))
 </code></pre>
 
+<p><a name="Interface"></a></p>
+
+<h2>Controlling Bops (<strong>new feature</strong>)</h2>
+
+<p>The following set of forms modify BINFIX behavior by adding/removing/redefining
+Bops.  They must be evaluated before and outside B-exprs in which the modified
+behavior takes place.</p>
+
+<ul>
+<li><p>(<code>defbinfix</code> Bop lisp-op priority &amp;rest properties)</p>
+
+<p>Macro function that defines new or redefines existing <code>Bop</code> to represent
+lisp operation <code>lisp-op</code> (both of these arguments are symbols,) where
+<code>priority</code> defines how weakly/strongly <code>Bop</code> binds its arguments (precedence,)
+with <a href="#Operation-properties">given <code>properties</code></a>.</p>
+
+<p><a name="setbinfix"></a></p></li>
+<li><p><code>(setbinfix Bop list-op)</code></p>
+
+<p>Macro function that associated with an existing <code>Bop</code> LISP symbol <code>list-op</code>.
+In effect it redefines what <code>Bop</code> does without changing any of its properties.</p>
+
+<p>Perhaps its most important role is to set what square-brackets in Bexpr
+represent.  For instance, </p>
+
+<p><code>(setbinfix binfix::index binfix::hashget)</code></p>
+
+<p>sets B-terms <code>a[k]</code> to represent indexing of hashtable <code>a</code> by key <code>k</code>, while</p>
+
+<p><code>(setbinfix binfix::index2 svref)</code></p>
+
+<p>sets <code>a[i]</code> to represent <code>(svref a i)</code>.</p></li>
+<li><p><code>(rmbinfix Bop1 ... Bopn)</code></p>
+
+<p>Macro function that removes specified Bops <code>Bop1</code> ... <code>Bopn</code>.  After this
+macro form is executed, <code>Bop1</code> ... <code>Bopn</code> will have no special meaning within
+B-expressions.</p></li>
+<li><p><code>(init-binfix)</code></p>
+
+<p>Macro function that sets BINFIX to its initial state.</p></li>
+</ul>
+
 <p><a name="Implementation"></a></p>
 
 <h2>Implementation</h2>
@@ -1760,10 +1805,10 @@ bundled with <code>vim</code>.</p>
 
 <p>Here are GUI and terminal looks:</p>
 
-<p><img src="syntax-gui.png" alt="gui" title="" />
+<p><img src="httpd://github.com/vcerovski/syntax-gui.png" alt="gui" title="" />
 (theme: <code>solarized</code>, font: <code>Inconsolata Medium</code>)</p>
 
-<p><img src="syntax-term.png" alt="terminal" title="" />
+<p><img src="httpd://github.com/vcerovski/syntax-term.png" alt="terminal" title="" />
 (theme: <code>herald</code>, font: <code>Terminus</code>)</p>
 
 <p><a name="Operation-properties"></a></p>

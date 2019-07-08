@@ -3,7 +3,8 @@
 (defpackage #:binfix
   #-gcl(:use #:cl)
   #+gcl(:use #:lisp)
-  (:export #:binfix    #:defbinfix #:setbinfix      #:rmbinfix #:lsbinfix  #:defbinfixdef
+  (:export #:binfix    #:defbinfix #:setbinfix      #:rembinfix  #:lsbinfix  #:defbinfixdef
+           #:init-binfix
            #:->  #:==  #:=== #:=c= #:=s= #:&  #:&&  #:||  #:in   #:!!  #:!!. #:=>
            #:.=  #:=.  #:.=. #:..= #:=.. #:=... #:+= #:-= #:<<   #:!   #:_   #:?
            #:$   #:**  #:@   #:@@  #:@n  #:@. #:@.. #:@.n #:.x.  #:|;| #:~~

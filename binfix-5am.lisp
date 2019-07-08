@@ -404,15 +404,30 @@
   (Berror  "  {def atruct x y} ")
 )
 
-(test interface
-  (B1 is-true "(defbinfix % mod :after +))")
+(test interface ;; These must be evaluated in order
+                ;; and non-concurrently with other tests
+  (B1 is-true "(defbinfix % mod :after +)")
   (B2 is (equal "'{a % b}" '(mod a b)))
   (B2 is (equal "'{a % b + c}" '(+ (mod a b) c)))
+
   (B1 is-false "(setbinfix % my-mod)")
   (B2 is (equal "'{a % b + c}" '(+ (my-mod a b) c)))
   (B1 is-false "(setbinfix binfix::index my-ref)")
   (B2 is (equal "'{a[i % j]}"  '(my-ref a (my-mod i j))))
-  (B1 is-false "(setbinfix binfix::index aref)") ;; needs to be restored for other tests to work
+  (B1 is-false "(setbinfix binfix::index aref)")
+
+  (B1 is-false "(rembinfix %)")
+  (B2 is (equal "'{a % b + c}" '(+ (a % b) c)))
+
+  (B1 is-false "(rembinfix + ++ := let def - flet |;| = && :.)")
+  (B2 is (equal "'{f := x + y}" '(f := x + y)))
+  (B1 is-false "(some 'identity
+                   {b -> get b 'binfix::properties
+                      @. '(+ ++ := let def - flet |;| = && :.)})")
+  (B1 is-false "(init-binfix)")
+  (B1 is-true  "(every 'identity
+                   {b -> get b 'binfix::properties
+                      @. '(+ := let def - flet |;| = && :.)})")
 )
 
 (defun run-tests ()

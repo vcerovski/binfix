@@ -73,6 +73,7 @@ reference 1.0 version.
     * [for](#for)
     * [Cartesian to polar coordinates](#Cartesian-to-polar-coordinates)
     * [Using BINFIX in packages](#packaging)
+* [Controlling Bops (**new feature**)](#Interface)
 * [Implementation](#Implementation)
     * [proto-BINFIX](#proto-BINFIX)
     * [Problems with CLISP](#CLISP-problems)
@@ -1107,6 +1108,8 @@ where `default` argument is optional, which macroexpands into
 
     (gethash key table default)
 
+What square-brackets represent can be changed [using `setbinfix`](#setbinfix).
+
 The following table summarizes indexing Bops, from
 the weakest to the strongest binding:
 
@@ -1393,6 +1396,47 @@ symbols:
        #+sbcl (:shadowing-import-from :binfix :struct :var)
        #+(ccl ecl) (:shadowing-import-from :binfix :@ :=>))
 
+<a name="Interface"></a>
+## Controlling Bops (**new feature**)
+
+The following set of forms modify BINFIX behavior by adding/removing/redefining
+Bops.  They must be evaluated before and outside B-exprs in which the modified
+behavior takes place.
+
+* (`defbinfix` Bop lisp-op priority &rest properties)
+
+  Macro function that defines new or redefines existing `Bop` to represent
+  lisp operation `lisp-op` (both of these arguments are symbols,) where
+  `priority` defines how weakly/strongly `Bop` binds its arguments (precedence,)
+  with [given `properties`](#Operation-properties).
+
+  <a name="setbinfix"></a>
+* `(setbinfix Bop list-op)`
+
+  Macro function that associated with an existing `Bop` LISP symbol `list-op`.
+  In effect it redefines what `Bop` does without changing any of its properties.
+
+  Perhaps its most important role is to set what square-brackets in Bexpr
+  represent.  For instance, 
+
+    `(setbinfix binfix::index binfix::hashget)`
+
+  sets B-terms `a[k]` to represent indexing of hashtable `a` by key `k`, while
+
+    `(setbinfix binfix::index2 svref)`
+
+  sets `a[i]` to represent `(svref a i)`.
+
+* `(rmbinfix Bop1 ... Bopn)`
+
+  Macro function that removes specified Bops `Bop1` ... `Bopn`.  After this
+  macro form is executed, `Bop1` ... `Bopn` will have no special meaning within
+  B-expressions.
+
+* `(init-binfix)`
+
+   Macro function that sets BINFIX to its initial state.
+
 <a name="Implementation"></a>
 ## Implementation
 
@@ -1564,10 +1608,10 @@ bundled with `vim`.
 
 Here are GUI and terminal looks:
 
-![gui](httpd://github.com/vcerovski/syntax-gui.png)
+![gui](syntax-gui.png)
 (theme: `solarized`, font: `Inconsolata Medium`)
 
-![terminal](httpd://github.com/vcerovski/syntax-term.png)
+![terminal](syntax-term.png)
 (theme: `herald`, font: `Terminus`)
 
 <a name="Operation-properties"></a>

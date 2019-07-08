@@ -1,4 +1,4 @@
-; BINFIX by V.Cerovski 2015,8
+; BINFIX by V.Cerovski 2015,9
 
 (in-package :binfix)
 
@@ -27,6 +27,16 @@
          remprop op 'properties;
          nil &
 
+ rembinfix &rest Bops :==
+  "Macro that removes Bops represented by symbols in BOPS.  Returns nil."
+  `{eval-when (:load-toplevel :compile-toplevel :execute)
+     progn
+       unless *init-binfix*
+         setq *init-binfix* = copy-tree *binfix*;
+       'rmbinfix .@ ',Bops;
+       (assign-properties);
+       nil} &
+
  setbinfix op :symbol lisp-op :symbol :==
   "Set already defined binfix OP to represent lisp LISP-OP."
    ops -> {op1 -> {car op1 eq op && setf cadr op1 = lisp-op} .@ ops} .@ *binfix*;
@@ -36,9 +46,10 @@
  #-abcl {declaim ({symbol &optional symbol priority &rest t :-> boolean} defbinfix)}
  #-abcl &
 
- defbinfix op lisp-op = op p = :later &rest prop :==
-  "DEFBINFIX op [lisp-op [priority op [property]*]]"
-   rmbinfix op;
+ defbinfix Bop lisp-op = Bop p = :later &rest prop :==
+  "DEFBINFIX bop [lisp-op [priority op [property]*]]
+  Defines new or redefines existing Bop BOP."
+   rmbinfix Bop;
    let* i = {ecase p;
              :first      => 0;
              :last       => op-position '; ;
@@ -52,9 +63,9 @@
                               prop =. caddr prop1;
                               op-position op1};
      every {p -> {etypecase p; property p}} prop;
-     unless i (error "DEFBINFIX ~S ~S cannot find binfix op." op p);
+     unless i (error "DEFBINFIX ~S ~S cannot find binfix Bop." Bop p);
      *binfix* =. append (subseq *binfix* 0 i)
-                       `(((,op ,lisp-op ,@prop) ,@{p in '(:as :same-as) && *binfix* .! i}))
+                       `(((,Bop ,lisp-op ,@prop) ,@{p in '(:as :same-as) && *binfix* .! i}))
                         (subseq *binfix* (if {p in '(:as :same-as)} (1+ i) i));
      (assign-properties);
      t &

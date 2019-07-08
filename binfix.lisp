@@ -391,6 +391,7 @@
  defs-macro &rest defs :== defs defs;
 
  hashget table key &rest opt :== `(gethash ,key ,table ,@opt);
+
  *binfix* =.
    `((( <&              prog1)
       ( <&..            multiple-value-prog1))
@@ -580,6 +581,7 @@
 
      ((index     aref    :term)
       (index2    hashget :term)));
+
  declaim (fixnum *no-of-bops*);
  defvar *no-of-bops* 0;
 
@@ -594,6 +596,13 @@
            *binfix*;
 
  (assign-properties);
+
+ defvar *init-binfix* nil;
+ init-binfix :==
+   when *init-binfix*
+     { *binfix* =. copy-tree *init-binfix*;
+       (assign-properties);
+       nil };
 
  split e op &optional args arg :=
     cond {null e      $ nreverse $ nreverse arg :. args}
