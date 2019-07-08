@@ -14,9 +14,14 @@ BINFIX (blend from "Binary Infix") is a powerful infix syntax notation for
 S-expressions of Common LISP ranging from simple arithmetic and logical
 forms to whole programs.
 
+**NEW FEATURE** (July 2019): [`let` supports multiple-value- and
+destructuring-bind](#Destructuring-multiple-values).
+<br>
 **NEW FEATURES** (July 2019): Introduced `=>` for writing [`cond` forms](#Multiple-choice-forms),
-use of `?` is *depreciated*.  Introduced [`with-slots`](#with-slots).
-**NEW FEATURE** (Jun 2019): _B-terms_, allowing [indexing](#Indexing)-like operations
+use of `?` is *depreciated*.  Introduced BINFIX [`with-slots`](#with-slots).
+<br>
+**NEW FEATURE** (Jun 2019): _B-terms_, allowing [indexing](#Indexing)-like operations.
+
 
 There are a few important new features still to come.
 One of them, available from v0.16, is use of a single `;` symbol as a
@@ -49,15 +54,15 @@ reference 1.0 version.
         * [Type annotations, declarations and definitions](#types)
         * [Funtion types](#funtypes)
         * [Definitions and declarations without parens](#progn-m)
-    * [LETs](#LETs)
+    * [LETs (**new feature**)](#LETs)
     * [SETs](#SETs)
     * [Implicit `progn`](#Implicit-progn)
     * [`$`plitter](#`$`plitter)
     * [Multiple-choice forms (**new feature**)](#Multiple-choice-forms)
-    * [Destructuring, multiple values](#Destructuring-multiple-values)
+    * [Destructuring, multiple values (**new feature**)](#Destructuring-multiple-values)
     * [Loops](#Loops)
     * [Hash tables and association lists](#Hash-tables-and-association-lists)
-* [Indexing (**New features**)](#Indexing)
+* [Indexing (**new feature**)](#Indexing)
 * [Mappings](#Mappings)
 * [Working with bits](#Bits)
 * [Support for macros](#Support-for-macros)
@@ -671,7 +676,7 @@ This extends to all Common LISP def-forms, `declaim` and `proclaim`.
 The result is wrapped up in a `progn`.
 
 <a name="LETs"></a>
-### LETs
+### LETs (**new feature**)
 
 LET symbol-binding forms (`let`, `let*`, `symbol-macrolet`, etc) in BINFIX use
 `=` with an optional type-annotation:
@@ -686,6 +691,9 @@ LET symbol-binding forms (`let`, `let*`, `symbol-macrolet`, etc) in BINFIX use
     (let ((x 1) (y (expt 2 3)) (z 4))
       (declare (type bit x))
       (+ x (* y z)))
+
+**New feature**: BINFIX `let` [supports `multiple-value-bind` and
+`destructuring-bind`](#Destructuring-multiple-values) 
 
 <a name="LET-impl-progn-examples"></a>
 A single `;` can be used as a terminator of bindings:
@@ -963,7 +971,28 @@ way
 See also [`ordinal` example below](#ordinal).
 
 <a name="Destructuring-multiple-values"></a>
-### Destructuring, multiple values
+### Destructuring, multiple values (**new feature**)
+
+BINFIX `let` supports binding of multiple values as well as
+destructuring,
+
+    `{let a = 1 b = 2 c = 3
+        let x y z = values 1 2 3;
+          let (p (q = 2) r = 3) = '(1 nil);
+            a = x = p = 1 &&
+            b = y = q = 2 &&
+            c = z = r = 3}
+
+=>
+
+    (let ((a 1) (b 2) (c 3))
+      (multiple-value-bind (x y z) (values 1 2 3)
+        (destructuring-bind (p (&optional (q 2)) &optional (r 3)) '(1 nil)
+          (and (= a x p 1)
+               (= b y q 2)
+               (= c z r 3)))))
+
+which evaluates to `t`.
 
 Multiple values (`values`) are represented by `.x.`, 
 `multiple-value-bind` by `=..` , and `destructuring-bind` by `..=`
@@ -1054,7 +1083,7 @@ map-reduce expr.
 `{'max @/ x y -> abs{x - y} @. a b}`
 
 <a name="Indexing"></a>
-### Indexing (**New features**)
+### Indexing (**new feature**)
 
 Indexing can be done using square brackets, `[`...`]`, by default set to
 `aref`,
@@ -1065,8 +1094,8 @@ Indexing can be done using square brackets, `[`...`]`, by default set to
 
     (incf (aref a i j) (* (aref b i k) (aref c k j)))
 
-or using double-square brackets, `[[`...`]]`, by default set to indexing of
-hash table,
+or using double-square brackets, `[[`...`]]`, with one or two arguments, by
+default set to indexing of hash table,
 
     '{ table[[key; default]] }
 
@@ -1074,7 +1103,7 @@ hash table,
 
     (binfix::hashget table key default)
 
-which macroexpands into
+where `default` argument is optional, which macroexpands into
 
     (gethash key table default)
 

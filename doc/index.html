@@ -15,9 +15,13 @@
 S-expressions of Common LISP ranging from simple arithmetic and logical
 forms to whole programs.</p>
 
-<p><strong>NEW FEATURES</strong> (July 2019): Introduced <code>=&gt;</code> for writing <a href="#Multiple-choice-forms"><code>cond</code> forms</a>,
-use of <code>?</code> is <em>depreciated</em>.  Introduced <a href="#with-slots"><code>with-slots</code></a>.
-<strong>NEW FEATURE</strong> (Jun 2019): <em>B-terms</em>, allowing <a href="#Indexing">indexing</a>-like operations</p>
+<p><strong>NEW FEATURE</strong> (July 2019): <a href="#Destructuring-multiple-values"><code>let</code> supports multiple-value- and
+destructuring-bind</a>.
+<br>
+<strong>NEW FEATURES</strong> (July 2019): Introduced <code>=&gt;</code> for writing <a href="#Multiple-choice-forms"><code>cond</code> forms</a>,
+use of <code>?</code> is <em>depreciated</em>.  Introduced BINFIX <a href="#with-slots"><code>with-slots</code></a>.
+<br>
+<strong>NEW FEATURE</strong> (Jun 2019): <em>B-terms</em>, allowing <a href="#Indexing">indexing</a>-like operations.</p>
 
 <p>There are a few important new features still to come.
 One of them, available from v0.16, is use of a single <code>;</code> symbol as a
@@ -55,16 +59,16 @@ reference 1.0 version.</p>
 <li><a href="#funtypes">Funtion types</a></li>
 <li><a href="#progn-m">Definitions and declarations without parens</a></li>
 </ul></li>
-<li><a href="#LETs">LETs</a></li>
+<li><a href="#LETs">LETs (<strong>new feature</strong>)</a></li>
 <li><a href="#SETs">SETs</a></li>
 <li><a href="#Implicit-progn">Implicit <code>progn</code></a></li>
 <li><a href="#<code>$</code>plitter"><code>$</code>plitter</a></li>
 <li><a href="#Multiple-choice-forms">Multiple-choice forms (<strong>new feature</strong>)</a></li>
-<li><a href="#Destructuring-multiple-values">Destructuring, multiple values</a></li>
+<li><a href="#Destructuring-multiple-values">Destructuring, multiple values (<strong>new feature</strong>)</a></li>
 <li><a href="#Loops">Loops</a></li>
 <li><a href="#Hash-tables-and-association-lists">Hash tables and association lists</a></li>
 </ul></li>
-<li><a href="#Indexing">Indexing (<strong>New features</strong>)</a></li>
+<li><a href="#Indexing">Indexing (<strong>new feature</strong>)</a></li>
 <li><a href="#Mappings">Mappings</a></li>
 <li><a href="#Bits">Working with bits</a></li>
 <li><a href="#Support-for-macros">Support for macros</a></li>
@@ -764,7 +768,7 @@ as in</p>
 
 <p><a name="LETs"></a></p>
 
-<h3>LETs</h3>
+<h3>LETs (<strong>new feature</strong>)</h3>
 
 <p>LET symbol-binding forms (<code>let</code>, <code>let*</code>, <code>symbol-macrolet</code>, etc) in BINFIX use
 <code>=</code> with an optional type-annotation:</p>
@@ -781,6 +785,9 @@ as in</p>
   (declare (type bit x))
   (+ x (* y z)))
 </code></pre>
+
+<p><strong>New feature</strong>: BINFIX <code>let</code> <a href="#Destructuring-multiple-values">supports <code>multiple-value-bind</code> and
+<code>destructuring-bind</code></a> </p>
 
 <p><a name="LET-impl-progn-examples"></a>
 A single <code>;</code> can be used as a terminator of bindings:</p>
@@ -1101,7 +1108,30 @@ way</p>
 
 <p><a name="Destructuring-multiple-values"></a></p>
 
-<h3>Destructuring, multiple values</h3>
+<h3>Destructuring, multiple values (<strong>new feature</strong>)</h3>
+
+<p>BINFIX <code>let</code> supports binding of multiple values as well as
+destructuring,</p>
+
+<pre><code>`{let a = 1 b = 2 c = 3
+    let x y z = values 1 2 3;
+      let (p (q = 2) r = 3) = '(1 nil);
+        a = x = p = 1 &amp;&amp;
+        b = y = q = 2 &amp;&amp;
+        c = z = r = 3}
+</code></pre>
+
+<p>=></p>
+
+<pre><code>(let ((a 1) (b 2) (c 3))
+  (multiple-value-bind (x y z) (values 1 2 3)
+    (destructuring-bind (p (&amp;optional (q 2)) &amp;optional (r 3)) '(1 nil)
+      (and (= a x p 1)
+           (= b y q 2)
+           (= c z r 3)))))
+</code></pre>
+
+<p>which evaluates to <code>t</code>.</p>
 
 <p>Multiple values (<code>values</code>) are represented by <code>.x.</code>, 
 <code>multiple-value-bind</code> by <code>=..</code> , and <code>destructuring-bind</code> by <code>..=</code></p>
@@ -1206,7 +1236,7 @@ map-reduce expr.</p>
 
 <p><a name="Indexing"></a></p>
 
-<h3>Indexing (<strong>New features</strong>)</h3>
+<h3>Indexing (<strong>new feature</strong>)</h3>
 
 <p>Indexing can be done using square brackets, <code>[</code>...<code>]</code>, by default set to
 <code>aref</code>,</p>
@@ -1219,8 +1249,8 @@ map-reduce expr.</p>
 <pre><code>(incf (aref a i j) (* (aref b i k) (aref c k j)))
 </code></pre>
 
-<p>or using double-square brackets, <code>[[</code>...<code>]]</code>, by default set to indexing of
-hash table,</p>
+<p>or using double-square brackets, <code>[[</code>...<code>]]</code>, with one or two arguments, by
+default set to indexing of hash table,</p>
 
 <pre><code>'{ table[[key; default]] }
 </code></pre>
@@ -1230,7 +1260,7 @@ hash table,</p>
 <pre><code>(binfix::hashget table key default)
 </code></pre>
 
-<p>which macroexpands into</p>
+<p>where <code>default</code> argument is optional, which macroexpands into</p>
 
 <pre><code>(gethash key table default)
 </code></pre>
