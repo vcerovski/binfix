@@ -27,16 +27,17 @@ else
  set iskeyword=38,42,43,45,47-58,60-62,64-90,97-122,_,.,\|,$,\?
 endif
 
-syn match lispParenError	")}"
+syn match lispParenError	")}]"
 
-syn match	lispSymbol	contained	![^()'`,"; \t{}]\+!
+syn match	lispSymbol	contained	![^()'`,"; \t{}\[\]]\+!
 syn match	lispSymbol	contained	!;[^;]\v|\$!
 
 syn region lispList	matchgroup=Delimiter start="{"   skip="|.\{-}|"	matchgroup=Delimiter end="}"  contains=@lispListCluster
+syn region lispList	matchgroup=Delimiter start="\["  skip="|.\{-}|"	matchgroup=Delimiter end="]"  contains=@lispListCluster
 syn region lispBQList	matchgroup=PreProc   start="`{"  skip="|.\{-}|"	matchgroup=PreProc   end="}"  contains=@lispListCluster
 
 syn match lispAtom		"'{"me=e-1		contains=lispAtomMark	nextgroup=lispAtomList
-syn match lispAtom		"'[^ \t(){}]\+"		contains=lispAtomMark
+syn match lispAtom		"'[^ \t(){}\[\]]\+"	contains=lispAtomMark
 syn match lispAtomBarSymbol	!'|..\{-}|!		contains=lispAtomMark
 
 syn region lispAtomList		contained	matchgroup=Special start="{"	skip="|.\{-}|" matchgroup=Special end="}"	contains=@lispAtomCluster,lispString,lispEscapeSpecial
@@ -56,8 +57,8 @@ syn keyword lispFunc	th	th-cdr	th-bit	th-value	subtype-of
 syn keyword lispFunc	 eqv.	 or.	 xor.	 and.	 nand.	 nor.	test.	 orc1.	 orc2.	 andc1.	 andc2.
 syn keyword lispFunc	.eqv.	.or.	.xor.	.and.	.nand.	.nor.	.not.	.orc1.	.orc2.	.andc1.	.andc2.
 
-syn match lispEscapeSpecial		!#|[^(){}'`,"; \t]\+|#!
-syn match binfixEscapeSpecial		!#[':][^()'`,"; \t{}]\+!
+syn match lispEscapeSpecial		!#|[^(){}'`,"; \t\[\]]\+|#!
+syn match binfixEscapeSpecial		!#[':][^()'`,"; \t\[\]{}]\+!
 
 syn match lispParenError	")}"
 
