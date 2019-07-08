@@ -135,7 +135,7 @@
  decls e &optional decls doc :=
   labels var*-keyword e &optional vars =
     (cond {null e           $ nil .x. nreverse vars}
-          {keywordp (car e) $ keyword-type-spec (car e) :. reverse vars .x. cdr e}
+          {keywordp (car e) $ 'type :. keyword-type-spec (car e) :. reverse vars .x. cdr e}
           {symbolp (car e)  $ var*-keyword (cdr e) {car e :. vars}}
           {consp (car e) && caar e in '(type ftype)
                             $ `(,@(car e) ,@(reverse vars)) .x. cdr e}

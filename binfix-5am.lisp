@@ -84,6 +84,10 @@
                    (declare (type number x)
                             (type number y))
                    (+ x y))  ))
+  (B2 is (equal "'{x = 1 y = 1 -> declare x y :number  x + y}"
+                 '(lambda (&optional (x 1) (y 1))
+                    (declare (type number x y))
+                    (+ x y))  ))
   (B1 is-true "
        {'{ x -> y -> z -> x * y + z  @ 2 @ 3 @ 4} equal
         '(funcall
@@ -219,7 +223,7 @@
               (let* ((x (y z)))
                (multiple-value-bind (l r) (f g)
                 (destructuring-bind (p q) (f l)
-                  (declare (int q))
+                  (declare (type int q))
                   (h a x l r p q)))))  ))
   (B2 is (equal "
             '{let a = b c;
@@ -232,7 +236,7 @@
               (let* ((x (y z)))
                (destructuring-bind (l r) (f g)
                 (multiple-value-bind (p q) (f l)
-                  (declare (int q))
+                  (declare (type int q))
                   (h a x l r p q)))))  ))
 
   (B2 is (equal "'{with-slots a b :_ s  f a b}"
