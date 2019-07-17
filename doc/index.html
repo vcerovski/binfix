@@ -62,7 +62,7 @@ reference 1.0 version.</p>
 <li><a href="#LETs">LETs (<strong>new feature</strong>)</a></li>
 <li><a href="#SETs">SETs</a></li>
 <li><a href="#Implicit-progn">Implicit <code>progn</code></a></li>
-<li><a href="#<code>$</code>plitter"><code>$</code>plitter</a></li>
+<li><a href="#<code>$</code>plitters"><code>$</code>plitters</a></li>
 <li><a href="#Multiple-choice-forms">Multiple-choice forms (<strong>new feature</strong>)</a></li>
 <li><a href="#Destructuring-multiple-values">Destructuring, multiple values (<strong>new feature</strong>)</a></li>
 <li><a href="#Loops">Loops</a></li>
@@ -1010,9 +1010,9 @@ is following that of the <a href="#LET-impl-progn-example">LET example above</a>
 
 <p>while <code>multiple-value-prog1</code> is given by <code>&lt;&amp;..</code>.</p>
 
-<p><a name="<code>$</code>plitter"></a></p>
+<p><a name="<code>$</code>plitters"></a></p>
 
-<h3><code>$</code>plitter</h3>
+<h3><code>$</code>plitters</h3>
 
 <p>Infix <code>$</code> is a vanishing OP, leaving only its arguments,
 effectively splitting the list in two parts.</p>
@@ -1022,15 +1022,23 @@ effectively splitting the list in two parts.</p>
 
 <p>=> <code>(f (g (h x y z)))</code></p>
 
-<p>So its effect here is similar to <code>$</code> in Haskell. 
-Or perhaps:</p>
+<p>Effect of <code>$</code> is similar to <code>$</code> in Haskell, except that here it works
+with Sexpr, so it is also possible to write</p>
 
 <pre><code>'{declare $ optimize (speed 1) (safety 1)}
 </code></pre>
 
-<p>=> <code>(declare (optimize (speed 1) (safety 1)))</code></p>
+<p>or</p>
 
-<p><code>$</code>plitter also allows writing a shorter <code>cond</code>, as in</p>
+<pre><code>'{declare {optimize $ speed 3; safety 1}}
+</code></pre>
+
+<p>both of which evaluate to</p>
+
+<pre><code>(declare (optimize (speed 1) (safety 1)))
+</code></pre>
+
+<p><code>$</code> also allows writing a shorter <code>cond</code>, as in</p>
 
 <pre><code>(cond {p x $ f x}
       {q x $ g x}
@@ -1046,14 +1054,28 @@ Or perhaps:</p>
       (t x))
 </code></pre>
 
-<p>Another splitter is <code>?</code>, which can be used instead of <code>$</code> in the previous
-example, as well as described in the next section.</p>
+<p><code>$</code> parenthesizes its l.h.s, leaving r.h.s. unchanged. Another splitter is <code>.$</code>,
+which does the opposite, namely parenthesizes its r.h.s leaving l.h.s unchanged,
+providing yet another way to omit parens:</p>
+
+<pre><code>'{loop for i to n
+       append loop for j to m
+                   collect .$ i :. j}
+</code></pre>
+
+<p>=></p>
+
+<pre><code>(loop for i to n
+      append (loop for j to m
+                   collect (cons i j)))
+</code></pre>
 
 <p><a name="Multiple-choice-forms"></a></p>
 
 <h3>Multiple-choice forms (<code>cond</code>, <code>case</code>, ...) (<strong>new feature</strong>)</h3>
 
-<p>An alternative syntax to describe multiple-choice forms is to use <code>?</code> and <code>;</code></p>
+<p>An alternative, <strong>depreciated</strong>, syntax to describe multiple-choice forms is to
+use <code>?</code> and <code>;</code></p>
 
 <pre><code>{cond p x ? f x;
       q x ? g x;
@@ -1061,8 +1083,7 @@ example, as well as described in the next section.</p>
         t ? x}
 </code></pre>
 
-<p>Use of <code>?</code> is <strong>depreciated</strong> and will be removed in the future.
-Preferred way to write such a form is to use <code>=&gt;</code> instead:</p>
+<p>Preferred way to write such a form is to use <code>=&gt;</code> instead:</p>
 
 <pre><code>{cond p x =&gt; f x;
       q x =&gt; g x;
@@ -1134,7 +1155,7 @@ destructuring,</p>
 
 <p>which evaluates to <code>t</code>.</p>
 
-<p>Multiple values (<code>values</code>) are represented by <code>.x.</code>, 
+<p>Multiple values (<code>values</code>) are represented by <code>.x.</code> as well as <code>values</code>, 
 <code>multiple-value-bind</code> by <code>=..</code> , and <code>destructuring-bind</code> by <code>..=</code></p>
 
 <pre><code>'{a (b) c ..= (f x) a + 1 .x. b + 2 .x. c + 3}
@@ -1434,7 +1455,7 @@ blog</a>)</p>
   join a :list  b :t    :- append a (list b) &amp;
   join a :t     b :t    :- list a b          &amp;
 
-  defbinfix '++ 'join 
+  defbinfix ++ join
 }
 ; Must close here in order to use ++
 
@@ -1869,7 +1890,13 @@ bundled with <code>vim</code>.</p>
 
 <tr><td><code>:prefix
 </code></td><td> OP is prefix with RHS being its arguments, given as one or more
-                 atoms/S-expr or a single `;` separated B-expr.
+                 atoms/exprs which can be also <code>;</code>-separated.
+</td></tr>
+
+<tr><td><code>:prefix-left
+</code></td><td> OP is prefix with RHS being its arguments, given as one or more
+                 atoms/exprs which can be also <code>;</code>-separated.
+                 Resulting forms will be appended to the forms on the LHS.
 </td></tr>
 
 <tr><td><code>:also-prefix
@@ -1900,7 +1927,8 @@ bundled with <code>vim</code>.</p>
 </td></tr>
 
 <tr><td><code>:rhs-args
-</code></td><td> OP takes LHS as 1st and RHS as remaining arguments.
+</code></td><td> OP takes LHS as 1st and RHS as remaining arguments, which can
+                 be <code>;</code>-separated Bexpr.
 </td></tr>
 
 <tr><td><code>:quote-lhs
@@ -1992,8 +2020,9 @@ the same priority:</p>
   let*           let*            :rhs-lbinds
   symbol-macrolet                symbol-macrolet :rhs-lbinds
   prog*          prog*           :rhs-lbinds
-  prog           prog            :rhs-lbinds )
-( macrolet       macrolet        :rhs-fbinds
+  prog           prog            :rhs-lbinds
+  with-slots     with-slots      :rhs-slots
+  macrolet       macrolet        :rhs-fbinds
   flet           flet            :rhs-fbinds
   labels         labels          :rhs-fbinds )
 ( :==            defmacro        :def
@@ -2006,18 +2035,14 @@ the same priority:</p>
   prog1          prog1           :prefix
   prog2          prog2           :prefix
   progn          progn           :prefix )
-( =...           multiple-value-setq             :quote-lhs )
-( .=             setf
-  +=             incf
-  -=             decf
-  =.             setq
-  .=.            set )
+( ?              nil             :split )
 ( setq           setq            :rhs-sbinds
   set            set             :rhs-sbinds
   psetq          psetq           :rhs-sbinds )
 ( setf           setf            :rhs-ebinds
   psetf          psetf           :rhs-ebinds )
-( $              nil             :split )
+( $              nil             :split          :rhs-args
+  .$             nil             :split-left     :rhs-args )
 ( .@             mapc            :rhs-args
   ..@            mapl            :rhs-args
   @/             reduce          :rhs-args
@@ -2036,6 +2061,12 @@ the same priority:</p>
 ( values         values          :prefix         :single
   .x.            values          :unreduce       :single )
 ( loop           loop            :prefix         :quote-rhs )
+( =...           multiple-value-setq             :quote-lhs
+  .=             setf
+  +=             incf
+  -=             decf
+  =.             setq
+  .=.            set )
 ( ||             or              :unreduce
   or             or              :unreduce       :also-prefix )
 ( &amp;&amp;             and             :unreduce
@@ -2059,6 +2090,7 @@ the same priority:</p>
   &lt;=             &lt;=              :single         :unreduce       :also-prefix
   &gt;=             &gt;=              :single         :unreduce       :also-prefix )
 ( th-bit         logbitp )
+( ++             join )
 ( coerce         coerce )
 ( !..            nth-value
   th-value       nth-value )

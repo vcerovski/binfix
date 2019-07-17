@@ -464,7 +464,8 @@
      (( setf setf  :rhs-ebinds)
       (psetf psetf :rhs-ebinds))
 
-     ((  $   ()         :split))
+     ((  $   ()         :split      :rhs-args)
+      ( .$   ()         :split-left :rhs-args))
 
      ((.@    mapc       :rhs-args) ;;-------------------------MAPPING
       (..@   mapl       :rhs-args)
@@ -798,12 +799,19 @@
                                 ,@(decl*-binfix+ (cdr rhs) decls))}
 
                 {:split in op-prop $
-                   cond {cdr lhs || null (get (car lhs) 'properties)
+                   cond {:rhs-args in op-prop && '; in rhs
+                           $ `(,(binfix lhs) ,@(binfix+ rhs))}
+                        {cdr lhs || null (get (car lhs) 'properties)
                            $ `(,(binfix lhs) ,(binfix rhs))}
                         {:also-unary in third (get (car lhs) 'properties) ;; needed for handling {- $ ...}
                            $ (binfix `(,@lhs ,(binfix rhs)))}
                         {t $ error "BINFIX: missing l.h.s of ~S~@
                                     with r.h.s:~%~S" (car lhs) rhs}}
+
+                {:split-left in op-prop $
+                   if {'; in rhs && :rhs-args in op-prop}
+                      (binfix`(,@lhs ,@(binfix+ rhs)))
+                      (binfix`(,@lhs ,(binfix rhs)))}
 
                 {:prefix in op-prop $
                    binfix `(,@lhs ,(cond {:quote-rhs in op-prop  $ `(,op,@rhs)}

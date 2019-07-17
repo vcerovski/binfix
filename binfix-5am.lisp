@@ -6,8 +6,7 @@
   (:import-from #:fiveam
       #:def-suite #:in-suite #:test #:is #:is-true #:is-false #:signals
       #:*on-error* #:*on-failure* #:run!)
-  (:export #:run-tests)
-)
+  (:export #:run-tests))
 
 (in-package :binfix/5am)
 
@@ -31,36 +30,58 @@
   `(signals error (read-from-string ,B-expr) ,@rest))
 
 (test S-expressions
-  (B2 is (equal "'{a $ b}" '(a b))                   "S-expr ops sanity check."            )
-  (B2 is (equal "'{f $ g $ h x y z}"
-                 '(f (g (h x y z)))  ))
-  (B1 is-true  "'{1 :. 2} == '(1 . 2)}"                           )
-  (B1 is-true  "'{'{f $ x * y} == '{f {x * y}} == '(f (* x y))}"  )
-  (B2 is (equal
-           "'{-2 :. loop for i upto 9 collect i}"
-            '(cons -2 (loop for i upto 9 collect i))    ))
+  (B2 is (equal "'{a $ b}" '(a b)                                ))
+  (B2 is (equal "'{f  $ g x}" '(f (g x))                         ))
+  (B2 is (equal "'{f .$ g x}"  '(f (g x))                        ))
+  (B2 is (equal "'{f x  $ g x}" '((f x) (g x))                   ))
+  (B2 is (equal "'{f x .$ g x}" '(f x (g x))                     ))
+  (B2 is (equal "'{f  $ g  $ h x y z}" '(f (g (h x y z)))        ))
+  (B2 is (equal "'{f .$ g .$ h x y z}" '(f (g (h x y z)))        ))
+
+  (B2 is (equal "'{a b  $ c d  $ e f}" '((a b) ((c d) (e f)))    ))
+  (B2 is (equal "'{a b .$ c d .$ e f}" '(a b (c d (e f)))        ))
+  (B2 is (equal "'{a b .$ c d  $ e f}" '(a b ((c d) (e f)))      ))
+  (B2 is (equal "'{a b  $ c d .$ e f}" '((a b) (c d (e f)))      ))
+
+  (B2 is (equal "'{a $ b;}" '(a b)                               ))
+  (B2 is (equal "'{a $ b; c}" '(a b c)                           ))
+  (B2 is (equal "'{f a  $ g b; h c}" '((f a) (g b) (h c))        ))
+  (B2 is (equal "'{f a .$ g b; h c}" '(f a (g b) (h c))          ))
+  (B2 is (equal "'{when {a > x}.$ print x; g x a}"
+                 '(when (> a x) (print x) (g x a))               ))
+
+  (B1 is-true  "{1 :. 2 equal '(1 . 2)}"                          )
+  (B1 is-true  "{'{f $ x * y} equal '{f {x * y}}}"                )
+  (B2 is (equal "'{-2 :. loop for i upto 9 collect i}"
+                 '(cons -2 (loop for i upto 9 collect i))        ))
 
   (B2 is (equal "
             '{loop for i = 1 to 3
                    collect loop for j = 2 to 4
-                                collect {i :. j}}"
-            '(loop for i = 1 to 3
+                                collect {i :. j}}
+           "'(loop for i = 1 to 3
                    collect (loop for j = 2 to 4
                                  collect (cons i j)))    ))
-
+  (B2 is (equal "
+            '{loop for i to n
+                   nconc loop for j to m
+                              collect .$ i :. j}
+           "'(loop for i to n
+                   nconc (loop for j to m
+                               collect (cons i j)))      ))
   (B2 is (equal "
             '(cond {x > 1 $ x}
                    {x < 1 $ sin x}
                    {b $ x + y}
-                   {t $ a})"
-            '(cond ((> x 1) x)
+                   {t $ a})
+           "'(cond ((> x 1) x)
                    ((< x 1) (sin x))
                    (b (+ x y))
                    (t a))                                ))
 )
 
-(test arithmetics
-  (B2 is (equal  "'{1 + 2}            " '(+ 1 2)                   ) "Arithmetics sanity check.")
+(test arithmetic
+  (B2 is (equal  "'{1 + 2}            " '(+ 1 2)                   ))
   (B2 is ( =     " {1 / 2}            "  1/2                       ))
   (B2 is (equal  "'{a - b - c - d}    " '(- a b c d)               ))
   (B2 is (equal  "'{- a - b - c - d}  " '(- (- a) b c d)           ))

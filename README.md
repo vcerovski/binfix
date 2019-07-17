@@ -57,7 +57,7 @@ reference 1.0 version.
     * [LETs (**new feature**)](#LETs)
     * [SETs](#SETs)
     * [Implicit `progn`](#Implicit-progn)
-    * [`$`plitter](#`$`plitter)
+    * [`$`plitters](#`$`plitters)
     * [Multiple-choice forms (**new feature**)](#Multiple-choice-forms)
     * [Destructuring, multiple values (**new feature**)](#Destructuring-multiple-values)
     * [Loops](#Loops)
@@ -886,8 +886,8 @@ Bop `<&` stands for `prog1`,
 
 while `multiple-value-prog1` is given by `<&..`.
 
-<a name="`$`plitter"></a>
-### `$`plitter
+<a name="`$`plitters"></a>
+### `$`plitters
 
 Infix `$` is a vanishing OP, leaving only its arguments,
 effectively splitting the list in two parts.
@@ -896,15 +896,21 @@ effectively splitting the list in two parts.
 
 => `(f (g (h x y z)))`
 
-So its effect here is similar to `$` in Haskell. 
-Or perhaps:
+Effect of `$` is similar to `$` in Haskell, except that here it works
+with Sexpr, so it is also possible to write
 
     '{declare $ optimize (speed 1) (safety 1)}
 
-=> `(declare (optimize (speed 1) (safety 1)))`
+or
+
+    '{declare {optimize $ speed 3; safety 1}}
+
+both of which evaluate to
+
+    (declare (optimize (speed 1) (safety 1)))
 
 
-`$`plitter also allows writing a shorter `cond`, as in
+`$` also allows writing a shorter `cond`, as in
 
     (cond {p x $ f x}
           {q x $ g x}
@@ -918,20 +924,30 @@ compared to the equivalent
           ((r x) (h x))
           (t x))
 
-Another splitter is `?`, which can be used instead of `$` in the previous
-example, as well as described in the next section.
+`$` parenthesizes its l.h.s, leaving r.h.s. unchanged. Another splitter is `.$`,
+which does the opposite, namely parenthesizes its r.h.s leaving l.h.s unchanged,
+providing yet another way to omit parens:
+
+    '{loop for i to n
+           append loop for j to m
+                       collect .$ i :. j}
+=>
+
+    (loop for i to n
+          append (loop for j to m
+                       collect (cons i j)))
 
 <a name="Multiple-choice-forms"></a>
 ### Multiple-choice forms (`cond`, `case`, ...) (**new feature**)
 
-An alternative syntax to describe multiple-choice forms is to use `?` and `;`
+An alternative, **depreciated**, syntax to describe multiple-choice forms is to
+use `?` and `;`
 
     {cond p x ? f x;
           q x ? g x;
           r x ? h x;
             t ? x}
 
-Use of `?` is **depreciated** and will be removed in the future.
 Preferred way to write such a form is to use `=>` instead:
 
     {cond p x => f x;
@@ -995,7 +1011,7 @@ destructuring,
 
 which evaluates to `t`.
 
-Multiple values (`values`) are represented by `.x.`, 
+Multiple values (`values`) are represented by `.x.` as well as `values`, 
 `multiple-value-bind` by `=..` , and `destructuring-bind` by `..=`
 
     '{a (b) c ..= (f x) a + 1 .x. b + 2 .x. c + 3}
@@ -1261,7 +1277,7 @@ APL-ish joining of things into list:
       join a :list  b :t    :- append a (list b) &
       join a :t     b :t    :- list a b          &
 
-      defbinfix '++ 'join 
+      defbinfix ++ join
     }
     ; Must close here in order to use ++
 
@@ -1672,7 +1688,13 @@ Here are GUI and terminal looks:
 
 <tr><td><code>:prefix
 </code></td><td> OP is prefix with RHS being its arguments, given as one or more
-                 atoms/S-expr or a single `;` separated B-expr.
+                 atoms/exprs which can be also <code>;</code>-separated.
+</td></tr>
+
+<tr><td><code>:prefix-left
+</code></td><td> OP is prefix with RHS being its arguments, given as one or more
+                 atoms/exprs which can be also <code>;</code>-separated.
+                 Resulting forms will be appended to the forms on the LHS.
 </td></tr>
 
 <tr><td><code>:also-prefix
@@ -1703,7 +1725,8 @@ Here are GUI and terminal looks:
 </td></tr>
 
 <tr><td><code>:rhs-args
-</code></td><td> OP takes LHS as 1st and RHS as remaining arguments.
+</code></td><td> OP takes LHS as 1st and RHS as remaining arguments, which can
+                 be <code>;</code>-separated Bexpr.
 </td></tr>
 
 <tr><td><code>:quote-lhs
@@ -1794,8 +1817,9 @@ the same priority:
       let*           let*            :rhs-lbinds
       symbol-macrolet                symbol-macrolet :rhs-lbinds
       prog*          prog*           :rhs-lbinds
-      prog           prog            :rhs-lbinds )
-    ( macrolet       macrolet        :rhs-fbinds
+      prog           prog            :rhs-lbinds
+      with-slots     with-slots      :rhs-slots
+      macrolet       macrolet        :rhs-fbinds
       flet           flet            :rhs-fbinds
       labels         labels          :rhs-fbinds )
     ( :==            defmacro        :def
@@ -1808,18 +1832,14 @@ the same priority:
       prog1          prog1           :prefix
       prog2          prog2           :prefix
       progn          progn           :prefix )
-    ( =...           multiple-value-setq             :quote-lhs )
-    ( .=             setf
-      +=             incf
-      -=             decf
-      =.             setq
-      .=.            set )
+    ( ?              nil             :split )
     ( setq           setq            :rhs-sbinds
       set            set             :rhs-sbinds
       psetq          psetq           :rhs-sbinds )
     ( setf           setf            :rhs-ebinds
       psetf          psetf           :rhs-ebinds )
-    ( $              nil             :split )
+    ( $              nil             :split          :rhs-args
+      .$             nil             :split-left     :rhs-args )
     ( .@             mapc            :rhs-args
       ..@            mapl            :rhs-args
       @/             reduce          :rhs-args
@@ -1838,6 +1858,12 @@ the same priority:
     ( values         values          :prefix         :single
       .x.            values          :unreduce       :single )
     ( loop           loop            :prefix         :quote-rhs )
+    ( =...           multiple-value-setq             :quote-lhs
+      .=             setf
+      +=             incf
+      -=             decf
+      =.             setq
+      .=.            set )
     ( ||             or              :unreduce
       or             or              :unreduce       :also-prefix )
     ( &&             and             :unreduce
@@ -1861,6 +1887,7 @@ the same priority:
       <=             <=              :single         :unreduce       :also-prefix
       >=             >=              :single         :unreduce       :also-prefix )
     ( th-bit         logbitp )
+    ( ++             join )
     ( coerce         coerce )
     ( !..            nth-value
       th-value       nth-value )

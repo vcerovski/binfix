@@ -49,7 +49,7 @@ syn keyword lispKey  	declare
 syn keyword lispFunc	:=	:==	:-	:->	:type=  =>      _       :_
 syn keyword lispFunc	<<	**	in	:.	==	===	=s=	=c=
 syn keyword lispFunc	-=	+=	.=	.=.	=.	=..	..=	=...
-syn keyword lispFunc	.x.	\|\|	&&	&	<&	<&..	;	?	$
+syn keyword lispFunc	.x.	\|\|	&&	&	<&	<&..	;	?	$       .$
 syn keyword lispFunc	->	@@	@.	@n	@	@..	@.n	.@	..@	@/	.@.
 syn keyword lispFunc	~~!	!~~	@~	~!	!~	~~
 syn keyword lispFunc	!	.!	!.	.!.	.!!.	!!	!!.	!..
