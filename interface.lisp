@@ -27,6 +27,21 @@
          remprop op 'properties;
          nil &
 
+ keepbinfix &rest Bops :==
+  "Keep only Bops represented by symbols in argument(s) BOPS
+  Without arguments restores all binfix Bops. Returns nil."
+  `{eval-when (:load-toplevel :compile-toplevel :execute)
+     progn
+       (init-binfix);
+       when ',Bops
+         {*binfix* =. remove-if 'null
+                        {Bs -> {Bs =. delete-if {B -> unless {car B in ',(pushnew '; Bops)}
+                                                        (remprop (car B) 'properties) t}
+                                                Bs}
+                            @. *binfix*}}
+         (assign-properties)
+         nil} &
+
  rembinfix &rest Bops :==
   "Macro that removes Bops represented by symbols in BOPS.  Returns nil."
   `{eval-when (:load-toplevel :compile-toplevel :execute)

@@ -428,7 +428,13 @@
   (B1 is-true  "(every 'identity
                    {b -> get b 'binfix::properties
                       @. '(+ := let def - flet |;| = && :.)})")
-)
+
+  (B1 is-false "(keepbinfix +)")
+  (B2 is (equal "'{a + b - c}" '(+ a (b - c))  ))
+  (B1 is-false "(keepbinfix let := + -)")
+  (B2 is (equal "'{f x := let a = b + c; f x - f b / a * x}"
+                 '(defun f (x) (let ((a (+ b c))) (- (f x) (f b / a * x)))) ))
+  (B1 is-false "(init-binfix)"))
 
 (defun run-tests ()
  "Returns t if all tests pass, otherwise nil"

@@ -1403,7 +1403,7 @@ The following set of forms modify BINFIX behavior by adding/removing/redefining
 Bops.  They must be evaluated before and outside B-exprs in which the modified
 behavior takes place.
 
-* (`defbinfix` Bop lisp-op priority &rest properties)
+* `(defbinfix Bop lisp-op priority &rest properties)`
 
   Macro function that defines new or redefines existing `Bop` to represent
   lisp operation `lisp-op` (both of these arguments are symbols,) where
@@ -1425,17 +1425,24 @@ behavior takes place.
 
     `(setbinfix binfix::index2 svref)`
 
-  sets `a[i]` to represent `(svref a i)`.
+  sets `a[[i]]` to represent `(svref a i)`.
 
 * `(rmbinfix Bop1 ... Bopn)`
 
-  Macro function that removes specified Bops `Bop1` ... `Bopn`.  After this
-  macro form is executed, `Bop1` ... `Bopn` will have no special meaning within
-  B-expressions.
+  Macro function that removes specified Bops `Bop1` ...  `Bopn`.  After this
+  macro form is executed, symbols `Bop1` ... `Bopn` will not be interpreted as
+  Bops within B-expressions.
 
-* `(init-binfix)`
+* `(keepbinfix Bop1 ... Bopn)`
 
-   Macro function that sets BINFIX to its initial state.
+  Keep only given Bops `Bop1` ... `Bopn` and `;`.  After this macro form is
+  executed, only symbols `Bop1` ...`Bopn` and `;` will be interpreted as Bops
+  within B-expressions.
+
+* `(keepbinfix)` or `(init-binfix)`
+
+  After either one of these macro forms is executed, BINFIX is restored to its
+  initial state.
 
 <a name="Implementation"></a>
 ## Implementation
@@ -1712,7 +1719,7 @@ Here are GUI and terminal looks:
 </td></tr>
 
 <tr><td><code>:progn
-</code></td><td> OP is in a progn-monad <a link=#progn-m>example</a>.  Currently
+</code></td><td> OP is in a <a href=#progn-m>progn-monad</a>.  Currently
                  implemented in combination with <code>:prefix</code>,
                  <code>:quote-rhs</code>/<code>:macro</code> properties.
 </td></tr>
@@ -1729,7 +1736,7 @@ Here are GUI and terminal looks:
                  <code>(aref a i (1+ j))</code> (<strong>new feature</strong>)
 </td></tr>
 <tr><td><code>:rhs-implicit-progn <i>symbol</i>
-</code></td><td> OP splits the RHS in block of Bexpr separated by
+</code></td><td> OP splits the RHS into blocks of Bexprs separated by
                  <code><i>symbol</i></code> and <code>;</code>
                  (<strong>new feature</strong>)
 </td></tr>

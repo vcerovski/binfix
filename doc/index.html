@@ -1594,7 +1594,7 @@ Bops.  They must be evaluated before and outside B-exprs in which the modified
 behavior takes place.</p>
 
 <ul>
-<li><p>(<code>defbinfix</code> Bop lisp-op priority &amp;rest properties)</p>
+<li><p><code>(defbinfix Bop lisp-op priority &amp;rest properties)</code></p>
 
 <p>Macro function that defines new or redefines existing <code>Bop</code> to represent
 lisp operation <code>lisp-op</code> (both of these arguments are symbols,) where
@@ -1616,15 +1616,21 @@ represent.  For instance, </p>
 
 <p><code>(setbinfix binfix::index2 svref)</code></p>
 
-<p>sets <code>a[i]</code> to represent <code>(svref a i)</code>.</p></li>
+<p>sets <code>a[[i]]</code> to represent <code>(svref a i)</code>.</p></li>
 <li><p><code>(rmbinfix Bop1 ... Bopn)</code></p>
 
-<p>Macro function that removes specified Bops <code>Bop1</code> ... <code>Bopn</code>.  After this
-macro form is executed, <code>Bop1</code> ... <code>Bopn</code> will have no special meaning within
-B-expressions.</p></li>
-<li><p><code>(init-binfix)</code></p>
+<p>Macro function that removes specified Bops <code>Bop1</code> ...  <code>Bopn</code>.  After this
+macro form is executed, symbols <code>Bop1</code> ... <code>Bopn</code> will not be interpreted as
+Bops within B-expressions.</p></li>
+<li><p><code>(keepbinfix Bop1 ... Bopn)</code></p>
 
-<p>Macro function that sets BINFIX to its initial state.</p></li>
+<p>Keep only given Bops <code>Bop1</code> ... <code>Bopn</code> and <code>;</code>.  After this macro form is
+executed, only symbols <code>Bop1</code> ...<code>Bopn</code> and <code>;</code> will be interpreted as Bops
+within B-expressions.</p></li>
+<li><p><code>(keepbinfix)</code> or <code>(init-binfix)</code></p>
+
+<p>After either one of these macro forms is executed, BINFIX is restored to its
+initial state.</p></li>
 </ul>
 
 <p><a name="Implementation"></a></p>
@@ -1805,10 +1811,10 @@ bundled with <code>vim</code>.</p>
 
 <p>Here are GUI and terminal looks:</p>
 
-<p><img src="httpd://github.com/vcerovski/syntax-gui.png" alt="gui" title="" />
+<p><img src="syntax-gui.png" alt="gui" title="" />
 (theme: <code>solarized</code>, font: <code>Inconsolata Medium</code>)</p>
 
-<p><img src="httpd://github.com/vcerovski/syntax-term.png" alt="terminal" title="" />
+<p><img src="syntax-term.png" alt="terminal" title="" />
 (theme: <code>herald</code>, font: <code>Terminus</code>)</p>
 
 <p><a name="Operation-properties"></a></p>
@@ -1910,7 +1916,7 @@ bundled with <code>vim</code>.</p>
 </td></tr>
 
 <tr><td><code>:progn
-</code></td><td> OP is in a progn-monad <a link=#progn-m>example</a>.  Currently
+</code></td><td> OP is in a <a href=#progn-m>progn-monad</a>.  Currently
                  implemented in combination with <code>:prefix</code>,
                  <code>:quote-rhs</code>/<code>:macro</code> properties.
 </td></tr>
@@ -1927,7 +1933,7 @@ bundled with <code>vim</code>.</p>
                  <code>(aref a i (1+ j))</code> (<strong>new feature</strong>)
 </td></tr>
 <tr><td><code>:rhs-implicit-progn <i>symbol</i>
-</code></td><td> OP splits the RHS in block of Bexpr separated by
+</code></td><td> OP splits the RHS into blocks of Bexprs separated by
                  <code><i>symbol</i></code> and <code>;</code>
                  (<strong>new feature</strong>)
 </td></tr>
