@@ -1118,10 +1118,6 @@ default set to indexing of hash table,
 
 =>
 
-    (binfix::hashget table key default)
-
-where `default` argument is optional, which macroexpands into
-
     (gethash key table default)
 
 What square-brackets represent can be changed [using `setbinfix`](#setbinfix).
@@ -1441,7 +1437,7 @@ behavior takes place.
 
     `(setbinfix binfix::index2 svref)`
 
-  sets `a[[i]]` to represent `(svref a i)`.
+  defines that `a[[i]]` represents `(svref a i)`.
 
 * `(rmbinfix Bop1 ... Bopn)`
 
@@ -1945,7 +1941,7 @@ the same priority:
       _              slot-value      :single )
     ( |;|            |;| )
     ( binfix::index  aref            :term
-      binfix::index2 binfix::hashget :term )
+      binfix::index2 binfix::hashget :term           :macro )
     ------------------------------------------------------------------------------
 
 => `nil`

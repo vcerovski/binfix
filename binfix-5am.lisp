@@ -400,7 +400,7 @@
   (B2 is (equal "'{a[1;2][2;3]}"  '(aref (aref a 1 2) 2 3)                    ))
 
   (B2 is (equal "'{incf table[[key;0]]}"
-                 '(incf (binfix::hashget table key 0))))
+                 '(incf (gethash key table 0))))
 )
 
 (test parsing-errors
@@ -439,7 +439,18 @@
   (B1 is-false "(setbinfix binfix::index my-ref)")
   (B2 is (equal "'{a[i % j]}"  '(my-ref a (my-mod i j))))
   (B1 is-false "(setbinfix binfix::index aref)")
-  
+
+  (B1 is-false "(setbinfix binfix::index funcall)")
+  (B2 is (equal "'{f[x;y;z]}"  '(funcall f x y z) ))
+  (B2 is (equal "'{f[x;y;]}"   '(funcall f x y)   ))
+  (B2 is (equal "'{f[]}"       '(funcall f)       ))
+  (B2 is (=     "{'+[1;2]}"    3                  ))
+  (B2 is (=     "{{x y -> y - x}[2;3]}"    1      ))
+
+  (B1 is-false "(setbinfix binfix::index2 svref)")
+  (B2 is (equal "'{f[x;a[[i]]]}"  '(funcall f x (svref a i))  ))
+  (B1 is-false "(setbinfix binfix::index2 svref :term)")
+  (B2 is (equal "'{f[x;a[[i]]]}"  '(funcall f x (svref a i))  ))
 
   (B1 is-false "(rembinfix %)")
   (B2 is (equal "'{a % b + c}" '(+ (a % b) c)))

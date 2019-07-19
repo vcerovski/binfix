@@ -52,11 +52,18 @@
        (assign-properties);
        nil} &
 
- setbinfix op :symbol lisp-op :symbol :==
-  "Set already defined binfix OP to represent lisp LISP-OP."
-   ops -> {op1 -> {car op1 eq op && setf cadr op1 = lisp-op} .@ ops} .@ *binfix*;
-   (assign-properties);
-   nil &
+ setbinfix op :symbol lisp-op :symbol &rest props :==
+  "Set already defined binfix OP to represent lisp LISP-OP,
+  with the same properties unless properties PROPS are non-nil."
+  `{eval-when (:load-toplevel :compile-toplevel :execute)
+     progn
+       unless *init-binfix* setq *init-binfix* = copy-tree *binfix*;
+       ops -> {op1 -> when {car op1 eq ',op}
+                        {setf cadr op1 = ',lisp-op}
+                        {unless ,(null props) setf cddr op1 = ',props} .@ ops}
+           .@ *binfix*;
+       (assign-properties);
+       nil} &
 
  #-abcl {declaim ({symbol &optional symbol priority &rest t :-> boolean} defbinfix)}
  #-abcl &

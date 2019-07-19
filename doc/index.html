@@ -1279,11 +1279,6 @@ default set to indexing of hash table,</p>
 
 <p>=></p>
 
-<pre><code>(binfix::hashget table key default)
-</code></pre>
-
-<p>where <code>default</code> argument is optional, which macroexpands into</p>
-
 <pre><code>(gethash key table default)
 </code></pre>
 
@@ -1637,7 +1632,7 @@ represent.  For instance, </p>
 
 <p><code>(setbinfix binfix::index2 svref)</code></p>
 
-<p>sets <code>a[[i]]</code> to represent <code>(svref a i)</code>.</p></li>
+<p>defines that <code>a[[i]]</code> represents <code>(svref a i)</code>.</p></li>
 <li><p><code>(rmbinfix Bop1 ... Bopn)</code></p>
 
 <p>Macro function that removes specified Bops <code>Bop1</code> ...  <code>Bopn</code>.  After this
@@ -2148,7 +2143,7 @@ the same priority:</p>
   _              slot-value      :single )
 ( |;|            |;| )
 ( binfix::index  aref            :term
-  binfix::index2 binfix::hashget :term )
+  binfix::index2 binfix::hashget :term           :macro )
 ------------------------------------------------------------------------------
 </code></pre>
 
