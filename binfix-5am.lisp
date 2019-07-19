@@ -427,15 +427,19 @@
 
 (test interface ;; These must be evaluated in order
                 ;; and non-concurrently with other tests
+  (is-false binfix::*init-binfix*)
   (B1 is-true "(defbinfix % mod :after +)")
+  (is-true binfix::*init-binfix*)
   (B2 is (equal "'{a % b}" '(mod a b)))
   (B2 is (equal "'{a % b + c}" '(+ (mod a b) c)))
+
 
   (B1 is-false "(setbinfix % my-mod)")
   (B2 is (equal "'{a % b + c}" '(+ (my-mod a b) c)))
   (B1 is-false "(setbinfix binfix::index my-ref)")
   (B2 is (equal "'{a[i % j]}"  '(my-ref a (my-mod i j))))
   (B1 is-false "(setbinfix binfix::index aref)")
+  
 
   (B1 is-false "(rembinfix %)")
   (B2 is (equal "'{a % b + c}" '(+ (a % b) c)))

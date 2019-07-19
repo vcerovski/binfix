@@ -64,7 +64,6 @@
  defbinfix Bop lisp-op = Bop p = :later &rest prop :==
   "DEFBINFIX bop [lisp-op [priority op [property]*]]
   Defines new or redefines existing Bop BOP."
-   rmbinfix Bop;
    let* i = {ecase p;
              :first      => 0;
              :last       => op-position '; ;
@@ -79,6 +78,8 @@
                               op-position op1};
      every {p -> {etypecase p; property p}} prop;
      unless i (error "DEFBINFIX ~S ~S cannot find binfix Bop." Bop p);
+     unless *init-binfix* setq *init-binfix* = copy-tree *binfix*;
+     rmbinfix Bop;
      *binfix* =. append (subseq *binfix* 0 i)
                        `(((,Bop ,lisp-op ,@prop) ,@{p in '(:as :same-as) && *binfix* .! i}))
                         (subseq *binfix* (if {p in '(:as :same-as)} (1+ i) i));
