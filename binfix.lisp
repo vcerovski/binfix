@@ -353,40 +353,10 @@
        decls e =.. (decls r (declare* decls))
           `(,slots ,s ,@(nreverse decls)) .x. e;
 
- fbinds e &optional binds name llist body :=
-   symbol-macrolet
-     finish =
-       {decl* r =.. (decls (if name {name :. revappend llist (nreverse body)}
-                                            {revappend llist (nreverse body)})
-                           (declare* ()))
-          `(,(nreverse binds) ,@decl*) .x. r}
-   labels
-     bind n ll d b =
-       {ll ldecl* =.. (lambda-list (nreverse ll))
-          decl* body =.. (decls (nreverse b) ldecl*)
-            `(,n ,ll ,@decl* ,@d ,(binfix body)) :. binds}
-    cond {null e
-            $ if body
-                {decl* r =.. (decls (nreverse body))
-                  `(,(nreverse (bind name llist decl* `(,(pop r))))) .x. r}
-                finish}
-         {car e == ':=
-            $ if body
-                {decl* r =.. (decls (nreverse body))
-                   fbinds (cddr e)
-                          (bind name llist decl* `(,(pop r)))
-                          (pop r)
-                          (nreverse r)
-                         `(,(cadr e))}
-                (fbinds (cddr e) binds name llist `(,(cadr e)))}
-         {car e == ';
-            $ if body
-                (fbinds (cdr e) (bind name llist () body))
-                finish}
-         {body  $ fbinds (cdr e) binds name llist {car e :. body}}
-         {llist $ fbinds (cdr e) binds name {car e :. llist} body}
-         {name  $ fbinds (cdr e) binds name `(,(car e))}
-         {t     $ fbinds (cdr e) binds (car e)};
+ fbinds e def :=
+   cond {car e ==  def   $ `(,(cdr e))}
+        {car e == 'progn $ mapcan (lambda (d) (fbinds d def)) (cdr e)}
+        {t $ error "BINFIX expects ~S, found:~%   ~S" def (car e)};
 
  defs-macro &rest defs :== defs defs;
 
@@ -443,8 +413,7 @@
       ( macrolet        macrolet        :rhs-fbinds)
       ( flet            flet            :rhs-fbinds)
       ( labels          labels          :rhs-fbinds)
-     )
-     (( :==             defmacro        :def)
+      ( :==             defmacro        :def)
       ( :=              defun           :def)
       ( :-              defmethod       :defm)
       ( :type=          deftype         :def))
@@ -693,6 +662,11 @@
                {rhs        $ e-binds (cdr e) binds           lhs {car e :. rhs}}
                {t          $ e-binds (cdr e) binds {car e :. lhs}          rhs}}
 
+     last-expr e =
+       {let i = (position '; e :from-end t)
+          if i {subseq e 0 i .x. subseq e (1+ i)}
+               {nil .x. e}}
+
      term e =
         {cond {atom e $ e}
               {consp e && consp (cadr e) && symbolp (caadr e)
@@ -745,9 +719,11 @@
                 {:rhs-ebinds in op-prop $
                    binds r =.. (e-binds rhs)
                      singleton (binfix `(,@lhs (,op-lisp ,@binds) ,@r))}
+
                 {:rhs-fbinds in op-prop $
-                   binds-decls* expr =.. (fbinds rhs)
-                     singleton (binfix `(,@lhs (,op-lisp ,@binds-decls* ,@(binfix+ expr))))}
+                   binfix `(,@lhs (,op-lisp
+                                    ,(fbinds (car rhs) (if {:rhs-fbinds in op-prop} 'defun 'defmacro))
+                                    ,@(decl*-binfix+ (cdr rhs) ())))}
 
                 {:lhs-lambda in op-prop $
                    ll decls =.. (lambda-list lhs)
@@ -785,14 +761,21 @@
                                                          { t        $ rhs}))}
                                 {t $ error "BINFIX: missing l.h.s. of ~S (~S)~@
                                             with r.h.s:~%~S" op op-lisp rhs}}
-                {:def in op-prop $ ll decls =.. (lambda-list (cdr lhs))
-                                    `(,op-lisp ,(car lhs) ,ll
-                                               ,@(doc*-decl*-binfix+ rhs decls))}
+                {:def in op-prop $
+                   prev lhs =.. (last-expr lhs)
+                     ll decls =.. (lambda-list (cdr lhs))
+                       (progn-monad
+                          (binfix prev)
+                         `(,op-lisp ,(car lhs) ,ll
+                                    ,@(doc*-decl*-binfix+ rhs decls)))}
                 {:defm in op-prop $
-                   `(,op-lisp ,(pop lhs) ,@(cond {consp (car lhs) && null (cdar lhs) $ pop lhs}
-                                                 {keywordp (car lhs) $ list (pop lhs)})
-                              ,@{ll decls =.. (method-lambda-list lhs)
-                                  `(,ll ,@(doc*-decl*-binfix+ rhs decls))})}
+                   prev lhs =.. (last-expr lhs)
+                     (progn-monad
+                        (binfix prev)
+                       `(,op-lisp ,(pop lhs) ,@(cond {consp (car lhs) && null (cdar lhs) $ pop lhs}
+                                                     {keywordp (car lhs) $ list (pop lhs)})
+                                  ,@{ll decls =.. (method-lambda-list lhs)
+                                      `(,ll ,@(doc*-decl*-binfix+ rhs decls))}))}
                 {:left-assoc in op-prop && find op rhs $
                    binfix `(,op-lisp ,(binfix  lhs) ,@rhs)}
                 {:lambda/expr in op-prop $

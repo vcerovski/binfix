@@ -131,10 +131,10 @@
 (test let-forms
   (B2 is (equal "'{let x = 1 x}"    '(let ((x 1)) x)  ) "LET-form sanity check.")
   (B1 is-true   "{1 = let x = 1 x}"                   )
-  (B1 is-true   "{1 = flet f := 1 (f)}"               )
+  (B1 is-true   "{1 = flet {f := 1} (f)}"             )
   (B2 is (equal"
-            '{flet f x :integer y :number := {x / y}
-                   g x :number y := {x ** y}
+            '{flet {f x :integer y :number := {x / y};
+                    g x :number y := {x ** y}}
                 f 1 2 / g 2 3}
           " '(flet ((f (x y)
                       (declare (type integer x)
@@ -143,14 +143,34 @@
                     (g (x y)
                       (declare (type number x))
                       (expt x y)))
-               (/ (f 1 2) (g 2 3)))     ))
+               (/ (f 1 2) (g 2 3)))       ))
   (B2 is (equal "
-              '{flet f x := x + x;
-                     g x := y * y;
+              '{flet {f x := x + x;
+                      g x := y * y}
                   f $ g x}
             " '(flet ((f (x) (+ x x))
                       (g (x) (* y y)))
-                 (f (g x)))             ))
+                 (f (g x)))               ))
+  (B2 is (equal "
+            '{g x := x * x;
+              declaim (inline f) &
+              f x := x * x}
+         "'(progn
+             (defun g (x) (* x x))
+             (declaim (inline f))
+             (defun f (x) (* x x)))       ))
+  (B2 is (equal "
+           '{g x := x * x;
+             h y := g (g y)
+             declaim (inline f) &
+             f x := x * x;
+             h x := f x}
+        "'(progn
+            (defun g (x) (* x x))
+            (defun h (y) (g (g y)))
+            (declaim (inline f))
+            (progn (defun f (x) (* x x))
+                   (defun h (x) (f x))))  ))
 )
 
 (test multiple-let
@@ -389,6 +409,40 @@
                 (:method ((a t) (b list)) (cons a b))
                 (:method ((a list) (b t)) `(,@a ,b))
                 (:method ((a t) (b t)) (list a b))))            ))
+
+  (B2 is (equal  "'{f x := 1- x;
+                    g x := 1+ x}"
+                  '(progn (defun f (x) (1- x))
+                          (defun g (x) (1+ x)))                 ))
+  (B2 is (equalp "'{f x :== `(1- ,x);
+                    g x :== `(1+ ,x)}"
+                  '(progn (defmacro f (x) `(1- ,x))
+                          (defmacro g (x) `(1+ ,x)))            ))
+  (B2 is (equal  "'{f x :t1 :- 1- x;
+                    f x :t2 :- 1+ x}"
+                  '(progn (defmethod f ((x t1)) (1- x))
+                          (defmethod f ((x t2)) (1+ x)))        ))
+
+  (B2 is (equal  "'{f x := print x; 1- x;
+                    g x := print x; 1+ x}"
+                  '(progn (defun f (x) (print x) (1- x))
+                          (defun g (x) (print x) (1+ x)))       ))
+
+  (B2 is (equal  "'{f x := let y = g x;
+                             x + y;
+                    g x := x * x}"
+                  '(progn
+                     (defun f (x)
+                       (let ((y (g x)))
+                         (+ x y)))
+                     (defun g (x) (* x x)))                     ))
+
+  (B2 is (equal  "'{def f x := x; g y := y}"
+                  '(progn (defun f (x) x) (defun g (y) y))      ))
+  (B2 is (equal  "'{f x := x; def g y := y}"
+                  '(progn (defun f (x) x) (defun g (y) y))      ))
+  (B2 is (equal  "'{f x := x  def g y := y}"
+                  '(progn (defun f (x) x) (defun g (y) y))      ))
 )
 
 (test B-terms

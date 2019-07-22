@@ -14,6 +14,10 @@ BINFIX (blend from "Binary Infix") is a powerful infix syntax notation for
 S-expressions of Common LISP ranging from simple arithmetic and logical
 forms to whole programs.
 
+**NEW FEATURES in v0.50** (July 2019): [`;`-separated definitions](#Multi-defs)
+of functions; [Simpler](#Local-functions) local definitions of longer/multiple
+functions;
+
 **NEW FEATURE** (July 2019): [`let` supports multiple-value- and
 destructuring-bind](#Destructuring-multiple-values).
 <br>
@@ -22,8 +26,11 @@ use of `?` is *depreciated*.  Introduced BINFIX [`with-slots`](#with-slots).
 <br>
 **NEW FEATURE** (Jun 2019): _B-terms_, allowing [indexing](#Indexing)-like operations.
 
+Currently developed v0.50, once it's finished, should mark transition from
+experimental to a stable version of BINFIX.  Although there are still a few
+important new features to come, BINFIX begins to look about right.
 
-There are a few important new features still to come.
+<!--
 One of them, available from v0.16, is use of a single `;` symbol as a
 form-separating symbol in [implicit-progn](#LET-impl-progn-example), [expression
 terminator](#SETF-expr-termination) for SETFs, or as end of [LET binds
@@ -33,6 +40,7 @@ writing standard LISP definitions [without outer parens](#progn-m).
 
 Once the rest of them have been implemented, BINFIX will go to RC and then to
 reference 1.0 version.
+-->
 
 -----------------------
 ## Content
@@ -47,7 +55,8 @@ reference 1.0 version.
         * [Mappings](#Maps)
         * [defun](#defun)
         * [&optional](#&optional)
-        * [Local functions](#Local-functions)
+        * [Multiple definitions (**new feature in v0.50**)](#Multi-defs)
+        * [Local functions (**new feture in v0.50**)](#Local-functions)
         * [defmethod](#defmethod)
         * [defmacro](#defmacro)
         * [def](#def)
@@ -365,10 +374,38 @@ where, within *`<body expr>`*, boolean variables `supplied-y` and `supplied-z`
 are available (for the standard check whether respective values were provided
 in the call of `f`.)
 
-<a name="Local-functions"></a>
-#### Local functions
+<a name="Multi-defs"></a>
+#### Multiple definitions (**new feature in v0.50**)
 
-Version of `fac` with a local recursive function `f`:
+Definitions of several functions are simply written as `;`-separated individual
+definitions,
+
+    '{f x y := print "Addition";
+               x + y;
+      g x :num y :num :- x + y;
+      m x y :== `{,x + ,y}}
+
+=>
+
+    (progn
+     (defun f (x y) (print "Addition") (+ x y))
+     (defmethod g ((x num) (y num)) (+ x y))
+     (defmacro m (x y) `(+ ,x ,y)))
+
+Another way to obtain the same Sexpr until v0.50 is to use `def`,
+
+    '{def f x y := print "Addition";
+                   x + y
+      def g x :num y :num :- x + y
+      def m x y :== `{,x + ,y}}
+
+but this way of defining functions is **DEPRECIATED**.
+
+<a name="Local-functions"></a>
+#### Local functions (**new feature in v0.50**)
+
+Version of `fac` with a local recursive function `f` prior to v0.50 could be
+written as:
 
     {fac n :integer :=
       labels
@@ -376,7 +413,7 @@ Version of `fac` with a local recursive function `f`:
                      {f (1- n) {n * m}}}
        f n 1}
 
-Another syntax to specify a local function is to use a single `;` as in
+or, by using a single `;` to terminate definition, as in
 
     {fac n :integer :=
       labels
@@ -384,16 +421,7 @@ Another syntax to specify a local function is to use a single `;` as in
                     {f (1- n) {n * m}};
        f n 1}
 
-<!--
-There is also yet another way to write the definition of `fac`, as
-
-    {fac n :integer :=
-      labels
-        f n m := {if n = 0; m; f (1- n) {n * m}}
-       f n 1}
--->
-
-All three above definitions of `fac` are transformed by `binfix` to
+where both forms are translated into the following S-expr,
 
     (defun fac (n)
       (declare (type integer n))
@@ -405,7 +433,21 @@ All three above definitions of `fac` are transformed by `binfix` to
 
 which can be demonstrated by simply evaluating the quoted expressions.
 
-The same syntax is used also in the case of `flet` and `macrolet`.
+These two ways of defining local functions are **not supported anymore starting
+with v0.50**.  Instead, the local function definition(s) must be enclosed in
+`{`...`}`,
+
+    {fac n :integer :=
+      labels {f n m :=
+               if {n = 0} m
+                 {f (1- n) {n * m}}}
+       f n 1}
+
+The new way of writing local definitions has advantages over old when multiple
+and/or more complicated local functions are defined.
+
+The same syntax is used also in the case of `flet` and `macrolet`, except that
+in the latter case [`:==` is written](#defmacro) instead of `:=`.
 
 <a name="defmethod"></a>
 #### `defmethod`
@@ -503,8 +545,8 @@ can have its type declared as
 
     '{fac n :integer :=
        labels
-         f n m := if {n = 0} m
-                     {f (1- n) {n * m}};
+         {f n m := if {n = 0} m
+                     {f (1- n) {n * m}}}
          declare f {integer integer :-> integer}
         f n 1}
 
@@ -526,9 +568,9 @@ instance:
     '{f x :integer :=
        let f = x -> 1+ x;
          declare f {integer -> integer}
-       {flet f x := 1- x;
-          declare f {integer :-> integer}
-          cons (f x) {f @ x}}}
+         flet {f x := 1- x}
+           declare f {integer :-> integer}
+           cons (f x) {f @ x}}
 
 =>
 
@@ -589,15 +631,15 @@ More detailed definitions are also straightforward to specify:
         :constructor create-point (x y = *y* z = *z*)
         x :single-float = 0f0
         y :single-float = 0f0
-        z :single-float = 0f0
+        z :single-float = 0f0 &
 
-      def point+= p :point q :point :=
+      point+= p :point q :point :=
         p _'x += q _'x;
         p _'y += q _'y;
         p _'z += q _'z;
-        p
+        p;
 
-      def point-= p :point q :point :=
+      point-= p :point q :point :=
         with-slots x y z :_ p
           with-slots dx = x dy = y dz = z :_ q
             x -= dx;
@@ -625,25 +667,25 @@ More detailed definitions are also straightforward to specify:
        (x 0.0 :type single-float)
        (y 0.0 :type single-float)
        (z 0.0 :type single-float))
-     (defun point+= (p q)
-       (declare (type point p)
-                (type point q))
-       (incf (slot-value p 'x) (slot-value q 'x))
-       (incf (slot-value p 'y) (slot-value q 'y))
-       (incf (slot-value p 'z) (slot-value q 'z))
-       p)
-     (defun point-= (p q)
-       (declare (type point p)
-                (type point q))
-       (with-slots (x y z)
-           p
-         (with-slots ((dx x) (dy y) (dz z))
-             q
-           (decf x dx)
-           (decf y dy)
-           (decf z dz)
-           p))))
-
+     (progn
+      (defun point+= (p q)
+        (declare (type point p)
+                 (type point q))
+        (incf (slot-value p 'x) (slot-value q 'x))
+        (incf (slot-value p 'y) (slot-value q 'y))
+        (incf (slot-value p 'z) (slot-value q 'z))
+        p)
+      (defun point-= (p q)
+        (declare (type point p)
+                 (type point q))
+        (with-slots (x y z)
+            p
+          (with-slots ((dx x) (dy y) (dz z))
+              q
+            (decf x dx)
+            (decf y dy)
+            (decf z dz)
+            p)))))
 
 `def class` syntax is like `defclass` without parens.  For this to work, class
 options (`:documentation` and `:metaclass`) have to be given <em>before</em>
@@ -1306,6 +1348,14 @@ which expands into
        (:method ((a list) (b t)) `(,@a ,b))
        (:method ((a t) (b t)) (list a b))))
 
+(**new feature in v0.50**) This way of writing `;`-separated instances is
+possible also in the first example, by replacing the four `join` lines with
+
+      join a :list  b :list :- append a b;
+      join a :t     b :list :- cons a b;
+      join a :list  b :t    :- append a (list b);
+      join a :t     b :t    :- list a b;
+
 <a name="values-bind"></a>
 #### `values-bind`
 
@@ -1627,10 +1677,10 @@ bundled with `vim`.
 
 Here are GUI and terminal looks:
 
-![gui](syntax-gui.png)
+![gui](httpd://github.com/vcerovski/syntax-gui.png)
 (theme: `solarized`, font: `Inconsolata Medium`)
 
-![terminal](syntax-term.png)
+![gui](httpd://github.com/vcerovski/syntax-term.png)
 (theme: `herald`, font: `Terminus`)
 
 <a name="Operation-properties"></a>
@@ -1817,8 +1867,8 @@ the same priority:
       with-slots     with-slots      :rhs-slots
       macrolet       macrolet        :rhs-fbinds
       flet           flet            :rhs-fbinds
-      labels         labels          :rhs-fbinds )
-    ( :==            defmacro        :def
+      labels         labels          :rhs-fbinds
+      :==            defmacro        :def
       :=             defun           :def
       :-             defmethod       :defm
       :type=         deftype         :def )
@@ -1883,7 +1933,6 @@ the same priority:
       <=             <=              :single         :unreduce       :also-prefix
       >=             >=              :single         :unreduce       :also-prefix )
     ( th-bit         logbitp )
-    ( ++             join )
     ( coerce         coerce )
     ( !..            nth-value
       th-value       nth-value )

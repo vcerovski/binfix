@@ -15,6 +15,10 @@
 S-expressions of Common LISP ranging from simple arithmetic and logical
 forms to whole programs.</p>
 
+<p><strong>NEW FEATURES in v0.50</strong> (July 2019): <a href="#Multi-defs"><code>;</code>-separated definitions</a>
+of functions; <a href="#Local-functions">Simpler</a> local definitions of longer/multiple
+functions;</p>
+
 <p><strong>NEW FEATURE</strong> (July 2019): <a href="#Destructuring-multiple-values"><code>let</code> supports multiple-value- and
 destructuring-bind</a>.
 <br>
@@ -23,16 +27,21 @@ use of <code>?</code> is <em>depreciated</em>.  Introduced BINFIX <a href="#with
 <br>
 <strong>NEW FEATURE</strong> (Jun 2019): <em>B-terms</em>, allowing <a href="#Indexing">indexing</a>-like operations.</p>
 
-<p>There are a few important new features still to come.
-One of them, available from v0.16, is use of a single <code>;</code> symbol as a
-form-separating symbol in <a href="#LET-impl-progn-example">implicit-progn</a>, <a href="#SETF-expr-termination">expression
-terminator</a> for SETFs, or as end of <a href="#LET-impl-progn-examples">LET binds
-symbol</a> or <a href="#Local-functions">local functions definition</a>.
-There is also <code>def</code>, for <a href="#def">defining things</a>, and the latest is
-writing standard LISP definitions <a href="#progn-m">without outer parens</a>.</p>
+<p>Currently developed v0.50, once it's finished, should mark transition from
+experimental to a stable version of BINFIX.  Although there are still a few
+important new features to come, BINFIX begins to look about right.</p>
 
-<p>Once the rest of them have been implemented, BINFIX will go to RC and then to
-reference 1.0 version.</p>
+<!--
+One of them, available from v0.16, is use of a single `;` symbol as a
+form-separating symbol in [implicit-progn](#LET-impl-progn-example), [expression
+terminator](#SETF-expr-termination) for SETFs, or as end of [LET binds
+symbol](#LET-impl-progn-examples) or [local functions definition](#Local-functions).
+There is also `def`, for [defining things](#def), and the latest is
+writing standard LISP definitions [without outer parens](#progn-m).
+
+Once the rest of them have been implemented, BINFIX will go to RC and then to
+reference 1.0 version.
+-->
 
 <hr />
 
@@ -51,7 +60,8 @@ reference 1.0 version.</p>
 <li><a href="#Maps">Mappings</a></li>
 <li><a href="#defun">defun</a></li>
 <li><a href="#&amp;optional">&amp;optional</a></li>
-<li><a href="#Local-functions">Local functions</a></li>
+<li><a href="#Multi-defs">Multiple definitions (<strong>new feature in v0.50</strong>)</a></li>
+<li><a href="#Local-functions">Local functions (<strong>new feture in v0.50</strong>)</a></li>
 <li><a href="#defmethod">defmethod</a></li>
 <li><a href="#defmacro">defmacro</a></li>
 <li><a href="#def">def</a></li>
@@ -427,11 +437,43 @@ after the assignment.</p>
 are available (for the standard check whether respective values were provided
 in the call of <code>f</code>.)</p>
 
+<p><a name="Multi-defs"></a></p>
+
+<h4>Multiple definitions (<strong>new feature in v0.50</strong>)</h4>
+
+<p>Definitions of several functions are simply written as <code>;</code>-separated individual
+definitions,</p>
+
+<pre><code>'{f x y := print "Addition";
+           x + y;
+  g x :num y :num :- x + y;
+  m x y :== `{,x + ,y}}
+</code></pre>
+
+<p>=></p>
+
+<pre><code>(progn
+ (defun f (x y) (print "Addition") (+ x y))
+ (defmethod g ((x num) (y num)) (+ x y))
+ (defmacro m (x y) `(+ ,x ,y)))
+</code></pre>
+
+<p>Another way to obtain the same Sexpr until v0.50 is to use <code>def</code>,</p>
+
+<pre><code>'{def f x y := print "Addition";
+               x + y
+  def g x :num y :num :- x + y
+  def m x y :== `{,x + ,y}}
+</code></pre>
+
+<p>but this way of defining functions is <strong>DEPRECIATED</strong>.</p>
+
 <p><a name="Local-functions"></a></p>
 
-<h4>Local functions</h4>
+<h4>Local functions (<strong>new feature in v0.50</strong>)</h4>
 
-<p>Version of <code>fac</code> with a local recursive function <code>f</code>:</p>
+<p>Version of <code>fac</code> with a local recursive function <code>f</code> prior to v0.50 could be
+written as:</p>
 
 <pre><code>{fac n :integer :=
   labels
@@ -440,7 +482,7 @@ in the call of <code>f</code>.)</p>
    f n 1}
 </code></pre>
 
-<p>Another syntax to specify a local function is to use a single <code>;</code> as in</p>
+<p>or, by using a single <code>;</code> to terminate definition, as in</p>
 
 <pre><code>{fac n :integer :=
   labels
@@ -449,16 +491,7 @@ in the call of <code>f</code>.)</p>
    f n 1}
 </code></pre>
 
-<!--
-There is also yet another way to write the definition of `fac`, as
-
-    {fac n :integer :=
-      labels
-        f n m := {if n = 0; m; f (1- n) {n * m}}
-       f n 1}
--->
-
-<p>All three above definitions of <code>fac</code> are transformed by <code>binfix</code> to</p>
+<p>where both forms are translated into the following S-expr,</p>
 
 <pre><code>(defun fac (n)
   (declare (type integer n))
@@ -471,7 +504,22 @@ There is also yet another way to write the definition of `fac`, as
 
 <p>which can be demonstrated by simply evaluating the quoted expressions.</p>
 
-<p>The same syntax is used also in the case of <code>flet</code> and <code>macrolet</code>.</p>
+<p>These two ways of defining local functions are <strong>not supported anymore starting
+with v0.50</strong>.  Instead, the local function definition(s) must be enclosed in
+<code>{</code>...<code>}</code>,</p>
+
+<pre><code>{fac n :integer :=
+  labels {f n m :=
+           if {n = 0} m
+             {f (1- n) {n * m}}}
+   f n 1}
+</code></pre>
+
+<p>The new way of writing local definitions has advantages over old when multiple
+and/or more complicated local functions are defined.</p>
+
+<p>The same syntax is used also in the case of <code>flet</code> and <code>macrolet</code>, except that
+in the latter case <a href="#defmacro"><code>:==</code> is written</a> instead of <code>:=</code>.</p>
 
 <p><a name="defmethod"></a></p>
 
@@ -582,8 +630,8 @@ can have its type declared as</p>
 
 <pre><code>'{fac n :integer :=
    labels
-     f n m := if {n = 0} m
-                 {f (1- n) {n * m}};
+     {f n m := if {n = 0} m
+                 {f (1- n) {n * m}}}
      declare f {integer integer :-&gt; integer}
     f n 1}
 </code></pre>
@@ -607,9 +655,9 @@ instance:</p>
 <pre><code>'{f x :integer :=
    let f = x -&gt; 1+ x;
      declare f {integer -&gt; integer}
-   {flet f x := 1- x;
-      declare f {integer :-&gt; integer}
-      cons (f x) {f @ x}}}
+     flet {f x := 1- x}
+       declare f {integer :-&gt; integer}
+       cons (f x) {f @ x}}
 </code></pre>
 
 <p>=></p>
@@ -676,15 +724,15 @@ More detailed definitions are also straightforward to specify:</p>
     :constructor create-point (x y = *y* z = *z*)
     x :single-float = 0f0
     y :single-float = 0f0
-    z :single-float = 0f0
+    z :single-float = 0f0 &amp;
 
-  def point+= p :point q :point :=
+  point+= p :point q :point :=
     p _'x += q _'x;
     p _'y += q _'y;
     p _'z += q _'z;
-    p
+    p;
 
-  def point-= p :point q :point :=
+  point-= p :point q :point :=
     with-slots x y z :_ p
       with-slots dx = x dy = y dz = z :_ q
         x -= dx;
@@ -713,24 +761,25 @@ More detailed definitions are also straightforward to specify:</p>
    (x 0.0 :type single-float)
    (y 0.0 :type single-float)
    (z 0.0 :type single-float))
- (defun point+= (p q)
-   (declare (type point p)
-            (type point q))
-   (incf (slot-value p 'x) (slot-value q 'x))
-   (incf (slot-value p 'y) (slot-value q 'y))
-   (incf (slot-value p 'z) (slot-value q 'z))
-   p)
- (defun point-= (p q)
-   (declare (type point p)
-            (type point q))
-   (with-slots (x y z)
-       p
-     (with-slots ((dx x) (dy y) (dz z))
-         q
-       (decf x dx)
-       (decf y dy)
-       (decf z dz)
-       p))))
+ (progn
+  (defun point+= (p q)
+    (declare (type point p)
+             (type point q))
+    (incf (slot-value p 'x) (slot-value q 'x))
+    (incf (slot-value p 'y) (slot-value q 'y))
+    (incf (slot-value p 'z) (slot-value q 'z))
+    p)
+  (defun point-= (p q)
+    (declare (type point p)
+             (type point q))
+    (with-slots (x y z)
+        p
+      (with-slots ((dx x) (dy y) (dz z))
+          q
+        (decf x dx)
+        (decf y dy)
+        (decf z dz)
+        p)))))
 </code></pre>
 
 <p><code>def class</code> syntax is like <code>defclass</code> without parens.  For this to work, class
@@ -1487,6 +1536,15 @@ generic</code>,</p>
    (:method ((a t) (b t)) (list a b))))
 </code></pre>
 
+<p>(<strong>new feature in v0.50</strong>) This way of writing <code>;</code>-separated instances is
+possible also in the first example, by replacing the four <code>join</code> lines with</p>
+
+<pre><code>  join a :list  b :list :- append a b;
+  join a :t     b :list :- cons a b;
+  join a :list  b :t    :- append a (list b);
+  join a :t     b :t    :- list a b;
+</code></pre>
+
 <p><a name="values-bind"></a></p>
 
 <h4><code>values-bind</code></h4>
@@ -2019,8 +2077,8 @@ the same priority:</p>
   with-slots     with-slots      :rhs-slots
   macrolet       macrolet        :rhs-fbinds
   flet           flet            :rhs-fbinds
-  labels         labels          :rhs-fbinds )
-( :==            defmacro        :def
+  labels         labels          :rhs-fbinds
+  :==            defmacro        :def
   :=             defun           :def
   :-             defmethod       :defm
   :type=         deftype         :def )
@@ -2085,7 +2143,6 @@ the same priority:</p>
   &lt;=             &lt;=              :single         :unreduce       :also-prefix
   &gt;=             &gt;=              :single         :unreduce       :also-prefix )
 ( th-bit         logbitp )
-( ++             join )
 ( coerce         coerce )
 ( !..            nth-value
   th-value       nth-value )
