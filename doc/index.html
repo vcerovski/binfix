@@ -16,9 +16,8 @@ S-expressions of Common LISP ranging from simple arithmetic and logical
 forms to whole programs.</p>
 
 <p><strong>NEW FEATURES in v0.50</strong> (July 2019): <a href="#Multi-defs"><code>;</code>-separated definitions</a>
-of functions which makes use of <code>def</code> for this purpose obsolette;
-<a href="#Local-functions">Simpler</a> local definitions of longer/multiple functions;
-using <code>def</code> for defining functions is <em>obsolette</em></p>
+of functions which makes use of <code>def</code> for this purpose <a href="#Multi-defs">obsolete</a>;
+<a href="#Local-functions">Simpler</a> local definitions of longer/multiple functions;</p>
 
 <p><strong>NEW FEATURE</strong> (July 2019): <a href="#Destructuring-multiple-values"><code>let</code> supports multiple-value- and
 destructuring-bind</a>.
@@ -467,7 +466,29 @@ definitions,</p>
   def m x y :== `{,x + ,y}}
 </code></pre>
 
-<p>but this way of defining functions is <strong>obsolette</strong>.</p>
+<p>but this way of defining functions is <strong>obsolete</strong>.</p>
+
+<p>Furthermore, to define types or compiler macros in v0.50, it is
+sufficient to prefix a macro definition with <code>type</code> or <code>compiler-macro</code>,
+respectively.  Here is the simplest example that puts together defining
+various kinds of Common LISP functions using BINFIX,</p>
+
+<pre><code>'{f x := x;
+  g x :- x;
+  m x :== x;
+  type I x :== x;
+  compiler-macro c x :== x}
+</code></pre>
+
+<p>=></p>
+
+<pre><code>(progn
+ (defun f (x) x)
+ (defmethod g (x) x)
+ (defmacro m (x) x)
+ (deftype i (x) x)
+ (define-compiler-macro c (x) x))
+</code></pre>
 
 <p><a name="Local-functions"></a></p>
 

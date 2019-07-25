@@ -380,10 +380,11 @@
       ( declaim                   declaim                   :progn :prefix :quote-rhs )
       ( proclaim                  proclaim                  :progn :prefix :quote-rhs ))
 
-     (( :==             defmacro        :def)
-      ( :=              defun           :def)
-      ( :-              defmethod       :defm)
-      ( :type=          deftype         :def))
+     (( :==             defmacro        :def  ((type           . deftype)
+                                               (compiler-macro . define-compiler-macro)))
+      ( :=              defun           :def                                            )
+      ( :-              defmethod       :defm                                           )
+      ( :type=          deftype         :def                                            ))
 
      (( cond       cond          :rhs-implicit-progn => :prefix)  ;; does not require => to have priority; :rhs-implicit-progn must be first prop.
       ( case       case          :rhs-implicit-progn => :prefix)  ;;   ... same ...
@@ -754,20 +755,24 @@
                                 {t $ error "BINFIX: missing l.h.s. of ~S (~S)~@
                                             with r.h.s:~%~S" op op-lisp rhs}}
                 {:def in op-prop $
-                   prev lhs =.. (last-expr lhs)
+                  prev lhs =.. (last-expr lhs)
+                   let def = (cdr (assoc (car lhs) (cadr op-prop)))
+                    {when def (pop lhs);
                      ll decls =.. (lambda-list (cdr lhs))
                        (progn-monad
                           (binfix prev)
-                         `(,op-lisp ,(car lhs) ,ll
-                                    ,@(doc*-decl*-binfix+ rhs decls)))}
+                         `(,{def || op-lisp} ,(car lhs) ,ll
+                                    ,@(doc*-decl*-binfix+ rhs decls)))}}
                 {:defm in op-prop $
-                   prev lhs =.. (last-expr lhs)
+                  prev lhs =.. (last-expr lhs)
+                   let def = (cdr (assoc (car lhs) (cadr op-prop)))
+                    {when def (pop lhs);
                      (progn-monad
                         (binfix prev)
-                       `(,op-lisp ,(pop lhs) ,@(cond {consp (car lhs) && null (cdar lhs) $ pop lhs}
-                                                     {keywordp (car lhs) $ list (pop lhs)})
+                       `(,{def || op-lisp} ,(pop lhs) ,@(cond {consp (car lhs) && null (cdar lhs) $ pop lhs}
+                                                              {keywordp (car lhs) $ list (pop lhs)})
                                   ,@{ll decls =.. (method-lambda-list lhs)
-                                      `(,ll ,@(doc*-decl*-binfix+ rhs decls))}))}
+                                      `(,ll ,@(doc*-decl*-binfix+ rhs decls))}))}}
                 {:left-assoc in op-prop && find op rhs $
                    binfix `(,op-lisp ,(binfix  lhs) ,@rhs)}
                 {:lambda/expr in op-prop $

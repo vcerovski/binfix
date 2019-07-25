@@ -485,6 +485,10 @@
                          (+ x y)))
                      (defun g (x) (* x x)))                     ))
 
+  (B2 is (equalp "'{m x == 'a b :n :- a + b}"
+                  '(defmethod m ((x (eql 'a)) (b n)) (+ a b))   ))
+
+
   (B2 is (equal "
             '{f x := x ** 2;
               m a :== binfix $ list a '** 2;
@@ -497,6 +501,28 @@
               (defun g (x) (cond ((> x 0) 1)
                                  (t -1)))
               (defun h (x) (- x)))              ))
+
+  (B2 is (equalp "'{type int := '(signed-byte 32)}"
+                  '(defun type (int) '(signed-byte 32))         ))
+  (B2 is (equalp "'{type int :== '(signed-byte 32)}"
+                  '(deftype int () '(signed-byte 32))           ))
+  (B2 is (equalp "'{compiler-macro f x := x}"
+                  '(defun compiler-macro (f x) x)               ))
+  (B2 is (equalp "'{compiler-macro f x :== x}"
+                  '(define-compiler-macro f (x) x)              ))
+
+  (B2 is (equalp "
+            '{f x := x;
+              g x :- x;
+              m x :== x;
+              type I x :== x;
+              compiler-macro c x :== x}
+           "'(progn
+              (defun f (x) x)
+              (defmethod g (x) x)
+              (defmacro m (x) x)
+              (deftype i (x) x)
+              (define-compiler-macro c (x) x))                  ))
 )
 
 (test obsolete

@@ -15,9 +15,8 @@ S-expressions of Common LISP ranging from simple arithmetic and logical
 forms to whole programs.
 
 **NEW FEATURES in v0.50** (July 2019): [`;`-separated definitions](#Multi-defs)
-of functions which makes use of `def` for this purpose obsolette;
+of functions which makes use of `def` for this purpose [obsolete](#Multi-defs);
 [Simpler](#Local-functions) local definitions of longer/multiple functions;
-using `def` for defining functions is *obsolette*
 
 **NEW FEATURE** (July 2019): [`let` supports multiple-value- and
 destructuring-bind](#Destructuring-multiple-values).
@@ -400,7 +399,28 @@ Another way to obtain the same Sexpr until v0.50 was to use `def`,
       def g x :num y :num :- x + y
       def m x y :== `{,x + ,y}}
 
-but this way of defining functions is **obsolette**.
+but this way of defining functions is **obsolete**.
+
+Furthermore, to define types or compiler macros in v0.50, it is
+sufficient to prefix a macro definition with `type` or `compiler-macro`,
+respectively.  Here is the simplest example that puts together defining
+various kinds of Common LISP functions using BINFIX,
+
+    '{f x := x;
+      g x :- x;
+      m x :== x;
+      type I x :== x;
+      compiler-macro c x :== x}
+
+=>
+
+    (progn
+     (defun f (x) x)
+     (defmethod g (x) x)
+     (defmacro m (x) x)
+     (deftype i (x) x)
+     (define-compiler-macro c (x) x))
+
 
 <a name="Local-functions"></a>
 #### Local functions (**new feature in v0.50**)
