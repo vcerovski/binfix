@@ -511,6 +511,8 @@
         m2 x :== `{,x ** 2} &
         macroexpand '(m1 3) equal macroexpand '(m2 3)
         and m1 3 = m2 3 = 9}"      )
+  (B2 is (equal "'{macrolet {m x y :== `x :. y} m 1 2}"
+                 '(macrolet ((m (x y) (cons `x y))) (m 1 2))   ))
 )
 
 (test B-terms

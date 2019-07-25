@@ -399,7 +399,7 @@
       ( prog*           prog*           :rhs-lbinds)
       ( prog            prog            :rhs-lbinds)
       ( with-slots      with-slots      :rhs-slots )
-      ( macrolet        macrolet        :rhs-fbinds)
+      ( macrolet        macrolet        :rhs-mbinds)
       ( flet            flet            :rhs-fbinds)
       ( labels          labels          :rhs-fbinds))
 
@@ -712,7 +712,7 @@
                    binds r =.. (e-binds rhs)
                      singleton (binfix `(,@lhs (,op-lisp ,@binds) ,@r))}
 
-                {:rhs-fbinds in op-prop $
+                {:rhs-fbinds in op-prop || :rhs-mbinds in op-prop $
                    binfix `(,@lhs (,op-lisp
                                     ,(fbinds (car rhs) (if {:rhs-fbinds in op-prop} 'defun 'defmacro))
                                     ,@(decl*-binfix+ (cdr rhs) ())))}
