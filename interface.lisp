@@ -28,14 +28,17 @@
          nil &
 
  keepbinfix &rest Bops :==
-  "Keep only Bops represented by symbols in argument(s) BOPS
-  Without arguments restores all binfix Bops. Returns nil."
+  "Keep only Bops represented by symbols in argument(s) BOPS.  Without
+  arguments restores all binfix Bops.  Handles also implicit dependence
+  of := :== and :- on progn Bop. Returns nil."
+  when {'; in Bops && intersection '(:= :== :-) Bops}
+     (pushnew 'progn Bops);
   `{eval-when (:load-toplevel :compile-toplevel :execute)
      progn
        (init-binfix);
-       when ',Bops
-         {*binfix* =. remove-if 'null
-                        {Bs -> {Bs =. delete-if {B -> unless {car B in ',(pushnew '; Bops)}
+       unless ,(null Bops)
+         {*binfix* =. delete ()
+                        {Bs -> {Bs =. delete-if {B -> unless {car B in ',Bops}
                                                         (remprop (car B) 'properties) t}
                                                 Bs}
                             @. *binfix*}}

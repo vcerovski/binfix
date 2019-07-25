@@ -15,8 +15,9 @@ S-expressions of Common LISP ranging from simple arithmetic and logical
 forms to whole programs.
 
 **NEW FEATURES in v0.50** (July 2019): [`;`-separated definitions](#Multi-defs)
-of functions; [Simpler](#Local-functions) local definitions of longer/multiple
-functions;
+of functions which makes use of `def` for this purpose obsolette;
+[Simpler](#Local-functions) local definitions of longer/multiple functions;
+using `def` for defining functions is *obsolette*
 
 **NEW FEATURE** (July 2019): [`let` supports multiple-value- and
 destructuring-bind](#Destructuring-multiple-values).
@@ -392,14 +393,14 @@ definitions,
      (defmethod g ((x num) (y num)) (+ x y))
      (defmacro m (x y) `(+ ,x ,y)))
 
-Another way to obtain the same Sexpr until v0.50 is to use `def`,
+Another way to obtain the same Sexpr until v0.50 was to use `def`,
 
     '{def f x y := print "Addition";
                    x + y
       def g x :num y :num :- x + y
       def m x y :== `{,x + ,y}}
 
-but this way of defining functions is **DEPRECIATED**.
+but this way of defining functions is **obsolette**.
 
 <a name="Local-functions"></a>
 #### Local functions (**new feature in v0.50**)
@@ -597,9 +598,9 @@ Type definitions are given using `:type=` OP, as in
 <a name="def"></a>
 #### `def`
 
-Program typically consists of a number of definitions of functions,
-constants, parameters, types, etc. The operation `def` is introduced
-to facilitate their easy writing:
+Program typically consists of a number of definitions.  Bop `def` can be used
+to define variables, parameters, constants, structures, classes and
+generic functions.  For instance,
 
     '{def parameter *x* = 1 *y* = 2
       def struct point x y z
@@ -621,9 +622,9 @@ More detailed definitions are also straightforward to specify:
 
     '{def parameter
         *y* :single-float = 1f0
-        *z* :single-float = 1f0;
+        *z* :single-float = 1f0
 
-      struct point "Point"
+      def struct point "Point"
         :print-function {p s d ->
                            declare (ignore d)
                            with-slots x y z :_ p
@@ -631,7 +632,7 @@ More detailed definitions are also straightforward to specify:
         :constructor create-point (x y = *y* z = *z*)
         x :single-float = 0f0
         y :single-float = 0f0
-        z :single-float = 0f0 &
+        z :single-float = 0f0;
 
       point+= p :point q :point :=
         p _'x += q _'x;
@@ -1497,9 +1498,10 @@ behavior takes place.
 
 * `(keepbinfix Bop1 ... Bopn)`
 
-  Keep only given Bops `Bop1` ... `Bopn` and `;`.  After this macro form is
-  executed, only symbols `Bop1` ...`Bopn` and `;` will be interpreted as Bops
-  within B-expressions.
+  Keep only given Bops `Bop1` ... `Bopn` .  After this macro form is
+  executed, only symbols `Bop1` ...`Bopn`  will be interpreted as Bops
+  within B-expressions, except in the case of `:=`, `:==` and `:-` which
+  also require `progn` Bop if implicit-progn is to be used.
 
 * `(keepbinfix)` or `(init-binfix)`
 
@@ -1790,7 +1792,8 @@ Here are GUI and terminal looks:
 <tr><td><code>:progn
 </code></td><td> OP is in a <a href=#progn-m>progn-monad</a>.  Currently
                  implemented in combination with <code>:prefix</code>,
-                 <code>:quote-rhs</code>/<code>:macro</code> properties.
+                 <code>:quote-rhs</code>/<code>:macro</code> properties (**DEPRECIATED**,)
+                 and with <code>:terms</code>.
 </td></tr>
 
 <tr><td><code>:single
@@ -1831,7 +1834,7 @@ the same priority:
     ( <&             prog1
       <&..           multiple-value-prog1 )
     ( &              progn           :progn )
-    ( def            binfix::defs-macro              :progn          :prefix         :macro
+    ( def            nil             :binfix-defs
       defclass       defclass        :progn          :prefix         :quote-rhs
       defstruct      defstruct       :progn          :prefix         :quote-rhs
       deftype        deftype         :progn          :prefix         :quote-rhs
@@ -1852,6 +1855,10 @@ the same priority:
       define-modify-macro            define-modify-macro             :progn          :prefix         :quote-rhs
       declaim        declaim         :progn          :prefix         :quote-rhs
       proclaim       proclaim        :progn          :prefix         :quote-rhs )
+    ( :==            defmacro        :def
+      :=             defun           :def
+      :-             defmethod       :defm
+      :type=         deftype         :def )
     ( cond           cond            :rhs-implicit-progn             =>              :prefix
       case           case            :rhs-implicit-progn             =>              :prefix
       ccase          ccase           :rhs-implicit-progn             =>              :prefix
@@ -1867,11 +1874,7 @@ the same priority:
       with-slots     with-slots      :rhs-slots
       macrolet       macrolet        :rhs-fbinds
       flet           flet            :rhs-fbinds
-      labels         labels          :rhs-fbinds
-      :==            defmacro        :def
-      :=             defun           :def
-      :-             defmethod       :defm
-      :type=         deftype         :def )
+      labels         labels          :rhs-fbinds )
     ( block          block           :prefix
       tagbody        tagbody         :prefix
       catch          catch           :prefix

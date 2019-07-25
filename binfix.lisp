@@ -122,14 +122,6 @@
      (constant     . defconstant)
      (symbol-macro . define-symbol-macro));
 
- defparameter *def-macro*
-   '((type           . deftype)
-     (compiler-macro . define-compiler-macro));
-
- defparameter *def-function* ();
-
- defparameter *def-method* ();
-
  defparameter *decls* '(declare declaim);
 
  decls e &optional decls doc :=
@@ -280,15 +272,7 @@
         {t $ error "BINFIX def generic has a trailing ~S" (ldiff b {'; in b})};
 
  defs x &optional defs types :=
-   labels check-def x assgn +x+ descr =
-     {let def = (binfix (cdr x))
-        if {assgn in cdr x}
-           (defs () `((,(cdr (assoc (car x) +x+)) ,@(cdr def)) ,@defs) types)
-           (error "BINFIX def ~A instead of ~A definition has~%~S" (car x) descr (cdr x))}
-    cond {null x
-            $ `(progn ,@{types && nreverse types}
-                      ,@(nreverse defs))}
-         {car x == 'generic
+    cond {car x == 'generic
             $ defgen r =.. (def-generic (cdr x))
                 defs r `((defgeneric ,@defgen) ,@defs) types}
          {assoc (car x) *def-symbol*
@@ -300,9 +284,6 @@
                                           mapcar {a -> def :. a} binds}
                                       defs)
                          (if decl* {append decl* types} types)}}
-         {assoc (car x) *def-macro*    $ check-def x ':== *def-macro*    "macro"}
-         {assoc (car x) *def-function* $ check-def x ':=  *def-function* "function"}
-         {assoc (car x) *def-method*   $ check-def x ':-  *def-method*   "method"}
          {car x == '#-sbcl{struct}
                     #+sbcl{sb-alien:struct}
             $ assgn types r =.. (dstruct (cdr x) defs types)
@@ -310,11 +291,14 @@
          {car x == 'class
             $ class-def r =..(def-class (cdddr x))
                 (defs r `((defclass ,(cadr x) ,(caddr x) ,@class-def) ,@defs) types)}
-         {find-if {e -> e in '(:= :== :- :type=)} x
-            $ `(,(binfix x))}
          {car x == 'binfix
             $ `((defbinfix ,@(cdr x)))}
-         {t $ error "BINFIX def has a trailing:~%~S" x};
+         {t $ if {defs || types}
+                 {progn-monad
+                   `(progn ,@{types && nreverse types}
+                           ,@(nreverse defs))
+                   (binfix x)}
+                 (error "BINFIX def has a trailing:~% ~S~%" x)};
 
  vbinds e &optional vars decls :=
    cond {null e $ reverse vars .x. reverse decls}
@@ -367,7 +351,7 @@
       ( <&..            multiple-value-prog1))
      ((  &              progn           :progn))
 
-     (( def                       defs-macro                :progn :prefix :macro     ) ;;---------DEFINITIONS
+     (( def                       nil                       :binfix-defs              ) ;;---------DEFINITIONS
       ;; data defs
       ( defclass                  defclass                  :progn :prefix :quote-rhs )
       ( defstruct                 defstruct                 :progn :prefix :quote-rhs )
@@ -395,14 +379,19 @@
       ;; global declarations
       ( declaim                   declaim                   :progn :prefix :quote-rhs )
       ( proclaim                  proclaim                  :progn :prefix :quote-rhs ))
+
+     (( :==             defmacro        :def)
+      ( :=              defun           :def)
+      ( :-              defmethod       :defm)
+      ( :type=          deftype         :def))
+
      (( cond       cond          :rhs-implicit-progn => :prefix)  ;; does not require => to have priority; :rhs-implicit-progn must be first prop.
       ( case       case          :rhs-implicit-progn => :prefix)  ;;   ... same ...
       (ccase      ccase          :rhs-implicit-progn => :prefix)  ;;   ... same ...
       (ecase      ecase          :rhs-implicit-progn => :prefix)  ;;   ... same ...
       ( typecase   typecase      :rhs-implicit-progn => :prefix)  ;;   ... same ...
       (ctypecase  ctypecase      :rhs-implicit-progn => :prefix)  ;;   ... same ...
-      (etypecase  etypecase      :rhs-implicit-progn => :prefix)  ;;   ... same ...
-     )
+      (etypecase  etypecase      :rhs-implicit-progn => :prefix)) ;;   ... same ...
 
      (( let             let             :rhs-lbinds);;-------LET constructs
       ( let*            let*            :rhs-lbinds)
@@ -412,11 +401,7 @@
       ( with-slots      with-slots      :rhs-slots )
       ( macrolet        macrolet        :rhs-fbinds)
       ( flet            flet            :rhs-fbinds)
-      ( labels          labels          :rhs-fbinds)
-      ( :==             defmacro        :def)
-      ( :=              defun           :def)
-      ( :-              defmethod       :defm)
-      ( :type=          deftype         :def))
+      ( labels          labels          :rhs-fbinds))
 
      (( block    block     :prefix);;------------------------PREFIX FORMS
       ( tagbody  tagbody   :prefix)
@@ -460,9 +445,11 @@
       ( +=   incf)
       ( -=   decf)
       (  =.  setq)
-      ( .=.  set));; DEPRECIATED
+      ( .=.  set ))
+
      (( ||       or     :unreduce);;-------------------------LOGICAL OPS
       ( or       or     :unreduce :also-prefix))
+
      (( &&       and    :unreduce)
       ( and      and    :unreduce :also-prefix))
 
@@ -614,7 +601,7 @@
 
  implicit-progn e := cddr $ binfix `(progn () ; ,@e);
 
- binfix e &optional (max-priority *no-of-bops*) :=
+ binfix e &optional (max-priority (1+ *no-of-bops*)) :=
    labels
      unreduce e op &optional args arg =
        (cond {null e      $ reverse {binfix (reverse arg) :. args}}
@@ -634,7 +621,7 @@
 
      doc*-decl*-binfix+ rhs decls =
        {doc*-decl* body =.. (doc-decls rhs decls)
-         `(,@doc*-decl* ,@(binfix+ body))}
+         `(,@doc*-decl* ,@(implicit-progn body))}
 
      sbinds e &optional converted s current =
        {symbol-macrolet
@@ -728,18 +715,19 @@
                 {:lhs-lambda in op-prop $
                    ll decls =.. (lambda-list lhs)
                       `(,op-lisp ,ll ,@(decl*-binfix+ rhs decls))}
+                {:binfix-defs in op-prop $
+                   progn-monad (singleton (binfix lhs))
+                               (singleton (defs rhs))}
                 {:progn in op-prop $
                    cond {:prefix in op-prop && {:quote-rhs in op-prop || :macro in op-prop}
                            $ progn-monad (singleton (binfix lhs))
-                                         (singleton (if {:macro in op-prop}
-                                                        (macroexpand-1 `(,op-lisp ,@rhs))
-                                                       `(,op-lisp ,@rhs)))}
+                                         {let e = {'; in rhs}
+                                            if (null e)
+                                              `(,op-lisp ,@rhs)
+                                               (progn-monad`(,op-lisp ,@(ldiff rhs e))
+                                                            (binfix (cdr e)))}}
                         {t $ progn-monad (binfix lhs) ;; partial implementation.
                                         `(,op-lisp ,(binfix rhs))}}
-                {:macro in op-prop $
-                   if {:prefix in op-prop}
-                      {singleton $ binfix $ `(,@lhs ,(singleton (macroexpand-1 `(,op-lisp ,@rhs))))}
-                      (error "BINFIX macro implemented only for :prefix OPs")}
                 {:rhs-implicit-progn == car op-prop && cadr op-prop in rhs $ ;; looks ahead to allow other variants of the same op
                    {rhs-split rhs-head =.. (unreduce-rhs (cadr op-prop) rhs)
                       binfix `(,@lhs

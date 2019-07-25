@@ -160,6 +160,32 @@
              (declaim (inline f))
              (defun f (x) (* x x)))       ))
   (B2 is (equal "
+            '{g x := x * x;
+              declaim (inline f);
+              f x := x * x}
+         "'(progn
+             (defun g (x) (* x x))
+             (declaim (inline f))
+             (defun f (x) (* x x)))       ))
+  (B2 is (equal "
+            '{g x := x * x
+              declaim (inline f);
+              f x := x * x}
+         "'(progn
+             (defun g (x) (* x x))
+             (declaim (inline f))
+             (defun f (x) (* x x)))       ))
+  (B2 is (equal "
+            '{declaim (inline g);
+              g x := x * x
+              declaim (inline f);
+              f x := x * x}
+         "'(progn
+             (declaim (inline g))
+             (defun g (x) (* x x))
+             (declaim (inline f))
+             (defun f (x) (* x x)))       ))
+  (B2 is (equal "
            '{g x := x * x;
              h y := g (g y)
              declaim (inline f) &
@@ -171,6 +197,18 @@
             (declaim (inline f))
             (progn (defun f (x) (* x x))
                    (defun h (x) (f x))))  ))
+  (B2 is (equal "
+           '{g x := x * x;
+             h y := g (g y)
+             declaim (inline f);
+             f x := x * x;
+             h x := f x}
+        "'(progn
+            (defun g (x) (* x x))
+            (defun h (y) (g (g y)))
+            (declaim (inline f))
+            (defun f (x) (* x x))
+            (defun h (x) (f x)))  ))
 )
 
 (test multiple-let
@@ -383,16 +421,26 @@
   (B2 is (equal
            "'{def var *x* :fixnum = 1;}"
            '(progn (declaim (type fixnum *x*)) (defvar *x* 1))   ))
+  (B2 is (equal  "'{def parameter a = x; g y := y}"
+                  '(progn (defparameter a x) (defun g (y) y))    ))
+;;(B2 is (equal  "'{declaim (inline f); f x := x}"
+;;                '(progn (declaim (inline f)) (defun f (x) x))  )) ;; NOT IMPLEMENTED YET
   (B2 is (equal
            "'{def struct s a b c; var *v* = 1}"
            '(progn (defstruct s a b c) (defvar *v* 1))           ))
   (B2 is (equal "
             '{def parameter *x* = 1 *y* = 2
-              def struct point x y z
-              def f x := sqrt x * sin x}
+              def struct point x y z;
+              f x := sqrt x * sin x}       ;; from v0.50, it is an error to use def here.
           "'(progn
               (defparameter *x* 1)
               (defparameter *y* 2)
+              (defstruct point x y z)
+              (defun f (x) (* (sqrt x) (sin x))))                ))
+  (B2 is (equal "
+            '{def struct point x y z;
+              f x := sqrt x * sin x}
+          "'(progn
               (defstruct point x y z)
               (defun f (x) (* (sqrt x) (sin x))))                ))
   (B2 is (equalp "
@@ -437,12 +485,32 @@
                          (+ x y)))
                      (defun g (x) (* x x)))                     ))
 
-  (B2 is (equal  "'{def f x := x; g y := y}"
-                  '(progn (defun f (x) x) (defun g (y) y))      ))
-  (B2 is (equal  "'{f x := x; def g y := y}"
-                  '(progn (defun f (x) x) (defun g (y) y))      ))
-  (B2 is (equal  "'{f x := x  def g y := y}"
-                  '(progn (defun f (x) x) (defun g (y) y))      ))
+  (B2 is (equal "
+            '{f x := x ** 2;
+              m a :== binfix $ list a '** 2;
+              g x := cond x > 0 => 1;
+                          t    => -1;
+              h x := - x}
+           "'(progn
+              (defun f (x) (expt x 2))
+              (defmacro m (a) (binfix (list a '** 2)))
+              (defun g (x) (cond ((> x 0) 1)
+                                 (t -1)))
+              (defun h (x) (- x)))              ))
+)
+
+(test obsolete
+  (Berror  "      '{def f x := x; g y := y}   "     )  ;; use of def here is
+  (Berror  "      '{f x := x; def g y := y}   "     )  ;; obsolete from v0.50
+  (Berror  "      '{f x := x  def g y := y}   "     )  ;;<-- ; instead of def needed
+)
+
+(test macro
+  (B1 is-true "
+       {defmacro m1 (x) `(expt ,x 2) &
+        m2 x :== `{,x ** 2} &
+        macroexpand '(m1 3) equal macroexpand '(m2 3)
+        and m1 3 = m2 3 = 9}"      )
 )
 
 (test B-terms
@@ -477,6 +545,10 @@
   (Berror  "  '{1 <= 2 < 3}    ")
   (Berror  "  '{a 1 =.. f x}   ")
   (Berror  " '{def atruct x y} ")
+  (Berror  " '{def f x := x}   ")          ;; These are obsolete.
+  (Berror  " '{def f x :- x}   ")          ;; Starting with v0.50,
+  (Berror  " '{def f x :== x}  ")          ;; binfix reports now
+  (Berror  " '{def type ty :== 'fixnum} ") ;; "def trailing error"
 )
 
 (test interface ;; These must be evaluated in order
@@ -521,7 +593,7 @@
 
   (B1 is-false "(keepbinfix +)")
   (B2 is (equal "'{a + b - c}" '(+ a (b - c))  ))
-  (B1 is-false "(keepbinfix let := + -)")
+  (B1 is-false "(keepbinfix let := + - |;|)")
   (B2 is (equal "'{f x := let a = b + c; f x - f b / a * x}"
                  '(defun f (x) (let ((a (+ b c))) (- (f x) (f b / a * x)))) ))
   (B1 is-false "(init-binfix)"))
