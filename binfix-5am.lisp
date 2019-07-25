@@ -423,8 +423,8 @@
            '(progn (declaim (type fixnum *x*)) (defvar *x* 1))   ))
   (B2 is (equal  "'{def parameter a = x; g y := y}"
                   '(progn (defparameter a x) (defun g (y) y))    ))
-;;(B2 is (equal  "'{declaim (inline f); f x := x}"
-;;                '(progn (declaim (inline f)) (defun f (x) x))  )) ;; NOT IMPLEMENTED YET
+  (B2 is (equal  "'{declaim (inline f); f x := x}"
+                  '(progn (declaim (inline f)) (defun f (x) x))  ))
   (B2 is (equal
            "'{def struct s a b c; var *v* = 1}"
            '(progn (defstruct s a b c) (defvar *v* 1))           ))

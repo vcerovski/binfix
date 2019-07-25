@@ -339,7 +339,7 @@
 
  fbinds e def :=
    cond {car e ==  def   $ `(,(cdr e))}
-        {car e == 'progn $ mapcan (lambda (d) (fbinds d def)) (cdr e)}
+        {car e == 'progn $ mapcan {d -> fbinds d def} (cdr e)}
         {t $ error "BINFIX expects ~S, found:~%   ~S" def (car e)};
 
  defs-macro &rest defs :== defs defs;
@@ -543,8 +543,8 @@
  defvar *no-of-bops* 0;
 
  assign-properties :=
-   let p = {*no-of-bops* =. 0}
-      mapc {l -> {incf p;
+  let p = {*no-of-bops* =. 0}
+    map () {l ->{incf p;
                   mapc {prop -> {let* bop = (pop prop)
                                       lop = (pop prop)
                                    {get bop 'properties .= `(,p,lop,prop)};
@@ -555,11 +555,16 @@
  (assign-properties);
 
  defvar *init-binfix* nil;
+
  init-binfix :==
    when *init-binfix*
      { *binfix* =. copy-tree *init-binfix*;
        (assign-properties);
        nil };
+
+ save-binfix :=
+   unless *init-binfix*
+     {*init-binfix* =. copy-tree *binfix*};
 
  split e op &optional args arg :=
     cond {null e      $ nreverse $ nreverse arg :. args}
@@ -716,8 +721,7 @@
                    ll decls =.. (lambda-list lhs)
                       `(,op-lisp ,ll ,@(decl*-binfix+ rhs decls))}
                 {:binfix-defs in op-prop $
-                   progn-monad (singleton (binfix lhs))
-                               (singleton (defs rhs))}
+                   progn-monad (binfix lhs) (defs rhs)}
                 {:progn in op-prop $
                    cond {:prefix in op-prop && {:quote-rhs in op-prop || :macro in op-prop}
                            $ progn-monad (singleton (binfix lhs))

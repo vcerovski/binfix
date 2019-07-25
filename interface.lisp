@@ -42,31 +42,27 @@
                                                         (remprop (car B) 'properties) t}
                                                 Bs}
                             @. *binfix*}}
-         (assign-properties)
-         nil} &
+         (assign-properties)} &
 
  rembinfix &rest Bops :==
   "Macro that removes Bops represented by symbols in BOPS.  Returns nil."
   `{eval-when (:load-toplevel :compile-toplevel :execute)
      progn
-       unless *init-binfix*
-         setq *init-binfix* = copy-tree *binfix*;
+       (save-binfix);
        'rmbinfix .@ ',Bops;
-       (assign-properties);
-       nil} &
+       (assign-properties)} &
 
  setbinfix op :symbol lisp-op :symbol &rest props :==
   "Set already defined binfix OP to represent lisp LISP-OP,
   with the same properties unless properties PROPS are non-nil."
   `{eval-when (:load-toplevel :compile-toplevel :execute)
      progn
-       unless *init-binfix* setq *init-binfix* = copy-tree *binfix*;
+       (save-binfix);
        ops -> {op1 -> when {car op1 eq ',op}
                         {setf cadr op1 = ',lisp-op}
                         {unless ,(null props) setf cddr op1 = ',props} .@ ops}
            .@ *binfix*;
-       (assign-properties);
-       nil} &
+       (assign-properties)} &
 
  #-abcl {declaim ({symbol &optional symbol priority &rest t :-> boolean} defbinfix)}
  #-abcl &
@@ -88,7 +84,7 @@
                               op-position op1};
      every {p -> {etypecase p; property p}} prop;
      unless i (error "DEFBINFIX ~S ~S cannot find binfix Bop." Bop p);
-     unless *init-binfix* setq *init-binfix* = copy-tree *binfix*;
+     (save-binfix);
      rmbinfix Bop;
      *binfix* =. append (subseq *binfix* 0 i)
                        `(((,Bop ,lisp-op ,@prop) ,@{p in '(:as :same-as) && *binfix* .! i}))
