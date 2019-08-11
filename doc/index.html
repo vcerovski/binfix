@@ -2,7 +2,7 @@
 
 <h1>BINFIX</h1>
 
-<p>Viktor Cerovski, July 2019.</p>
+<p>Viktor Cerovski, August 2019.</p>
 
 <p><a href="https://travis-ci.org/vcerovski/binfix"><img src="https://travis-ci.org/vcerovski/binfix.png" alt="Build Status" title="" /></a>
 <a href="http://quickdocs.org/binfix/"><img src="http://quickdocs.org/badge/binfix.svg" alt="Quicklisp dist" title="" /></a></p>
@@ -15,9 +15,10 @@
 S-expressions of Common LISP ranging from simple arithmetic and logical
 forms to whole programs.</p>
 
-<p><strong>NEW FEATURES in v0.50</strong> (July 2019): <a href="#Multi-defs"><code>;</code>-separated definitions</a>
+<p><strong>NEW FEATURES in v0.50</strong> (July/August 2019): <a href="#Multi-defs"><code>;</code>-separated definitions</a>
 of functions which makes use of <code>def</code> for this purpose <a href="#Multi-defs">obsolete</a>;
-<a href="#Local-functions">Simpler</a> local definitions of longer/multiple functions;</p>
+<a href="#Local-functions">Simpler</a> local definitions of longer/multiple functions;
+<a href="#packaging">No need to import any symbols to use BINFIX</a>.</p>
 
 <p><strong>NEW FEATURE</strong> (July 2019): <a href="#Destructuring-multiple-values"><code>let</code> supports multiple-value- and
 destructuring-bind</a>.
@@ -89,7 +90,7 @@ reference 1.0 version.
 <li><a href="#values-bind">values-bind</a></li>
 <li><a href="#for">for</a></li>
 <li><a href="#Cartesian-to-polar-coordinates">Cartesian to polar coordinates</a></li>
-<li><a href="#packaging">Using BINFIX in packages</a></li>
+<li><a href="#packaging">Using BINFIX in packages (<strong>new feature</strong>)</a></li>
 </ul></li>
 <li><a href="#Interface">Controlling Bops (<strong>new feature</strong>)</a></li>
 <li><a href="#Implementation">Implementation</a>
@@ -116,11 +117,6 @@ reference 1.0 version.
 downloading/installation/loading trivial:</p>
 
 <pre><code>(ql:quickload :binfix)
-</code></pre>
-
-<p>After loading the package, the next step is to allow use of its symbols</p>
-
-<pre><code>(use-package :binfix)
 </code></pre>
 
 <p>System can be tested via</p>
@@ -1428,9 +1424,10 @@ straightforward manner:</p>
 <pre><code>{m x y op = '/ type = :double-float :==
    let a = (gensym)
        b = (gensym)
-     binfix `(let ,a ,type = ,x
-                  ,b ,type = ,y
-                {,a - ,b} ,op {,a + ,b})}
+     binfix:binfix
+       `(let ,a ,type = ,x
+             ,b ,type = ,y
+           {,a - ,b} ,op {,a + ,b})}
 </code></pre>
 
 <p>Now macro <code>m</code> works as expected:</p>
@@ -1624,7 +1621,7 @@ t
 
 <p>An example from <em>Common LISP the Language 2nd ed.</em> where Cartesian
 coordinates are converted into polar coordinates via change of class can be
-straightforwardly written in BINFIX as</p>
+straightforwardly written in BINFIX (prior to v0.50) as</p>
 
 <pre><code>{def class position () ();
 
@@ -1663,23 +1660,57 @@ straightforwardly written in BINFIX as</p>
 }
 </code></pre>
 
+<p>while in v0.50 <code>def class</code> section of the code has to be finished by <code>;</code>
+and <code>def</code> before <code>update-instance-for-different-class</code> is superfluous,</p>
+
+<pre><code>{def class position () ();
+
+     class x-y-position (position) 
+      x :initform 0 :initarg :x
+      y :initform 0 :initarg :y;
+
+     class rho-theta-position (position) 
+      rho :initform 0
+      theta :initform 0;
+
+ update-instance-for-different-class :before 
+   old :x-y-position
+   new :rho-theta-position &amp;key :-
+   ;; Copy the position information from old to new to make new 
+   ;; be a rho-theta-position at the same position as old. 
+     let x = old _'x 
+         y = old _'y;
+       new _'rho .= sqrt {x * x + y * y};
+       new _'theta .= atan y x
+
+;;; At this point an instance of the class x-y-position can be 
+;;; changed to be an instance of the class rho-theta-position 
+;;; using change-class: 
+
+&amp; p1 =. make-instance 'x-y-position :x 2 :y 0
+
+&amp; change-class p1 'rho-theta-position
+
+;;; The result is that the instance bound to p1 is now 
+;;; an instance of the class rho-theta-position. 
+;;; The update-instance-for-different-class method 
+;;; performed the initialization of the rho and theta 
+;;; slots based on the values of the x and y slots, 
+;;; which were maintained by the old instance.
+}
+</code></pre>
+
 <p>where Steele's comments are left verbatim.</p>
 
 <p><a name="packaging"></a></p>
 
-<h4>Using BINFIX in packages</h4>
+<h4>Using BINFIX in packages (<strong>new feature</strong>)</h4>
 
-<p>BINFIX can be included into packages by <code>defpackage</code>, with recommended <code>(:use
-:binfix)</code> option.  <code>sbcl</code>, <code>ecl</code> and <code>ccl</code>, however, intern certain symbols so
-that simple import does not work and thus use of these symbols by binfix may(!)
-lead to incorrect parsing.  Here is then the implementation-sensitive
-<code>defpackage</code> that creates <code>my-package</code> which properly imports all of BINFIX
-symbols:</p>
-
-<pre><code>(defpackage :my-package (:use :cl :binfix)
-   #+sbcl (:shadowing-import-from :binfix :struct :var)
-   #+(ccl ecl) (:shadowing-import-from :binfix :@ :=&gt;))
-</code></pre>
+<p>v0.50 of BINFIX greatly simplifies use of BINFIX in packages by recognizing
+symbols representing Bops as having no package membership. Thus there is no
+need to export Bops by BINFIX and consequently no importing of Bops by a
+package is needed.  The only symbols exported by BINFIX are names of macros
+needed for controlling Bops, described next.</p>
 
 <p><a name="Interface"></a></p>
 
@@ -1690,7 +1721,7 @@ Bops.  They must be evaluated before and outside B-exprs in which the modified
 behavior takes place.</p>
 
 <ul>
-<li><p><code>(defbinfix Bop lisp-op priority &amp;rest properties)</code></p>
+<li><p><code>(binfix:def-Bop Bop lisp-op priority &amp;rest properties)</code></p>
 
 <p>Macro function that defines new or redefines existing <code>Bop</code> to represent
 lisp operation <code>lisp-op</code> (both of these arguments are symbols,) where
@@ -1698,36 +1729,35 @@ lisp operation <code>lisp-op</code> (both of these arguments are symbols,) where
 with <a href="#Operation-properties">given <code>properties</code></a>.</p>
 
 <p><a name="setbinfix"></a></p></li>
-<li><p><code>(setbinfix Bop list-op)</code></p>
+<li><p><code>(binfix:set-Bop Bop lisp-op)</code></p>
 
-<p>Macro function that associated with an existing <code>Bop</code> LISP symbol <code>list-op</code>.
+<p>Macro function that associated with an existing <code>Bop</code> LISP symbol <code>lisp-op</code>.
 In effect it redefines what <code>Bop</code> does without changing any of its properties.</p>
 
 <p>Perhaps its most important role is to set what square-brackets in Bexpr
 represent.  For instance, </p>
 
-<p><code>(setbinfix binfix::index binfix::hashget)</code></p>
+<p><code>(binfix:set-Bop binfix::index binfix::hashget)</code></p>
 
 <p>sets B-terms <code>a[k]</code> to represent indexing of hashtable <code>a</code> by key <code>k</code>, while</p>
 
-<p><code>(setbinfix binfix::index2 svref)</code></p>
+<p><code>(binfix:set-Bop binfix::index2 svref)</code></p>
 
 <p>defines that <code>a[[i]]</code> represents <code>(svref a i)</code>.</p></li>
-<li><p><code>(rmbinfix Bop1 ... Bopn)</code></p>
+<li><p><code>(binfix:rem-Bops Bop1 ... Bopn)</code></p>
 
 <p>Macro function that removes specified Bops <code>Bop1</code> ...  <code>Bopn</code>.  After this
 macro form is executed, symbols <code>Bop1</code> ... <code>Bopn</code> will not be interpreted as
 Bops within B-expressions.</p></li>
-<li><p><code>(keepbinfix Bop1 ... Bopn)</code></p>
+<li><p><code>(binfix:keep-Bops Bop1 ... Bopn)</code></p>
 
 <p>Keep only given Bops <code>Bop1</code> ... <code>Bopn</code> .  After this macro form is
 executed, only symbols <code>Bop1</code> ...<code>Bopn</code>  will be interpreted as Bops
 within B-expressions, except in the case of <code>:=</code>, <code>:==</code> and <code>:-</code> which
 also require <code>progn</code> Bop if implicit-progn is to be used.</p></li>
-<li><p><code>(keepbinfix)</code> or <code>(init-binfix)</code></p>
+<li><p><code>(binfix:keep-Bops)</code></p>
 
-<p>After either one of these macro forms is executed, BINFIX is restored to its
-initial state.</p></li>
+<p>After evaluation of this macro form, BINFIX is restored to its initial state.</p></li>
 </ul>
 
 <p><a name="Implementation"></a></p>
@@ -1863,9 +1893,9 @@ no implicit-progn in proto-BINFIX let's and def's.</p>
 the symbol property <code>binfix::properties</code>, which includes a numerically given
 priority of the OP (which also considerably speeds up parsing.) The actual
 value of number representing priority is supposed to be immaterial since only
-relation to other Bops priority values is relevant.  Defining new same-priority
-Bops should be done via <code>defbinfix</code> with <code>:as</code> option, which may change priority
-values of many other OPs.</p>
+relation to other Bops priority values is relevant.  Defining a new same-priority
+Bop should be done via <code>defbinfix</code> with <code>:as</code> option.
+<a href="#Interface">Using <code>defbinfix</code></a> typically changes priority values of other Bops.</p>
 
 <p><a name="binfix-macros"></a>
 Since shallow transformation into standard syntax is done by function <code>binfix</code>
@@ -2056,175 +2086,177 @@ will be left for user-defined Bops.</p>
 
 <h3>List of all operations</h3>
 
-<p>Command <code>(lsbinfix)</code> prints the table of all Bops and their properties
+<p>Command <code>(binfix:list-Bops)</code> prints the table of all Bops and their properties
 from the weakest- to the strongest-binding Bop, with parens enclosing Bop(s) of
 the same priority:</p>
 
 <pre><code>  BINFIX         LISP            Properties
 ==============================================================================
-( &lt;&amp;             prog1
-  &lt;&amp;..           multiple-value-prog1 )
-( &amp;              progn           :progn )
-( def            nil             :binfix-defs
-  defclass       defclass        :progn          :prefix         :quote-rhs
-  defstruct      defstruct       :progn          :prefix         :quote-rhs
-  deftype        deftype         :progn          :prefix         :quote-rhs
-  defparameter   defparameter    :progn          :prefix         :quote-rhs
-  defvar         defvar          :progn          :prefix         :quote-rhs
-  defconstant    defconstant     :progn          :prefix         :quote-rhs
-  define-condition               define-condition                :progn          :prefix         :quote-rhs
-  define-setf-expander           define-setf-expander            :progn          :prefix         :quote-rhs
-  binfix::define-setf-method     binfix::define-setf-method      :progn          :prefix         :quote-rhs
-  defsetf        defsetf         :progn          :prefix         :quote-rhs
-  defgeneric     defgeneric      :progn          :prefix         :quote-rhs
-  defmethod      defmethod       :progn          :prefix         :quote-rhs
-  define-method-combination      define-method-combination       :progn          :prefix         :quote-rhs
-  defun          defun           :progn          :prefix         :quote-rhs
-  defmacro       defmacro        :progn          :prefix         :quote-rhs
-  define-compiler-macro          define-compiler-macro           :progn          :prefix         :quote-rhs
-  define-symbol-macro            define-symbol-macro             :progn          :prefix         :quote-rhs
-  define-modify-macro            define-modify-macro             :progn          :prefix         :quote-rhs
-  declaim        declaim         :progn          :prefix         :quote-rhs
-  proclaim       proclaim        :progn          :prefix         :quote-rhs )
-( :==            defmacro        :def
-  :=             defun           :def
-  :-             defmethod       :defm
-  :type=         deftype         :def )
-( cond           cond            :rhs-implicit-progn             =&gt;              :prefix
-  case           case            :rhs-implicit-progn             =&gt;              :prefix
-  ccase          ccase           :rhs-implicit-progn             =&gt;              :prefix
-  ecase          ecase           :rhs-implicit-progn             =&gt;              :prefix
-  typecase       typecase        :rhs-implicit-progn             =&gt;              :prefix
-  ctypecase      ctypecase       :rhs-implicit-progn             =&gt;              :prefix
-  etypecase      etypecase       :rhs-implicit-progn             =&gt;              :prefix )
-( let            let             :rhs-lbinds
-  let*           let*            :rhs-lbinds
-  symbol-macrolet                symbol-macrolet :rhs-lbinds
-  prog*          prog*           :rhs-lbinds
-  prog           prog            :rhs-lbinds
-  with-slots     with-slots      :rhs-slots
-  macrolet       macrolet        :rhs-fbinds
-  flet           flet            :rhs-fbinds
-  labels         labels          :rhs-fbinds )
-( block          block           :prefix
-  tagbody        tagbody         :prefix
-  catch          catch           :prefix
-  prog1          prog1           :prefix
-  prog2          prog2           :prefix
-  progn          progn           :prefix )
-( ?              nil             :split )
-( setq           setq            :rhs-sbinds
-  set            set             :rhs-sbinds
-  psetq          psetq           :rhs-sbinds )
-( setf           setf            :rhs-ebinds
-  psetf          psetf           :rhs-ebinds )
-( $              nil             :split          :rhs-args
-  .$             nil             :split-left     :rhs-args )
-( .@             mapc            :rhs-args
-  ..@            mapl            :rhs-args
-  @/             reduce          :rhs-args
-  @.             mapcar          :rhs-args
-  @..            maplist         :rhs-args
-  @n             mapcan          :rhs-args
-  @.n            mapcon          :rhs-args
-  @~             maphash
-  @@             apply           :rhs-args
-  .@.            multiple-value-call             :rhs-args
-  @              funcall         :rhs-args       :left-assoc     :also-postfix )
-( :-&gt;            function        :lhs-lambda )
-( -&gt;             lambda          :lhs-lambda )
-( =..            multiple-value-bind             :syms/expr
-  ..=            destructuring-bind              :lambda/expr )
-( values         values          :prefix         :single
-  .x.            values          :unreduce       :single )
-( loop           loop            :prefix         :quote-rhs )
-( =...           multiple-value-setq             :quote-lhs
-  .=             setf
-  +=             incf
-  -=             decf
-  =.             setq
-  .=.            set )
-( ||             or              :unreduce
-  or             or              :unreduce       :also-prefix )
-( &amp;&amp;             and             :unreduce
-  and            and             :unreduce       :also-prefix )
-( ===            equalp          :single
-  equal          equal           :single
-  ==             eql             :single
-  eql            eql             :single
-  eq             eq              :single
-  ~~             remhash         :single
-  subtype-of     subtypep        :single )
-( :|.|           cons )
-( in             member )
-( th-cdr         nthcdr )
-( =s=            string=         :single
-  =c=            char=           :single         :unreduce
-  =              =               :single         :unreduce       :also-prefix
-  /=             /=              :single         :unreduce       :also-prefix
-  &lt;              &lt;               :single         :unreduce       :also-prefix
-  &gt;              &gt;               :single         :unreduce       :also-prefix
-  &lt;=             &lt;=              :single         :unreduce       :also-prefix
-  &gt;=             &gt;=              :single         :unreduce       :also-prefix )
-( th-bit         logbitp )
-( coerce         coerce )
-( !..            nth-value
-  th-value       nth-value )
-( th             nth )
-( .!             elt
-  !.             svref
-  !!.            row-major-aref )
-( .!!.           bit             :rhs-args )
-( !!             aref            :rhs-args )
-( ~!             gethash         :single         :rhs-args
-  !~~            assoc           :single
-  ~~!            rassoc          :single )
-( .eqv.          bit-eqv         :rhs-args
-  .or.           bit-ior         :rhs-args
-  .xor.          bit-xor         :rhs-args
-  .and.          bit-and         :rhs-args
-  .nand.         bit-and         :rhs-args
-  .nor.          bit-nor         :rhs-args
-  .not.          bit-not         :also-unary
-  .orc1.         bit-orc1        :rhs-args
-  .orc2.         bit-orc2        :rhs-args
-  .andc1.        bit-andc1       :rhs-args
-  .andc2.        bit-andc2       :rhs-args )
-( dpb            dpb             :rhs-args )
-( ldb            ldb )
-( ldb-test       ldb-test )
-( deposit-field  deposit-field   :rhs-args )
-( mask-field     mask-field )
-( byte           byte )
-( eqv.           logeqv          :also-unary     :unreduce )
-( or.            logior          :also-unary     :unreduce )
-( xor.           logxor          :also-unary     :unreduce )
-( and.           logand          :also-unary     :unreduce )
-( nand.          lognand )
-( nor.           lognor )
-( test.          logtest )
-( orc1.          logorc1 )
-( orc2.          logorc2 )
-( andc1.         logandc1 )
-( andc2.         logandc2 )
-( &lt;&lt;             ash )
-( lcm            lcm             :also-unary     :unreduce )
-( gcd            gcd             :also-unary     :unreduce )
-( mod            mod )
-( rem            rem )
-( min            min             :also-prefix    :unreduce       :single
-  max            max             :also-prefix    :unreduce       :single )
-( +              +               :also-unary     :unreduce )
-( -              -               :also-unary     :unreduce )
-( /              /               :also-unary )
-( *              *               :also-prefix    :unreduce )
-( **             expt )
-( .!.            bit             :rhs-args )
-( !              aref            :rhs-args       :single
-  _              slot-value      :single )
-( |;|            |;| )
-( binfix::index  aref            :term
-  binfix::index2 binfix::hashget :term           :macro )
+( &lt;&amp;            prog1
+  &lt;&amp;..          multiple-value-prog1 )
+( &amp;             progn            :progn )
+( def           nil              :binfix-defs
+  defclass      defclass         :progn          :prefix         :quote-rhs
+  defstruct     defstruct        :progn          :prefix         :quote-rhs
+  deftype       deftype          :progn          :prefix         :quote-rhs
+  defparameter  defparameter     :progn          :prefix         :quote-rhs
+  defvar        defvar           :progn          :prefix         :quote-rhs
+  defconstant   defconstant      :progn          :prefix         :quote-rhs
+  define-condition define-condition              :progn          :prefix         :quote-rhs
+  define-setf-expander define-setf-expander      :progn          :prefix         :quote-rhs
+  define-setf-method binfix::define-setf-method  :progn          :prefix         :quote-rhs
+  defsetf       defsetf          :progn          :prefix         :quote-rhs
+  defgeneric    defgeneric       :progn          :prefix         :quote-rhs
+  defmethod     defmethod        :progn          :prefix         :quote-rhs
+  define-method-combination define-method-combination            :progn          :prefix         :quote-rhs
+  defun         defun            :progn          :prefix         :quote-rhs
+  defmacro      defmacro         :progn          :prefix         :quote-rhs
+  define-compiler-macro define-compiler-macro    :progn          :prefix         :quote-rhs
+  define-symbol-macro define-symbol-macro        :progn          :prefix         :quote-rhs
+  define-modify-macro define-modify-macro        :progn          :prefix         :quote-rhs
+  declaim       declaim          :progn          :prefix         :quote-rhs
+  proclaim      proclaim         :progn          :prefix         :quote-rhs )
+( :==           defmacro         :def            ((type . deftype)
+                                                  (compiler-macro
+                                                   . define-compiler-macro))
+  :=            defun            :def
+  :-            defmethod        :defm
+  :type=        deftype          :def )
+( cond          cond             :rhs-implicit-progn             binfix::=&gt;      :prefix
+  case          case             :rhs-implicit-progn             binfix::=&gt;      :prefix
+  ccase         ccase            :rhs-implicit-progn             binfix::=&gt;      :prefix
+  ecase         ecase            :rhs-implicit-progn             binfix::=&gt;      :prefix
+  typecase      typecase         :rhs-implicit-progn             binfix::=&gt;      :prefix
+  ctypecase     ctypecase        :rhs-implicit-progn             binfix::=&gt;      :prefix
+  etypecase     etypecase        :rhs-implicit-progn             binfix::=&gt;      :prefix )
+( let           let              :rhs-lbinds
+  let*          let*             :rhs-lbinds
+  symbol-macrolet symbol-macrolet                :rhs-lbinds
+  prog*         prog*            :rhs-lbinds
+  prog          prog             :rhs-lbinds
+  with-slots    with-slots       :rhs-slots
+  macrolet      macrolet         :rhs-mbinds
+  flet          flet             :rhs-fbinds
+  labels        labels           :rhs-fbinds )
+( block         block            :prefix
+  tagbody       tagbody          :prefix
+  catch         catch            :prefix
+  prog1         prog1            :prefix
+  prog2         prog2            :prefix
+  progn         progn            :prefix )
+( ?             nil              :split )
+( setq          setq             :rhs-sbinds
+  set           set              :rhs-sbinds
+  psetq         psetq            :rhs-sbinds )
+( setf          setf             :rhs-ebinds
+  psetf         psetf            :rhs-ebinds )
+( $             nil              :split          :rhs-args
+  .$            nil              :split-left     :rhs-args )
+( .@            mapc             :rhs-args
+  ..@           mapl             :rhs-args
+  @/            reduce           :rhs-args
+  @.            mapcar           :rhs-args
+  @..           maplist          :rhs-args
+  @n            mapcan           :rhs-args
+  @.n           mapcon           :rhs-args
+  @~            maphash
+  @@            apply            :rhs-args
+  .@.           multiple-value-call              :rhs-args
+  @             funcall          :rhs-args       :left-assoc     :also-postfix )
+( :-&gt;           function         :lhs-lambda )
+( -&gt;            lambda           :lhs-lambda )
+( =..           multiple-value-bind              :syms/expr
+  ..=           destructuring-bind               :lambda/expr )
+( values        values           :prefix         :single
+  .x.           values           :unreduce       :single )
+( loop          loop             :prefix         :quote-rhs )
+( =...          multiple-value-setq              :quote-lhs
+  .=            setf
+  +=            incf
+  -=            decf
+  =.            setq
+  .=.           set )
+( ||            or               :unreduce
+  or            or               :unreduce       :also-prefix )
+( &amp;&amp;            and              :unreduce
+  and           and              :unreduce       :also-prefix )
+( ===           equalp           :single
+  equal         equal            :single
+  ==            eql              :single
+  eql           eql              :single
+  eq            eq               :single
+  ~~            remhash          :single
+  subtype-of    subtypep         :single )
+( :.            cons )
+( in            member )
+( th-cdr        nthcdr )
+( =s=           string=          :single
+  =c=           char=            :single         :unreduce
+  =             =                :single         :unreduce       :also-prefix
+  /=            /=               :single         :unreduce       :also-prefix
+  &lt;             &lt;                :single         :unreduce       :also-prefix
+  &gt;             &gt;                :single         :unreduce       :also-prefix
+  &lt;=            &lt;=               :single         :unreduce       :also-prefix
+  &gt;=            &gt;=               :single         :unreduce       :also-prefix )
+( th-bit        logbitp )
+( coerce        coerce )
+( !..           nth-value
+  th-value      nth-value )
+( th            nth )
+( .!            elt
+  !.            svref
+  !!.           row-major-aref )
+( .!!.          bit              :rhs-args )
+( !!            aref             :rhs-args )
+( ~!            gethash          :single         :rhs-args
+  !~~           assoc            :single
+  ~~!           rassoc           :single )
+( .eqv.         bit-eqv          :rhs-args
+  .or.          bit-ior          :rhs-args
+  .xor.         bit-xor          :rhs-args
+  .and.         bit-and          :rhs-args
+  .nand.        bit-and          :rhs-args
+  .nor.         bit-nor          :rhs-args
+  .not.         bit-not          :also-unary
+  .orc1.        bit-orc1         :rhs-args
+  .orc2.        bit-orc2         :rhs-args
+  .andc1.       bit-andc1        :rhs-args
+  .andc2.       bit-andc2        :rhs-args )
+( dpb           dpb              :rhs-args )
+( ldb           ldb )
+( ldb-test      ldb-test )
+( deposit-field deposit-field    :rhs-args )
+( mask-field    mask-field )
+( byte          byte )
+( eqv.          logeqv           :also-unary     :unreduce )
+( or.           logior           :also-unary     :unreduce )
+( xor.          logxor           :also-unary     :unreduce )
+( and.          logand           :also-unary     :unreduce )
+( nand.         lognand )
+( nor.          lognor )
+( test.         logtest )
+( orc1.         logorc1 )
+( orc2.         logorc2 )
+( andc1.        logandc1 )
+( andc2.        logandc2 )
+( &lt;&lt;            ash )
+( lcm           lcm              :also-unary     :unreduce )
+( gcd           gcd              :also-unary     :unreduce )
+( mod           mod )
+( rem           rem )
+( min           min              :also-prefix    :unreduce       :single
+  max           max              :also-prefix    :unreduce       :single )
+( +             +                :also-unary     :unreduce )
+( -             -                :also-unary     :unreduce )
+( /             /                :also-unary )
+( *             *                :also-prefix    :unreduce )
+( **            expt )
+( .!.           bit              :rhs-args )
+( !             aref             :rhs-args       :single
+  _             slot-value       :single )
+( ;             binfix::|;| )
+( index         aref             :term
+  index2        binfix::hashget  :term           :macro )
 ------------------------------------------------------------------------------
 </code></pre>
 

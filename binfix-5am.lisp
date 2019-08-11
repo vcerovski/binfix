@@ -1,11 +1,5 @@
 (defpackage #:binfix/5am
-  (:use #:cl #:binfix)
-  #+sbcl (:shadowing-import-from #:binfix #:struct #:var)
-  #+ecl (:shadowing-import-from #:binfix #:@ #:=>)
-  #+ccl (:shadowing-import-from #:binfix #:@ #:=>)
-  (:import-from #:fiveam
-      #:def-suite #:in-suite #:test #:is #:is-true #:is-false #:signals
-      #:*on-error* #:*on-failure* #:run!)
+  (:use #:cl #:fiveam)
   (:export #:run-tests))
 
 (in-package :binfix/5am)
@@ -374,6 +368,16 @@
                  (g b1 a2)))   ))
 )
 
+(test Bop-symbol
+  (B2 is (equal "'{a =c= b =c= c}" '(char= a b c)  ))
+  (B2 is (equal "'{cond a = b => c; a :=> b}" '(cond ((= a b) c (a :=> b)))  ))
+  (is-true (defpackage :test-bops (:use :cl)))
+  (is-true (in-package :test-bops))
+  (is-true (defvar => 1))
+  (is-true (defvar =s= 2))
+  (B1 is-true "{t == cond package-name *package* =s= \"TEST-BOPS\" => t}")
+)
+
 (test implicit-progn
   (B2 is (equal"
             '{x -> print x;
@@ -550,7 +554,11 @@
   (B2 is (equal "'{a[1;2][2;3]}"  '(aref (aref a 1 2) 2 3)                    ))
 
   (B2 is (equal "'{incf table[[key;0]]}"
-                 '(incf (gethash key table 0))))
+                 '(incf (gethash key table 0))   ))
+
+  (B2 is (equal "'{a index b}" '(a index b)      ))
+  (B2 is (equal "'{a (index b)}" '(a (index b))  ))
+  (B2 is (equal "'{a {index b}}" '(a (index b))  ))
 )
 
 (test parsing-errors
@@ -573,6 +581,7 @@
   (Berror  "  '{1 <= 2 < 3}    ")
   (Berror  "  '{a 1 =.. f x}   ")
   (Berror  " '{def atruct x y} ")
+  (Berror  " '{def :var x = 1} ")
   (Berror  " '{def f x := x}   ")          ;; These are obsolete.
   (Berror  " '{def f x :- x}   ")          ;; Starting with v0.50,
   (Berror  " '{def f x :== x}  ")          ;; binfix reports now
@@ -582,49 +591,49 @@
 (test interface ;; These must be evaluated in order
                 ;; and non-concurrently with other tests
   (is-false binfix::*init-binfix*)
-  (B1 is-true "(defbinfix % mod :after +)")
+  (B1 is-true "(binfix:def-Bop % mod :after +)")
   (is-true binfix::*init-binfix*)
   (B2 is (equal "'{a % b}" '(mod a b)))
   (B2 is (equal "'{a % b + c}" '(+ (mod a b) c)))
 
 
-  (B1 is-false "(setbinfix % my-mod)")
+  (B1 is-false "(binfix:set-Bop % my-mod)")
   (B2 is (equal "'{a % b + c}" '(+ (my-mod a b) c)))
-  (B1 is-false "(setbinfix binfix::index my-ref)")
+  (B1 is-false "(binfix:set-Bop binfix::index my-ref)")
   (B2 is (equal "'{a[i % j]}"  '(my-ref a (my-mod i j))))
-  (B1 is-false "(setbinfix binfix::index aref)")
+  (B1 is-false "(binfix:set-Bop binfix::index aref)")
 
-  (B1 is-false "(setbinfix binfix::index funcall)")
+  (B1 is-false "(binfix:set-Bop binfix::index funcall)")
   (B2 is (equal "'{f[x;y;z]}"  '(funcall f x y z) ))
   (B2 is (equal "'{f[x;y;]}"   '(funcall f x y)   ))
   (B2 is (equal "'{f[]}"       '(funcall f)       ))
   (B2 is (=     "{'+[1;2]}"    3                  ))
   (B2 is (=     "{{x y -> y - x}[2;3]}"    1      ))
 
-  (B1 is-false "(setbinfix binfix::index2 svref)")
+  (B1 is-false "(binfix:set-Bop binfix::index2 svref)")
   (B2 is (equal "'{f[x;a[[i]]]}"  '(funcall f x (svref a i))  ))
-  (B1 is-false "(setbinfix binfix::index2 svref :term)")
+  (B1 is-false "(binfix:set-Bop binfix::index2 svref :term)")
   (B2 is (equal "'{f[x;a[[i]]]}"  '(funcall f x (svref a i))  ))
 
-  (B1 is-false "(rembinfix %)")
+  (B1 is-false "(binfix:rem-Bops %)")
   (B2 is (equal "'{a % b + c}" '(+ (a % b) c)))
 
-  (B1 is-false "(rembinfix + ++ := let def - flet |;| = && :.)")
+  (B1 is-false "(binfix:rem-Bops + ++ := let def - flet |;| = && :.)")
   (B2 is (equal "'{f := x + y}" '(f := x + y)))
   (B1 is-false "(some 'identity
-                   {b -> get b 'binfix::properties
+                   {b -> get (binfix::find-Bop b) 'binfix::properties
                       @. '(+ ++ := let def - flet |;| = && :.)})")
-  (B1 is-false "(init-binfix)")
+  (B1 is-false "(binfix:keep-Bops)")
   (B1 is-true  "(every 'identity
-                   {b -> get b 'binfix::properties
+                   {b -> get (binfix::find-Bop b) 'binfix::properties
                       @. '(+ := let def - flet |;| = && :.)})")
 
-  (B1 is-false "(keepbinfix +)")
+  (B1 is-false "(binfix:keep-Bops +)")
   (B2 is (equal "'{a + b - c}" '(+ a (b - c))  ))
-  (B1 is-false "(keepbinfix let := + - |;|)")
+  (B1 is-false "(binfix:keep-Bops let := + - |;|)")
   (B2 is (equal "'{f x := let a = b + c; f x - f b / a * x}"
                  '(defun f (x) (let ((a (+ b c))) (- (f x) (f b / a * x)))) ))
-  (B1 is-false "(init-binfix)"))
+  (B1 is-false "(binfix:keep-Bops)"))
 
 (defun run-tests ()
  "Returns t if all tests pass, otherwise nil"

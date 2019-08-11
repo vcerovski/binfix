@@ -23,6 +23,7 @@
     (&&     infix     (and))
     (==     infix     (eql))
     (=c=    infix     (char=))
+    (=s=    infix     (string=))
     ( <     infix     (<))
     (in     infix     (member))
     ( !     infix     (aref))))

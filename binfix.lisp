@@ -63,6 +63,10 @@
              {t $ error "BINFIX lambda-list expects symbol or list instead of ~S~@
                          ~S" l (nreverse arg)};
 
+ sym-eql s1 s2 := symbolp s1 && symbolp s2 && keywordp s1 == keywordp s2 && symbol-name s1 =s= symbol-name s2;
+
+ semicolon-in e :== `(member '; ,e :test 'sym-eql);
+
  method-lambda-list l &optional args :=
    if (null l) {nreverse args .x. ()}
      let s = (pop l)
@@ -73,13 +77,14 @@
                         (method-lambda-list (cdr l) {`(,s,(keyword-type-spec (car l))) :. args})}
                     {&lambdap s  $ collect-&parts l {s :. args}}
                     {car l =='=  $ collect-&parts `(&optional,s,@l) args}
-                    {car l =='== $ method-lambda-list (cddr l) {`(,s (eql,(cadr l))) :. args}}
+                    {sym-eql (car l) '==
+                                 $ method-lambda-list (cddr l) {`(,s (eql,(cadr l))) :. args}}
                     {         t  $ method-lambda-list l {s :. args}}}
              {listp s $ method-lambda-list l {s :. args}}
              {t $ error "BINFIX method-lambda-list expects symbol or list, not ~S" s};
 
  dstruct x &optional defs types name opts slots doc :=
-    cond {null x || car x == ';
+    cond {null x || sym-eql (car x) ';
             $ `(defstruct ,(if opts `(,name,@(nreverse opts)) name)
                                   ,@{doc && `(,doc)} ,@(nreverse slots)) :. defs
                .x. types .x. cdr x}
@@ -161,7 +166,7 @@
                   cdr {nreverse $ `(,s ,e) :. binds} .x. decls .x. current}
            {car e in *decls* || listp (car e) && caar e in *decls*
               $ cdr (nreverse {make-bind s current :. binds}) .x. decls .x. e}
-           {car e == ';
+           {sym-eql (car e) ';
               $ cdr (nreverse {make-bind s current :. binds}) .x. decls .x. cdr e}
            {cadr e == '=
               $ sbind* (cddr e)
@@ -181,17 +186,17 @@
    cond {null e $ errorm "Incomplete LET.  Missing = ?"}
         {car e == '=
            $ if (null syms) (errorm "No symbols to bind in LET.")
-               let r = {'; in cdr e}
+               let r = (semicolon-in (cdr e))
                  if (null r) (errorm "Incomplete LET. Missing ; ?")
                    {nreverse syms .x. binfix (ldiff (cdr e) r) .x. decls .x. cdr r}}
-        {car e == '; $ errorm "Missing body of LET."}
+        {sym-eql (car e) '; $ errorm "Missing body of LET."}
         {keywordp (cadr e)
            $ mvbind (cddr e) {car e :. syms} {type-keyword-type (car e) (cadr e) :. decls}}
         {t $ mvbind (cdr e) {car e :. syms} decls};
 
  dbind e &optional llist :=
    cond {cadr e == '=
-           $ let* r = {'; in cddr e}
+           $ let* r = (semicolon-in (cddr e))
                   llist = (if llist {nreverse $ car e :. llist}
                                     (car e))
                   e = (cddr e)
@@ -201,19 +206,19 @@
         {t $ dbind (cdr e) {car e :. llist}};
 
  def-sbind* binds :==
-   `(sbind* (cdr (if {car (last,binds) == ';}
+   `(sbind* (cdr (if (sym-eql (car (last,binds)) ';)
                         ,binds
                     `(,@,binds ;))));
 
  def-class b &optional slot slots class-opts :=
-   if {null b || car b == ';}
+   if {null b || sym-eql (car b) ';}
       (values `(,{cdr $ nreverse $ if slot {reverse slot :. slots} slots}
                 ,@(nreverse class-opts))
               (cdr b))
       let e = (pop b)
           cond {keywordp e
                   $ cond {e == :default-initargs
-                            $ let* br = {'; in b}
+                            $ let* br = {semicolon-in b}
                                    inits = (ldiff b br)
                                 def-class br slot slots `((:default-initargs ,@inits) ,@class-opts)}
                          {slot $ def-class (cdr b) {car b :. e :. slot} slots class-opts}
@@ -231,12 +236,13 @@
    labels
      last-semi e &optional last =
        (cond {null e      $ last}
-             {car e == '; $ last-semi (cdr e) e}
+             {sym-eql (car e) ';
+                          $ last-semi (cdr e) e}
              {t           $ last-semi (cdr e) last})
      pair-forms forms &optional pairs =
        (if (null forms) (nreverse pairs)
           (pair-forms (cddr forms) {{car forms :. cadr forms} :. pairs}))
-   let rhs = {op in e}
+   let rhs = {member op e :test 'sym-eql}
      (if (null rhs)
         {pair-forms {nreverse $ e :. forms} .x. form0}
         {let* lhs = (ldiff e rhs)
@@ -250,7 +256,7 @@
    cond {null b
            $ `(,@(method-lambda-list params) ,@(nreverse entries)) .x. ()}
         {null params
-           $ let rest = {'; in b} ;; ;-terminated method lambda list.
+           $ let rest = {semicolon-in b} ;; ;-terminated method lambda list.
                if rest
                  (def-generic (cdr rest) {let h =(ldiff b rest) `(,(car h),(cdr h))})
                  (def-generic () `(,(car b),(cdr b)))}
@@ -260,7 +266,7 @@
            $ def-generic (cddr b) params `((,(car b),(cadr b)) ,@entries)}
         {car b in '(:argument-precedence-order :method-combination)
            $ loop for nxt = (cdr b) then (cdr nxt)
-                  until {null nxt || keywordp (car nxt) || '; == car nxt}
+                  until {null nxt || keywordp (car nxt) || sym-eql (car nxt) ';}
                   finally (def-generic nxt params `(,(ldiff b nxt) ,@entries))}
         {':- in b
            $ `(,@(method-lambda-list params)
@@ -269,29 +275,28 @@
                          (unreduce-rhs :- b))) .x. ()}
       ;;{car b == '; ;; doen't work because ; is consumed at this point.
       ;;   $ `(,@(method-lambda-list params) ,@(nreverse entries)) .x. cdr b}
-        {t $ error "BINFIX def generic has a trailing ~S" (ldiff b {'; in b})};
+        {t $ error "BINFIX def generic has a trailing ~S" (ldiff b {semicolon-in b})};
 
  defs x &optional defs types :=
-    cond {car x == 'generic
+    cond {sym-eql (car x) 'generic
             $ defgen r =.. (def-generic (cdr x))
                 defs r `((defgeneric ,@defgen) ,@defs) types}
-         {assoc (car x) *def-symbol*
-            $ if {null (cddr x) || caddr x == ';} ;; It's a hack, sbind* should support it.
-                (defs (cdddr x) `((,(cdr (assoc (car x) *def-symbol*)),(cadr x)) ,@defs) types)
+         {assoc (car x) *def-symbol* :test 'sym-eql
+            $ if {null (cddr x) || sym-eql (caddr x) ';} ;; It's a hack, sbind* should support it.
+                (defs (cdddr x) `((,(cdr (assoc (car x) *def-symbol* :test 'sym-eql)),(cadr x)) ,@defs) types)
                 {binds decl* r =.. (def-sbind* x)
                   decl* r =.. (decls r (declare* decl* declaim))
-                    defs r (revappend {let def = (cdr (assoc (car x) *def-symbol*))
+                    defs r (revappend {let def = (cdr (assoc (car x) *def-symbol* :test 'sym-eql))
                                           mapcar {a -> def :. a} binds}
                                       defs)
                          (if decl* {append decl* types} types)}}
-         {car x == '#-sbcl{struct}
-                    #+sbcl{sb-alien:struct}
+         {sym-eql (car x) 'struct
             $ assgn types r =.. (dstruct (cdr x) defs types)
                 (defs r assgn types)}
-         {car x == 'class
+         {sym-eql (car x) 'class
             $ class-def r =..(def-class (cdddr x))
                 (defs r `((defclass ,(cadr x) ,(caddr x) ,@class-def) ,@defs) types)}
-         {car x == 'binfix
+         {sym-eql (car x) 'binfix
             $ `((defbinfix ,@(cdr x)))}
          {t $ if {defs || types}
                  {progn-monad
@@ -572,16 +577,28 @@
          {car e == op $ split (cdr e) op {nreverse arg :. args}}
          {t           $ split (cdr e) op args {car e :. arg}};
 
- find-op-in e &optional (p (1+ *no-of-bops*)) last-o o.r :=
+ Bop-p s :=
+   symbolp s &&
+     {get s 'properties ||
+      not (keywordp s) && get (find-symbol (symbol-name s) "BINFIX") 'properties};
+
+ find-Bop s &key (terms t) :=
+   symbolp s &&
+     let Bop = (cond {get s 'properties $ s}
+                     {not (keywordp s) $ find-symbol (symbol-name s) "BINFIX"})
+       get Bop 'properties && {terms || not {:term in caddr (get Bop 'properties)}} && Bop;
+
+ find-Bop-in e &optional (p (1+ *no-of-bops*)) last-Bop o.r :=
     cond {null e $ o.r}
-         {symbolp (car e)
-            $ let q = (get (car e) 'properties)
+         {Bop-p (car e) && find-Bop (car e) :terms nil
+            $ let* Bop = (find-Bop (car e) :terms nil)
+                   q = (get Bop 'properties)
                  if {q && {car q < p
                            || car q == p
                               && not {   :single in caddr q
-                                      && :single in caddr (get last-o 'properties)
-                                      && not {car e == last-o}
-                                      && error "BINFIX parsing ambiguity between ~S and ~S" last-o (car e)}
+                                      && :single in caddr (get last-Bop 'properties)
+                                      && not {Bop == last-Bop}
+                                      && error "BINFIX parsing ambiguity between ~S and ~S" last-Bop Bop}
                               && caddr q
                               && null (intersection
                                         '(:rhs-args    :unreduce
@@ -589,9 +606,9 @@
                                           :lambda/expr :split
                                           :syms/expr)
                                         (caddr q))}}
-                   {find-op-in (cdr e) (car q) (car e) e }
-                   {find-op-in (cdr e)  p      last-o o.r}}
-         {t $ find-op-in (cdr e) p last-o o.r};
+                   {find-Bop-in (cdr e) (car q) Bop e }
+                   {find-Bop-in (cdr e)  p      last-Bop o.r}}
+         {t $ find-Bop-in (cdr e) p last-Bop o.r};
 
  progn-monad form1 &optional form2 :=
    labels
@@ -610,13 +627,13 @@
  binfix e &optional (max-priority (1+ *no-of-bops*)) :=
    labels
      unreduce e op &optional args arg =
-       (cond {null e      $ reverse {binfix (reverse arg) :. args}}
-             {car e == op $ unreduce (cdr e) op {binfix (reverse arg) :. args}}
-             {t           $ unreduce (cdr e) op args {car e :. arg}})
+       (cond {null e             $ reverse {binfix (reverse arg) :. args}}
+             {sym-eql (car e) op $ unreduce (cdr e) op {binfix (reverse arg) :. args}}
+             {t                  $ unreduce (cdr e) op args {car e :. arg}})
 
      binfix+ e =
-       (if {'; in e}
-          (if {'; == car (last e)}
+       (if {semicolon-in e}
+          (if (sym-eql (car (last e)) ';)
              (binfix+ (butlast e))
              (unreduce e ';))
          `(,(binfix e)))
@@ -648,7 +665,8 @@
                {car e =='= $ if (null rhs)
                                (e-binds (cddr e) binds lhs `(,(cadr e)))
                                (e-binds (cddr e) (bind lhs (last rhs)) (butlast rhs) `(,(cadr e)))}
-               {car e =='; $ if {lhs && rhs}
+               {sym-eql (car e) ';
+                           $ if {lhs && rhs}
                                {e-binds (cdr e) (bind lhs rhs)}
                                (error "BINFIX expression(s) bind(s), missing = in:~@
                                       ~A" (append (nreverse lhs) (nreverse rhs)))}
@@ -656,14 +674,14 @@
                {t          $ e-binds (cdr e) binds {car e :. lhs}          rhs}}
 
      last-expr e =
-       {let i = (position '; e :from-end t)
+       {let i = (position '; e :from-end t :test 'sym-eql)
           if i {subseq e 0 i .x. subseq e (1+ i)}
                {nil .x. e}}
 
      term e =
         {cond {atom e $ e}
-              {consp e && consp (cadr e) && symbolp (caadr e)
-                 $ let op-prop = (get (caadr e) 'properties)
+              {consp e && consp (cadr e) && Bop-p (caadr e)
+                 $ let op-prop = (get (caadr e) 'properties) ;; not looking for B-op, just a symbol.
                      if {:term in caddr op-prop}
                         (if {:macro in caddr op-prop}
                            {term $ macroexpand-1 {cadr op-prop :. car e :. cdadr e && binfix+ (cdadr e)} :. cddr e}
@@ -672,13 +690,13 @@
               {t $ car e :. term (cdr e)}}
 
   if {atom e} e
-    let rhs = (find-op-in e max-priority)
+    let rhs = (find-Bop-in e max-priority)
       if (null rhs) (singleton (term e))
         let* lhs = (term (ldiff e rhs))
              rhs = (term rhs)
-             op = (pop rhs)
+             op = (find-Bop (pop rhs) :terms nil)
            priority op-lisp op-prop ..= (get op 'properties)
-           cond {op == '; $ error "BINFIX: bare ; in:~% ~{ ~A~}" e}
+           cond {sym-eql op '; $ error "BINFIX: bare ; in:~% ~{ ~A~}" e}
                 {null rhs $
                    if {:also-postfix in op-prop}
                       `(,op-lisp ,(singleton (binfix lhs)))
@@ -726,20 +744,20 @@
                 {:progn in op-prop $
                    cond {:prefix in op-prop && {:quote-rhs in op-prop || :macro in op-prop}
                            $ progn-monad (singleton (binfix lhs))
-                                         {let e = {'; in rhs}
+                                         {let e = {semicolon-in rhs}
                                             if (null e)
                                               `(,op-lisp ,@rhs)
                                                (progn-monad`(,op-lisp ,@(ldiff rhs e))
                                                             (binfix (cdr e)))}}
                         {t $ progn-monad (binfix lhs) ;; partial implementation.
                                         `(,op-lisp ,(binfix rhs))}}
-                {:rhs-implicit-progn == car op-prop && cadr op-prop in rhs $ ;; looks ahead to allow other variants of the same op
+                {:rhs-implicit-progn == car op-prop && find (cadr op-prop) rhs :test 'sym-eql $ ;; looks ahead to allow other variants of the same op
                    {rhs-split rhs-head =.. (unreduce-rhs (cadr op-prop) rhs)
                       binfix `(,@lhs
                                (,op-lisp ,@{let h = (binfix rhs-head) h && list h}
                                 ,@(mapcar {spl -> binfix (car spl) :. implicit-progn (cdr spl)}
                                           rhs-split)))}}
-                {:unreduce in op-prop && position op rhs $ ;;position necessary...
+                {:unreduce in op-prop && find op rhs :key 'find-Bop $ ;;find necessary...
                   let u = (unreduce rhs op `(,(binfix lhs),op-lisp))
                      cond {lhs $ u}
                           {:also-unary  in op-prop $ `(,op-lisp (,op-lisp ,(caddr u)) ,@(cdddr u))}
@@ -749,7 +767,7 @@
                 {null lhs $ cond{:also-unary  in op-prop $ `(,op-lisp ,(binfix rhs))}
                                 {:also-prefix in op-prop || :prefix in op-prop
                                     $ `(,op-lisp ,@(cond {:quote-rhs in op-prop $ rhs}
-                                                         {'; in rhs $ binfix+ rhs}
+                                                         {semicolon-in rhs $ binfix+ rhs}
                                                          {cdr rhs   $ binfix rhs}
                                                          { t        $ rhs}))}
                                 {t $ error "BINFIX: missing l.h.s. of ~S (~S)~@
@@ -773,7 +791,7 @@
                                                               {keywordp (car lhs) $ list (pop lhs)})
                                   ,@{ll decls =.. (method-lambda-list lhs)
                                       `(,ll ,@(doc*-decl*-binfix+ rhs decls))}))}}
-                {:left-assoc in op-prop && find op rhs $
+                {:left-assoc in op-prop && find op rhs :key 'find-Bop $
                    binfix `(,op-lisp ,(binfix  lhs) ,@rhs)}
                 {:lambda/expr in op-prop $
                    llist decls =.. (lambda-list lhs)
@@ -781,31 +799,32 @@
                                 ,@(decl*-binfix+ (cdr rhs) decls))}
 
                 {:split in op-prop $
-                   cond {:rhs-args in op-prop && '; in rhs
+                   cond {:rhs-args in op-prop && semicolon-in rhs
                            $ `(,(binfix lhs) ,@(binfix+ rhs))}
-                        {cdr lhs || null (get (car lhs) 'properties)
+                        {cdr lhs || not (Bop-p (car lhs))
                            $ `(,(binfix lhs) ,(binfix rhs))}
-                        {:also-unary in third (get (car lhs) 'properties) ;; needed for handling {- $ ...}
+                        {:also-unary in third (get (find-Bop (car lhs) :terms nil) 'properties) ;; needed for handling {- $ ...}
                            $ (binfix `(,@lhs ,(binfix rhs)))}
                         {t $ error "BINFIX: missing l.h.s of ~S~@
                                     with r.h.s:~%~S" (car lhs) rhs}}
 
                 {:split-left in op-prop $
-                   if {'; in rhs && :rhs-args in op-prop}
+                   if {semicolon-in rhs && :rhs-args in op-prop}
                       (binfix`(,@lhs ,@(binfix+ rhs)))
                       (binfix`(,@lhs ,(binfix rhs)))}
 
                 {:prefix in op-prop $
                    binfix `(,@lhs ,(cond {:quote-rhs in op-prop  $ `(,op,@rhs)}
-                                         {'; in rhs              $ `(,op,@(binfix+ rhs))}
+                                         {semicolon-in rhs       $ `(,op,@(binfix+ rhs))}
                                          {t $ binfix `(,op,@rhs)}))}
                 (t `(,op-lisp
                      ,(if {:quote-lhs in op-prop} lhs (binfix lhs))
                      ,@(cond {null (cdr rhs) $ rhs}
                              {:rhs-args in op-prop $
-                                cond {find-op-in rhs (1+ priority)
+                                cond {find-Bop-in rhs (1+ priority)
                                                 $ `(,(binfix rhs))}
-                                     {'; in rhs $ binfix+ rhs}
+                                     {semicolon-in rhs
+                                                $ binfix+ rhs}
                                      {t         $ rhs}}
                              {t $ `(,(binfix rhs))})))}
 

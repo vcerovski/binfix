@@ -15,23 +15,24 @@
 
  op-position op :symbol :=
   "Returns index of the first element of *binfix* that contains op, or nil otherwise."
-   position-if {ops -> member op ops :key #'car} *binfix* &
+   position-if {ops -> member op ops :key #'car :test 'sym-eql} *binfix* &
 
- rmbinfix op :symbol :=
+ rmbop op :symbol :=
   "Removes binfix operation OP. Returns nil."
-   let i = op-position op;
+   let* bop = (find-Bop op)
+        i = op-position bop;
      when i
        let B-ops = *binfix* .! i;
-         unless {setf *binfix* .! i = delete op B-ops :key 'car}
+         unless {setf *binfix* .! i = delete bop B-ops :key 'car :test 'sym-eql}
            setq *binfix* = delete-if 'null *binfix*;
-         remprop op 'properties;
+         remprop bop 'properties;
          nil &
 
- keepbinfix &rest Bops :==
+ keep-Bops &rest Bops :==
   "Keep only Bops represented by symbols in argument(s) BOPS.  Without
   arguments restores all binfix Bops.  Handles also implicit dependence
   of := :== and :- on progn Bop. Returns nil."
-  when {'; in Bops && intersection '(:= :== :-) Bops}
+  when {semicolon-in Bops && intersection '(:= :== :-) Bops}
      (pushnew 'progn Bops);
   `{eval-when (:load-toplevel :compile-toplevel :execute)
      progn
@@ -44,15 +45,15 @@
                             @. *binfix*}}
          (assign-properties)} &
 
- rembinfix &rest Bops :==
+ rem-Bops &rest Bops :==
   "Macro that removes Bops represented by symbols in BOPS.  Returns nil."
   `{eval-when (:load-toplevel :compile-toplevel :execute)
      progn
        (save-binfix);
-       'rmbinfix .@ ',Bops;
+       'rmbop .@ ',Bops;
        (assign-properties)} &
 
- setbinfix op :symbol lisp-op :symbol &rest props :==
+ set-Bop op :symbol lisp-op :symbol &rest props :==
   "Set already defined binfix OP to represent lisp LISP-OP,
   with the same properties unless properties PROPS are non-nil."
   `{eval-when (:load-toplevel :compile-toplevel :execute)
@@ -67,7 +68,7 @@
  #-abcl {declaim ({symbol &optional symbol priority &rest t :-> boolean} defbinfix)}
  #-abcl &
 
- defbinfix Bop lisp-op = Bop p = :later &rest prop :==
+ def-Bop Bop lisp-op = Bop p = :later &rest prop :==
   "DEFBINFIX bop [lisp-op [priority op [property]*]]
   Defines new or redefines existing Bop BOP."
    let* i = {ecase p;
@@ -85,17 +86,23 @@
      every {p -> {etypecase p; property p}} prop;
      unless i (error "DEFBINFIX ~S ~S cannot find binfix Bop." Bop p);
      (save-binfix);
-     rmbinfix Bop;
+     rmbop Bop;
      *binfix* =. append (subseq *binfix* 0 i)
                        `(((,Bop ,lisp-op ,@prop) ,@{p in '(:as :same-as) && *binfix* .! i}))
                         (subseq *binfix* (if {p in '(:as :same-as)} (1+ i) i));
      (assign-properties);
      t &
 
- lsbinfix s :stream = *standard-output* :=
+ list-Bops s :stream = *standard-output* :=
     format s "  BINFIX~16t   LISP~16t~32t   Properties~@
               ==============================================================================~@
-              ~{~&(~{~2t~{~s~^~,16t~}~^~%~} )~}~@
+              ~{~&(~{~2t~{~(~A~)~16t~{~S~^~,16t~}~}~^~%~} )~}~@
               ------------------------------------------------------------------------------~@
-             " *binfix*
+             " {Bops -> {Bop -> list {cond car Bop == :.   => ":.";
+                                           car Bop == ' || => "||";
+                                           keywordp (car Bop) => format nil "~S" (car Bop);
+                                           t => symbol-name (car Bop)}
+                                     (cdr Bop)
+                              @. Bops}
+                      @. *binfix*}
 }
